@@ -9,7 +9,7 @@
 #include "caffe/layer_factory.hpp"
 #include "caffe/layers/clip_layer.hpp"
 #include "caffe/layers/conv_layer.hpp"
-#include "caffe/layers/deconv_layer.hpp"
+//#include "caffe/layers/deconv_layer.hpp"
 #include "caffe/layers/lrn_layer.hpp"
 #include "caffe/layers/pooling_layer.hpp"
 #include "caffe/layers/relu_layer.hpp"
@@ -20,7 +20,7 @@
 
 #ifdef USE_CUDNN
 #include "caffe/layers/cudnn_conv_layer.hpp"
-#include "caffe/layers/cudnn_deconv_layer.hpp"
+//#include "caffe/layers/cudnn_deconv_layer.hpp"
 #include "caffe/layers/cudnn_lcn_layer.hpp"
 #include "caffe/layers/cudnn_lrn_layer.hpp"
 #include "caffe/layers/cudnn_pooling_layer.hpp"
@@ -77,7 +77,7 @@ shared_ptr<Layer<Dtype> > GetConvolutionLayer(
 REGISTER_LAYER_CREATOR(Convolution, GetConvolutionLayer);
 
 // Get deconvolution layer according to engine.
-template <typename Dtype>
+/*template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetDeconvolutionLayer(const LayerParameter& param) {
   ConvolutionParameter conv_param = param.convolution_param();
   ConvolutionParameter_Engine engine = conv_param.engine();
@@ -114,7 +114,7 @@ shared_ptr<Layer<Dtype> > GetDeconvolutionLayer(const LayerParameter& param) {
 }
 
 REGISTER_LAYER_CREATOR(Deconvolution, GetDeconvolutionLayer);
-
+*/
 // Get pooling layer according to engine.
 template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetPoolingLayer(const LayerParameter& param) {
