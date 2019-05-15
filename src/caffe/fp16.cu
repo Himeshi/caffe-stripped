@@ -2,15 +2,27 @@
 
 namespace caffe {
 
-__global__ void convert_to_fp16_and_back(const int n, float* in) {
+__global__ void convert_to_fp16(const int n, float* in, __half* out) {
   CUDA_KERNEL_LOOP(index, n) {
-    in[index] = fp16tofp32_gpu(fp32tofp16_gpu(in[index]));
+    out[index] = fp32tofp16_gpu(in[index]);
   }
 }
 
-__global__ void convert_to_fp16_and_back(const int n, double* in) {
+__global__ void convert_to_fp16(const int n, double* in, __half* out) {
   CUDA_KERNEL_LOOP(index, n) {
-   in[index] = fp16tofp32_gpu(fp32tofp16_gpu(in[index]));
+   out[index] = fp32tofp16_gpu(in[index]);
+  }
+}
+
+__global__ void convert_to_float(const int n, __half* in, float* out) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu(in[index]);
+  }
+}
+
+__global__ void convert_to_float(const int n, __half* in, double* out) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu(in[index]);
   }
 }
 
