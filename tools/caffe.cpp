@@ -432,6 +432,8 @@ int main(int argc, char** argv) {
       "  time            benchmark model execution time");
   // Run tool or show usage.
   caffe::GlobalInit(&argc, &argv);
+  // computing with fp16
+  LOG(INFO) << "Using compression with FP16";
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER
     try {
