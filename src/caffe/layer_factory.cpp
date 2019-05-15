@@ -13,9 +13,9 @@
 #include "caffe/layers/lrn_layer.hpp"
 #include "caffe/layers/pooling_layer.hpp"
 #include "caffe/layers/relu_layer.hpp"
-#include "caffe/layers/sigmoid_layer.hpp"
+//#include "caffe/layers/sigmoid_layer.hpp"
 #include "caffe/layers/softmax_layer.hpp"
-#include "caffe/layers/tanh_layer.hpp"
+//#include "caffe/layers/tanh_layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 
 #ifdef USE_CUDNN
@@ -25,9 +25,9 @@
 #include "caffe/layers/cudnn_lrn_layer.hpp"
 #include "caffe/layers/cudnn_pooling_layer.hpp"
 #include "caffe/layers/cudnn_relu_layer.hpp"
-#include "caffe/layers/cudnn_sigmoid_layer.hpp"
+//#include "caffe/layers/cudnn_sigmoid_layer.hpp"
 #include "caffe/layers/cudnn_softmax_layer.hpp"
-#include "caffe/layers/cudnn_tanh_layer.hpp"
+//#include "caffe/layers/cudnn_tanh_layer.hpp"
 #endif
 
 #ifdef WITH_PYTHON_LAYER
@@ -216,7 +216,7 @@ shared_ptr<Layer<Dtype> > GetReLULayer(const LayerParameter& param) {
 REGISTER_LAYER_CREATOR(ReLU, GetReLULayer);
 
 // Get sigmoid layer according to engine.
-template <typename Dtype>
+/*template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetSigmoidLayer(const LayerParameter& param) {
   SigmoidParameter_Engine engine = param.sigmoid_param().engine();
   if (engine == SigmoidParameter_Engine_DEFAULT) {
@@ -237,7 +237,7 @@ shared_ptr<Layer<Dtype> > GetSigmoidLayer(const LayerParameter& param) {
   }
 }
 
-REGISTER_LAYER_CREATOR(Sigmoid, GetSigmoidLayer);
+REGISTER_LAYER_CREATOR(Sigmoid, GetSigmoidLayer);*/
 
 // Get softmax layer according to engine.
 template <typename Dtype>
@@ -264,7 +264,7 @@ shared_ptr<Layer<Dtype> > GetSoftmaxLayer(const LayerParameter& param) {
 REGISTER_LAYER_CREATOR(Softmax, GetSoftmaxLayer);
 
 // Get tanh layer according to engine.
-template <typename Dtype>
+/*template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetTanHLayer(const LayerParameter& param) {
   TanHParameter_Engine engine = param.tanh_param().engine();
   if (engine == TanHParameter_Engine_DEFAULT) {
@@ -285,7 +285,7 @@ shared_ptr<Layer<Dtype> > GetTanHLayer(const LayerParameter& param) {
   }
 }
 
-REGISTER_LAYER_CREATOR(TanH, GetTanHLayer);
+REGISTER_LAYER_CREATOR(TanH, GetTanHLayer);*/
 
 #ifdef WITH_PYTHON_LAYER
 template <typename Dtype>
