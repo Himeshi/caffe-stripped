@@ -30,18 +30,18 @@ __global__ void SoftmaxLossForwardGPU(const int nthreads,
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
-  const Dtype* prob_data = prob_.gpu_data();
-  const Dtype* label = bottom[1]->gpu_data();
+  const __half* prob_data = prob_.gpu_data();
+  const __half* label = bottom[1]->gpu_data();
   const int dim = prob_.count() / outer_num_;
   const int nthreads = outer_num_ * inner_num_;
   // Since this memory is not used for anything, we use it here to avoid having
   // to allocate new GPU memory to accumulate intermediate results.
-  Dtype* loss_data = bottom[0]->mutable_gpu_diff();
+  __half* loss_data = bottom[0]->mutable_gpu_diff();
   // Similarly, this memory is never used elsewhere, and thus we can use it
   // to avoid having to allocate additional GPU memory.
-  Dtype* counts = prob_.mutable_gpu_diff();
+  __half* counts = prob_.mutable_gpu_diff();
   // NOLINT_NEXT_LINE(whitespace/operators)
   SoftmaxLossForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
       CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,
@@ -90,23 +90,23 @@ __global__ void SoftmaxLossBackwardGPU(const int nthreads, const Dtype* top,
 }
 
 template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
-    const Dtype* prob_data = prob_.gpu_data();
-    const Dtype* top_data = top[0]->gpu_data();
+    __half* bottom_diff = bottom[0]->mutable_gpu_diff();
+    const __half* prob_data = prob_.gpu_data();
+    const __half* top_data = top[0]->gpu_data();
     caffe_gpu_memcpy(prob_.count() * sizeof(Dtype), prob_data, bottom_diff);
-    const Dtype* label = bottom[1]->gpu_data();
+    const __half* label = bottom[1]->gpu_data();
     const int dim = prob_.count() / outer_num_;
     const int nthreads = outer_num_ * inner_num_;
     // Since this memory is never used for anything else,
     // we use to to avoid allocating new GPU memory.
-    Dtype* counts = prob_.mutable_gpu_diff();
+    __half* counts = prob_.mutable_gpu_diff();
     // NOLINT_NEXT_LINE(whitespace/operators)
     SoftmaxLossBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
         CAFFE_CUDA_NUM_THREADS>>>(nthreads, top_data, label, bottom_diff,

@@ -14,10 +14,10 @@ __global__ void ReLUForward(const int n, const Dtype* in, Dtype* out,
 }
 
 template <typename Dtype>
-void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
+    const vector<Blob<__half>*>& top) {
+  const __half* bottom_data = bottom[0]->gpu_data();
+  __half* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
   Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
   // NOLINT_NEXT_LINE(whitespace/operators)
@@ -41,13 +41,13 @@ __global__ void ReLUBackward(const int n, const Dtype* in_diff,
 }
 
 template <typename Dtype>
-void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<Blob<__half>*>& bottom) {
   if (propagate_down[0]) {
-    const Dtype* bottom_data = bottom[0]->gpu_data();
-    const Dtype* top_diff = top[0]->gpu_diff();
-    Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
+    const __half* bottom_data = bottom[0]->gpu_data();
+    const __half* top_diff = top[0]->gpu_diff();
+    __half* bottom_diff = bottom[0]->mutable_gpu_diff();
     const int count = bottom[0]->count();
     Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
     // NOLINT_NEXT_LINE(whitespace/operators)

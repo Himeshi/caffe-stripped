@@ -25,9 +25,9 @@ class LossLayer : public Layer<Dtype> {
   explicit LossLayer(const LayerParameter& param)
      : Layer<Dtype>(param) {}
   virtual void LayerSetUp(
-      const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
+      const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top);
   virtual void Reshape(
-      const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
+      const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top);
 
   virtual inline int ExactNumBottomBlobs() const { return 2; }
 

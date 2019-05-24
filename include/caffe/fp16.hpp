@@ -68,6 +68,14 @@ __global__ void convert_to_float(const int n, __half* in, float* out);
 
 __global__ void convert_to_float(const int n, __half* in, double* out);
 
+__global__ void convert_to_fp16(const int n, const float* in, __half* out);
+
+__global__ void convert_to_fp16(const int n, const double* in, __half* out);
+
+__global__ void convert_to_float(const int n, const __half* in, float* out);
+
+__global__ void convert_to_float(const int n, const __half* in, double* out);
+
 __device__ float fp16tofp32_gpu(fp16 f16value);
 
 __device__ fp16 fp32tofp16_gpu(float f);

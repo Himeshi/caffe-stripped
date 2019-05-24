@@ -18,8 +18,8 @@ BaseDataLayer<Dtype>::BaseDataLayer(const LayerParameter& param)
 }
 
 template <typename Dtype>
-void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
   if (top.size() == 1) {
     output_labels_ = false;
   } else {
@@ -46,7 +46,7 @@ BasePrefetchingDataLayer<Dtype>::BasePrefetchingDataLayer(
 
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
   BaseDataLayer<Dtype>::LayerSetUp(bottom, top);
 
   // Before starting the prefetch thread, we make cpu_data and gpu_data
@@ -111,7 +111,7 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
 
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
   if (prefetch_current_) {
     prefetch_free_.push(prefetch_current_);
   }

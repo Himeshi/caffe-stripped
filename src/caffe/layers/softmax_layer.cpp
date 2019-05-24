@@ -7,14 +7,14 @@
 namespace caffe {
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SoftmaxLayer<Dtype>::Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
   softmax_axis_ =
       bottom[0]->CanonicalAxisIndex(this->layer_param_.softmax_param().axis());
   top[0]->ReshapeLike(*bottom[0]);
   vector<int> mult_dims(1, bottom[0]->shape(softmax_axis_));
   sum_multiplier_.Reshape(mult_dims);
-  Dtype* multiplier_data = sum_multiplier_.mutable_cpu_data();
+  __half* multiplier_data = sum_multiplier_.mutable_cpu_data();
   caffe_set(sum_multiplier_.count(), Dtype(1), multiplier_data);
   outer_num_ = bottom[0]->count(0, softmax_axis_);
   inner_num_ = bottom[0]->count(softmax_axis_ + 1);
@@ -24,11 +24,11 @@ void SoftmaxLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* top_data = top[0]->mutable_cpu_data();
-  Dtype* scale_data = scale_.mutable_cpu_data();
+void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<__half>*>& bottom,
+    const vector<Blob<__half>*>& top) {
+  const __half* bottom_data = bottom[0]->cpu_data();
+  __half* top_data = top[0]->mutable_cpu_data();
+  __half* scale_data = scale_.mutable_cpu_data();
   int channels = bottom[0]->shape(softmax_axis_);
   int dim = bottom[0]->count() / outer_num_;
   caffe_copy(bottom[0]->count(), bottom_data, top_data);
@@ -60,13 +60,13 @@ void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void SoftmaxLayer<Dtype>::Backward_cpu(const vector<Blob<__half>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* top_diff = top[0]->cpu_diff();
-  const Dtype* top_data = top[0]->cpu_data();
-  Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
-  Dtype* scale_data = scale_.mutable_cpu_data();
+    const vector<Blob<__half>*>& bottom) {
+  const __half* top_diff = top[0]->cpu_diff();
+  const __half* top_data = top[0]->cpu_data();
+  __half* bottom_diff = bottom[0]->mutable_cpu_diff();
+  __half* scale_data = scale_.mutable_cpu_data();
   int channels = top[0]->shape(softmax_axis_);
   int dim = top[0]->count() / outer_num_;
   caffe_copy(top[0]->count(), top_diff, bottom_diff);

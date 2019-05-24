@@ -31,17 +31,17 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
  public:
   explicit CuDNNConvolutionLayer(const LayerParameter& param)
       : ConvolutionLayer<Dtype>(param), handles_setup_(false) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
   virtual ~CuDNNConvolutionLayer();
 
  protected:
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Backward_gpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
 
   bool handles_setup_;
   cudnnHandle_t* handle_;

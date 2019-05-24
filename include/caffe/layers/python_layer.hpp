@@ -16,8 +16,8 @@ class PythonLayer : public Layer<Dtype> {
   PythonLayer(PyObject* self, const LayerParameter& param)
       : Layer<Dtype>(param), self_(bp::handle<>(bp::borrowed(self))) { }
 
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
     // Disallow PythonLayer in MultiGPU training stage, due to GIL issues
     // Details: https://github.com/BVLC/caffe/issues/2936
     if (this->phase_ == TRAIN && Caffe::solver_count() > 1
@@ -29,20 +29,20 @@ class PythonLayer : public Layer<Dtype> {
     self_.attr("phase") = static_cast<int>(this->phase_);
     self_.attr("setup")(bottom, top);
   }
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+  virtual void Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
     self_.attr("reshape")(bottom, top);
   }
 
   virtual inline const char* type() const { return "Python"; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+  virtual void Forward_cpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
     self_.attr("forward")(bottom, top);
   }
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+  virtual void Backward_cpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
     self_.attr("backward")(top, propagate_down, bottom);
   }
 

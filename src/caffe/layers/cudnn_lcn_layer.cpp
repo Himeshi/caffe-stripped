@@ -6,8 +6,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void CuDNNLCNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void CuDNNLCNLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom,
+    const vector<Blob<__half>*>& top) {
   LRNLayer<Dtype>::LayerSetUp(bottom, top);
 
   CUDNN_CHECK(cudnnCreate(&handle_));
@@ -26,8 +26,8 @@ void CuDNNLCNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void CuDNNLCNLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void CuDNNLCNLayer<Dtype>::Reshape(const vector<Blob<__half>*>& bottom,
+    const vector<Blob<__half>*>& top) {
   LRNLayer<Dtype>::Reshape(bottom, top);
   cudnn::setTensor4dDesc<Dtype>(&bottom_desc_, bottom[0]->num(),
       this->channels_, this->height_, this->width_);

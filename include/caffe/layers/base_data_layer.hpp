@@ -24,18 +24,18 @@ class BaseDataLayer : public Layer<Dtype> {
   // LayerSetUp: implements common data layer setup functionality, and calls
   // DataLayerSetUp to do special data layer setup for individual layer types.
   // This method may not be overridden except by the BasePrefetchingDataLayer.
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
+  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void DataLayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {}
   // Data layers have no bottoms, so reshaping is trivial.
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {}
+  virtual void Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {}
 
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {}
+  virtual void Backward_cpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {}
+  virtual void Backward_gpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {}
 
  protected:
   TransformationParameter transform_param_;
@@ -60,10 +60,10 @@ class BasePrefetchingDataLayer :
   void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
 
  protected:
   virtual void InternalThreadEntry();
@@ -74,7 +74,7 @@ class BasePrefetchingDataLayer :
   BlockingQueue<Batch<Dtype>*> prefetch_full_;
   Batch<Dtype>* prefetch_current_;
 
-  Blob<Dtype> transformed_data_;
+  Blob<__half> transformed_data_;
 };
 
 }  // namespace caffe

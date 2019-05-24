@@ -62,6 +62,24 @@ void caffe_gpu_gemv<double>(const CBLAS_TRANSPOSE TransA, const int M,
       A, N, x, 1, &beta, y, 1));
 }
 
+void caffe_gpu_axpy_half(const int N, const float alpha, const __half* X,
+    __half* Y) {
+  float tempX[N];
+  float tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
+  //CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha, tempX, 1, tempY, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
+}
+
+void caffe_gpu_axpy_half(const int N, const double alpha, const __half* X,
+    __half* Y) {
+  double tempX[N];
+  double tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
+  //CUBLAS_CHECK(cublasDaxpy(Caffe::cublas_handle(), N, &alpha, tempX, 1, tempY, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
+}
+
 template <>
 void caffe_gpu_axpy<float>(const int N, const float alpha, const float* X,
     float* Y) {
@@ -146,6 +164,26 @@ void caffe_gpu_asum<double>(const int n, const double* x, double* y) {
   CUBLAS_CHECK(cublasDasum(Caffe::cublas_handle(), n, x, 1, y));
 }
 
+void caffe_gpu_scale_half(const int n, const float alpha, const __half *x,
+                            __half* y) {
+  float tempX[n];
+  float tempY[n];
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
+  CUBLAS_CHECK(cublasScopy(Caffe::cublas_handle(), n, x, 1, y, 1));
+  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), n, &alpha, y, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
+}
+
+void caffe_gpu_scale_half(const int n, const double alpha, const __half *x,
+                            __half* y) {
+  double tempX[n];
+  double tempY[n];
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
+  CUBLAS_CHECK(cublasDcopy(Caffe::cublas_handle(), n, x, 1, y, 1));
+  CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), n, &alpha, y, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
+}
+
 template <>
 void caffe_gpu_scale<float>(const int n, const float alpha, const float *x,
                             float* y) {
@@ -165,6 +203,28 @@ __global__ void set_kernel(const int n, const Dtype alpha, Dtype* y) {
   CUDA_KERNEL_LOOP(index, n) {
     y[index] = alpha;
   }
+}
+
+void caffe_gpu_set_half(const int N, const float alpha, __half* Y) {
+  if (alpha == 0) {
+    CUDA_CHECK(cudaMemset(Y, 0, sizeof(__half) * N));  // NOLINT(caffe/alt_fn)
+    return;
+  }
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  __half alpha_temp = fp32tofp16_gpu(alpha);
+  set_kernel<__half><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, alpha_temp, Y);
+}
+
+void caffe_gpu_set_half(const int N, const double alpha, __half* Y) {
+  if (alpha == 0) {
+    CUDA_CHECK(cudaMemset(Y, 0, sizeof(__half) * N));  // NOLINT(caffe/alt_fn)
+    return;
+  }
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  __half alpha_temp = fp32tofp16_gpu(alpha);
+  set_kernel<__half><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, alpha_temp, Y);
 }
 
 template <typename Dtype>

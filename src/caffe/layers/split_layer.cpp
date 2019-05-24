@@ -6,8 +6,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void SplitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SplitLayer<Dtype>::Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
   count_ = bottom[0]->count();
   for (int i = 0; i < top.size(); ++i) {
     // Do not allow in-place computation in the SplitLayer.  Instead, share data
@@ -23,16 +23,16 @@ void SplitLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void SplitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void SplitLayer<Dtype>::Forward_cpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
   for (int i = 0; i < top.size(); ++i) {
     top[i]->ShareData(*bottom[0]);
   }
 }
 
 template <typename Dtype>
-void SplitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void SplitLayer<Dtype>::Backward_cpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
   if (!propagate_down[0]) { return; }
   if (top.size() == 1) {
     caffe_copy(count_, top[0]->cpu_diff(), bottom[0]->mutable_cpu_diff());
@@ -42,8 +42,8 @@ void SplitLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             bottom[0]->mutable_cpu_diff());
   // Add remaining top blob diffs.
   for (int i = 2; i < top.size(); ++i) {
-    const Dtype* top_diff = top[i]->cpu_diff();
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+    const __half* top_diff = top[i]->cpu_diff();
+    __half* bottom_diff = bottom[0]->mutable_cpu_diff();
     caffe_axpy(count_, Dtype(1.), top_diff, bottom_diff);
   }
 }

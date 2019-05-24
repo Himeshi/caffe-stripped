@@ -6,8 +6,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void PowerLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void PowerLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
   NeuronLayer<Dtype>::LayerSetUp(bottom, top);
   power_ = this->layer_param_.power_param().power();
   scale_ = this->layer_param_.power_param().scale();
@@ -17,9 +17,9 @@ void PowerLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 
 // Compute y = (shift + scale * x)^power
 template <typename Dtype>
-void PowerLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
-  Dtype* top_data = top[0]->mutable_cpu_data();
+void PowerLayer<Dtype>::Forward_cpu(const vector<Blob<__half>*>& bottom,
+    const vector<Blob<__half>*>& top) {
+  __half* top_data = top[0]->mutable_cpu_data();
   const int count = bottom[0]->count();
   // Special case where we can ignore the input: scale or power is 0.
   if (diff_scale_ == Dtype(0)) {
@@ -27,7 +27,7 @@ void PowerLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     caffe_set(count, value, top_data);
     return;
   }
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+  const __half* bottom_data = bottom[0]->cpu_data();
   caffe_copy(count, bottom_data, top_data);
   if (scale_ != Dtype(1)) {
     caffe_scal(count, scale_, top_data);
@@ -41,13 +41,13 @@ void PowerLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void PowerLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+void PowerLayer<Dtype>::Backward_cpu(const vector<Blob<__half>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<Blob<__half>*>& bottom) {
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+	__half* bottom_diff = bottom[0]->mutable_cpu_diff();
     const int count = bottom[0]->count();
-    const Dtype* top_diff = top[0]->cpu_diff();
+    const __half* top_diff = top[0]->cpu_diff();
     if (diff_scale_ == Dtype(0) || power_ == Dtype(1)) {
       caffe_set(count, diff_scale_, bottom_diff);
     } else {

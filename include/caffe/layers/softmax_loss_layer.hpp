@@ -53,10 +53,10 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
     */
   explicit SoftmaxWithLossLayer(const LayerParameter& param)
       : LossLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
 
   virtual inline const char* type() const { return "SoftmaxWithLoss"; }
   virtual inline int ExactNumTopBlobs() const { return -1; }
@@ -64,10 +64,10 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   virtual inline int MaxTopBlobs() const { return 2; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_cpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
   /**
    * @brief Computes the softmax loss error gradient w.r.t. the predictions.
    *
@@ -95,10 +95,10 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
    *   -# @f$ (N \times 1 \times 1 \times 1) @f$
    *      the labels -- ignored as we can't compute their error gradients
    */
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
 
   /// Read the normalization mode parameter and compute the normalizer based
   /// on the blob size.  If normalization_mode is VALID, the count of valid

@@ -6,8 +6,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
   size_ = this->layer_param_.lrn_param().local_size();
   CHECK_EQ(size_ % 2, 1) << "LRN only supports odd values for local_size";
   pre_pad_ = (size_ - 1) / 2;
@@ -66,8 +66,8 @@ void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void LRNLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
+void LRNLayer<Dtype>::Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top) {
   CHECK_EQ(4, bottom[0]->num_axes()) << "Input must have 4 axes, "
       << "corresponding to (num, channels, height, width)";
   num_ = bottom[0]->num();
@@ -90,8 +90,8 @@ void LRNLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-void LRNLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void LRNLayer<Dtype>::Forward_cpu(const vector<Blob<__half>*>& bottom,
+    const vector<Blob<__half>*>& top) {
   switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelForward_cpu(bottom, top);
@@ -106,10 +106,10 @@ void LRNLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
 template <typename Dtype>
 void LRNLayer<Dtype>::CrossChannelForward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
-  Dtype* top_data = top[0]->mutable_cpu_data();
-  Dtype* scale_data = scale_.mutable_cpu_data();
+  __half* top_data = top[0]->mutable_cpu_data();
+  __half* scale_data = scale_.mutable_cpu_data();
   // start with the constant value
   for (int i = 0; i < scale_.count(); ++i) {
     scale_data[i] = k_;
@@ -153,7 +153,7 @@ void LRNLayer<Dtype>::CrossChannelForward_cpu(
 
 template <typename Dtype>
 void LRNLayer<Dtype>::WithinChannelForward(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
   split_layer_->Forward(bottom, split_top_vec_);
   square_layer_->Forward(square_bottom_vec_, square_top_vec_);
   pool_layer_->Forward(square_top_vec_, pool_top_vec_);
@@ -162,8 +162,8 @@ void LRNLayer<Dtype>::WithinChannelForward(
 }
 
 template <typename Dtype>
-void LRNLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void LRNLayer<Dtype>::Backward_cpu(const vector<Blob<__half>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
   switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelBackward_cpu(top, propagate_down, bottom);
@@ -178,12 +178,12 @@ void LRNLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
 template <typename Dtype>
 void LRNLayer<Dtype>::CrossChannelBackward_cpu(
-    const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
-  const Dtype* top_diff = top[0]->cpu_diff();
-  const Dtype* top_data = top[0]->cpu_data();
-  const Dtype* bottom_data = bottom[0]->cpu_data();
-  const Dtype* scale_data = scale_.cpu_data();
+    const vector<Blob<__half>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<__half>*>& bottom) {
+  const __half* top_diff = top[0]->cpu_diff();
+  const __half* top_data = top[0]->cpu_data();
+  const __half* bottom_data = bottom[0]->cpu_data();
+  const __half* scale_data = scale_.cpu_data();
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
   Blob<Dtype> padded_ratio(1, channels_ + size_ - 1, height_, width_);
   Blob<Dtype> accum_ratio(1, 1, height_, width_);
@@ -233,8 +233,8 @@ void LRNLayer<Dtype>::CrossChannelBackward_cpu(
 
 template <typename Dtype>
 void LRNLayer<Dtype>::WithinChannelBackward(
-    const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<Blob<__half>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<__half>*>& bottom) {
   if (propagate_down[0]) {
     vector<bool> product_propagate_down(2, true);
     product_layer_->Backward(top, product_propagate_down, product_bottom_vec_);

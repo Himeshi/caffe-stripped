@@ -6,7 +6,7 @@
 namespace caffe {
 
 template <typename Dtype>
-__global__ void LRNFillScale(const int nthreads, const Dtype* const in,
+__global__ void LRNFillScale(const int nthreads, const __half* const in,
     const int num, const int channels, const int height,
     const int width, const int size, const Dtype alpha_over_size,
     const Dtype k, Dtype* const scale) {
@@ -53,8 +53,8 @@ __global__ void LRNFillScale(const int nthreads, const Dtype* const in,
 
 
 template <typename Dtype>
-void LRNLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void LRNLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
+    const vector<Blob<__half>*>& top) {
   switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelForward_gpu(bottom, top);
@@ -69,7 +69,7 @@ void LRNLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 
 // TODO: check if it would be faster to just put it into the previous kernel.
 template <typename Dtype>
-__global__ void LRNComputeOutput(const int nthreads, const Dtype* const in,
+__global__ void LRNComputeOutput(const int nthreads, const __half* const in,
     const Dtype* const scale, const Dtype negative_beta, Dtype* const out) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     out[index] = in[index] * pow(scale[index], negative_beta);
@@ -78,10 +78,10 @@ __global__ void LRNComputeOutput(const int nthreads, const Dtype* const in,
 
 template <typename Dtype>
 void LRNLayer<Dtype>::CrossChannelForward_gpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
   // First, compute scale
-  const Dtype* bottom_data = bottom[0]->gpu_data();
-  Dtype* top_data = top[0]->mutable_gpu_data();
+  const __half* bottom_data = bottom[0]->gpu_data();
+  __half* top_data = top[0]->mutable_gpu_data();
   Dtype* scale_data = scale_.mutable_gpu_data();
   // We will launch one kernel for each pixel location, and have the kernel
   // go through all the channels.
@@ -98,14 +98,14 @@ void LRNLayer<Dtype>::CrossChannelForward_gpu(
   CUDA_POST_KERNEL_CHECK;
 }
 template void LRNLayer<float>::CrossChannelForward_gpu(
-    const vector<Blob<float>*>& bottom, const vector<Blob<float>*>& top);
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top);
 template void LRNLayer<double>::CrossChannelForward_gpu(
-    const vector<Blob<double>*>& bottom, const vector<Blob<double>*>& top);
+    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top);
 
 
 template <typename Dtype>
-void LRNLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+void LRNLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
   switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelBackward_gpu(top, propagate_down, bottom);
@@ -178,8 +178,8 @@ __global__ void LRNComputeDiff(const int nthreads,
 
 template <typename Dtype>
 void LRNLayer<Dtype>::CrossChannelBackward_gpu(
-    const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+    const vector<Blob<__half>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<__half>*>& bottom) {
   int n_threads = num_ * height_ * width_;
   // NOLINT_NEXT_LINE(whitespace/operators)
   LRNComputeDiff<<<CAFFE_GET_BLOCKS(n_threads), CAFFE_CUDA_NUM_THREADS>>>(
@@ -189,11 +189,11 @@ void LRNLayer<Dtype>::CrossChannelBackward_gpu(
       bottom[0]->mutable_gpu_diff());
 }
 template void LRNLayer<float>::CrossChannelBackward_gpu(
-    const vector<Blob<float>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<float>*>& bottom);
+    const vector<Blob<__half>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<__half>*>& bottom);
 template void LRNLayer<double>::CrossChannelBackward_gpu(
-    const vector<Blob<double>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<double>*>& bottom);
+    const vector<Blob<__half>*>& top, const vector<bool>& propagate_down,
+    const vector<Blob<__half>*>& bottom);
 
 
 

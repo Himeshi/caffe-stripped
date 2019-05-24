@@ -27,10 +27,10 @@ class RecurrentLayer : public Layer<Dtype> {
  public:
   explicit RecurrentLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Reshape(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
   virtual void Reset();
 
   virtual inline const char* type() const { return "Recurrent"; }
@@ -140,12 +140,12 @@ class RecurrentLayer : public Layer<Dtype> {
    *      Refer to documentation for particular RecurrentLayer implementations
    *      (such as RNNLayer and LSTMLayer) for the definition of @f$ y @f$.
    */
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Forward_cpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
+      const vector<Blob<__half>*>& top);
+  virtual void Backward_cpu(const vector<Blob<__half>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
 
   /// @brief A Net to implement the Recurrent functionality.
   shared_ptr<Net<Dtype> > unrolled_net_;
@@ -174,12 +174,12 @@ class RecurrentLayer : public Layer<Dtype> {
    */
   bool expose_hidden_;
 
-  vector<Blob<Dtype>* > recur_input_blobs_;
-  vector<Blob<Dtype>* > recur_output_blobs_;
-  vector<Blob<Dtype>* > output_blobs_;
-  Blob<Dtype>* x_input_blob_;
-  Blob<Dtype>* x_static_input_blob_;
-  Blob<Dtype>* cont_input_blob_;
+  vector<Blob<__half>* > recur_input_blobs_;
+  vector<Blob<__half>* > recur_output_blobs_;
+  vector<Blob<__half>* > output_blobs_;
+  Blob<__half>* x_input_blob_;
+  Blob<__half>* x_static_input_blob_;
+  Blob<__half>* cont_input_blob_;
 };
 
 }  // namespace caffe
