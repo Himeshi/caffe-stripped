@@ -9,11 +9,11 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void MaxPoolForward(const int nthreads,
-    const Dtype* const bottom_data, const int num, const int channels,
+    const __half* const bottom_data, const int num, const int channels,
     const int height, const int width, const int pooled_height,
     const int pooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
-    Dtype* const top_data, int* mask, Dtype* top_mask) {
+    __half* const top_data, int* mask, __half* top_mask) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -27,32 +27,32 @@ __global__ void MaxPoolForward(const int nthreads,
     wstart = max(wstart, 0);
     Dtype maxval = -FLT_MAX;
     int maxidx = -1;
-    const Dtype* const bottom_slice =
+    const __half* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        if (bottom_slice[h * width + w] > maxval) {
+        if (fp16tofp32_gpu(bottom_slice[h * width + w]) > maxval) {
           maxidx = h * width + w;
-          maxval = bottom_slice[maxidx];
+          maxval = fp16tofp32_gpu(bottom_slice[maxidx]);
         }
       }
     }
-    top_data[index] = maxval;
+    top_data[index] = fp32tofp16_gpu(maxval);
     if (mask) {
-      mask[index] = maxidx;
+      mask[index] = fp32tofp16_gpu(maxidx);
     } else {
-      top_mask[index] = maxidx;
+      top_mask[index] = fp32tofp16_gpu(maxidx);
     }
   }
 }
 
 template <typename Dtype>
 __global__ void AvePoolForward(const int nthreads,
-    const Dtype* const bottom_data, const int num, const int channels,
+    const __half* const bottom_data, const int num, const int channels,
     const int height, const int width, const int pooled_height,
     const int pooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
-    Dtype* const top_data) {
+    __half* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -68,24 +68,24 @@ __global__ void AvePoolForward(const int nthreads,
     hend = min(hend, height);
     wend = min(wend, width);
     Dtype aveval = 0;
-    const Dtype* const bottom_slice =
+    const __half* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        aveval += bottom_slice[h * width + w];
+        aveval += fp16tofp32_gpu(bottom_slice[h * width + w]);
       }
     }
-    top_data[index] = aveval / pool_size;
+    top_data[index] = fp32tofp16_gpu(aveval / pool_size);
   }
 }
 
 template <typename Dtype>
 __global__ void StoPoolForwardTrain(const int nthreads,
-    const Dtype* const bottom_data,
+    const __half* const bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, Dtype* const rand_idx, Dtype* const top_data) {
+    const int stride_w, Dtype* const rand_idx, __half* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -96,12 +96,12 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     const int wstart = pw * stride_w;
     const int wend = min(wstart + kernel_w, width);
     Dtype cumsum = 0.;
-    const Dtype* const bottom_slice =
+    const __half* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_slice[h * width + w];
+        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
       }
     }
     const float thres = rand_idx[index] * cumsum;
@@ -109,10 +109,10 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     cumsum = 0;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_slice[h * width + w];
+        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
         if (cumsum >= thres) {
           rand_idx[index] = ((n * channels + c) * height + h) * width + w;
-          top_data[index] = bottom_slice[h * width + w];
+          top_data[index] = fp32tofp16_gpu(bottom_slice[h * width + w]);
           return;
         }
       }
@@ -123,11 +123,11 @@ __global__ void StoPoolForwardTrain(const int nthreads,
 
 template <typename Dtype>
 __global__ void StoPoolForwardTest(const int nthreads,
-    const Dtype* const bottom_data,
+    const __half* const bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, Dtype* const top_data) {
+    const int stride_w, __half* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -140,16 +140,16 @@ __global__ void StoPoolForwardTest(const int nthreads,
     // We set cumsum to be 0 to avoid divide-by-zero problems
     Dtype cumsum = 0.;
     Dtype cumvalues = 0.;
-    const Dtype* const bottom_slice =
+    const __half* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_slice[h * width + w];
-        cumvalues += bottom_slice[h * width + w] * bottom_slice[h * width + w];
+        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
+        cumvalues += fp16tofp32_gpu(bottom_slice[h * width + w]) * fp16tofp32_gpu(bottom_slice[h * width + w]);
       }
     }
-    top_data[index] = (cumsum > 0.) ? cumvalues / cumsum : 0.;
+    top_data[index] = fp32tofp16_gpu((cumsum > 0.) ? cumvalues / cumsum : 0.);
   }
 }
 
@@ -214,12 +214,12 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
 
 
 template <typename Dtype>
-__global__ void MaxPoolBackward(const int nthreads, const Dtype* const top_diff,
-    const int* const mask, const Dtype* const top_mask, const int num,
+__global__ void MaxPoolBackward(const int nthreads, const __half* const top_diff,
+    const int* const mask, const __half* const top_mask, const int num,
     const int channels, const int height, const int width,
     const int pooled_height, const int pooled_width, const int kernel_h,
     const int kernel_w, const int stride_h, const int stride_w, const int pad_h,
-    const int pad_w, Dtype* const bottom_diff) {
+    const int pad_w, __half* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -235,37 +235,37 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* const top_diff,
     const int pwend = min((w + pad_w) / stride_w + 1, pooled_width);
     Dtype gradient = 0;
     const int offset = (n * channels + c) * pooled_height * pooled_width;
-    const Dtype* const top_diff_slice = top_diff + offset;
+    const __half* const top_diff_slice = top_diff + offset;
     if (mask) {
       const int* const mask_slice = mask + offset;
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
           if (mask_slice[ph * pooled_width + pw] == h * width + w) {
-            gradient += top_diff_slice[ph * pooled_width + pw];
+            gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]);
           }
         }
       }
     } else {
-      const Dtype* const top_mask_slice = top_mask + offset;
+      const __half* const top_mask_slice = top_mask + offset;
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
-          if (top_mask_slice[ph * pooled_width + pw] == h * width + w) {
-            gradient += top_diff_slice[ph * pooled_width + pw];
+          if (fp16tofp32_gpu(top_mask_slice[ph * pooled_width + pw]) == h * width + w) {
+            gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]);
           }
         }
       }
     }
-    bottom_diff[index] = gradient;
+    bottom_diff[index] = fp32tofp16_gpu(gradient);
   }
 }
 
 template <typename Dtype>
-__global__ void AvePoolBackward(const int nthreads, const Dtype* const top_diff,
+__global__ void AvePoolBackward(const int nthreads, const __half* const top_diff,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
     const int stride_w, const int pad_h, const int pad_w,
-    Dtype* const bottom_diff) {
+    __half* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -278,7 +278,7 @@ __global__ void AvePoolBackward(const int nthreads, const Dtype* const top_diff,
     const int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     const int pwend = min(w / stride_w + 1, pooled_width);
     Dtype gradient = 0;
-    const Dtype* const top_diff_slice =
+    const __half* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
@@ -288,21 +288,21 @@ __global__ void AvePoolBackward(const int nthreads, const Dtype* const top_diff,
         int hend = min(hstart + kernel_h, height + pad_h);
         int wend = min(wstart + kernel_w, width + pad_w);
         int pool_size = (hend - hstart) * (wend - wstart);
-        gradient += top_diff_slice[ph * pooled_width + pw] / pool_size;
+        gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]) / pool_size;
       }
     }
-    bottom_diff[index] = gradient;
+    bottom_diff[index] = fp32tofp16_gpu(gradient);
   }
 }
 
 
 template <typename Dtype>
 __global__ void StoPoolBackward(const int nthreads,
-    const Dtype* const rand_idx, const Dtype* const top_diff,
+    const Dtype* const rand_idx, const __half* const top_diff,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, Dtype* const bottom_diff) {
+    const int stride_w, __half* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -317,15 +317,15 @@ __global__ void StoPoolBackward(const int nthreads,
     Dtype gradient = 0;
     const Dtype* const rand_idx_slice =
         rand_idx + (n * channels + c) * pooled_height * pooled_width;
-    const Dtype* const top_diff_slice =
+    const __half* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
-        gradient += top_diff_slice[ph * pooled_width + pw] *
+        gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]) *
             (index == static_cast<int>(rand_idx_slice[ph * pooled_width + pw]));
       }
     }
-    bottom_diff[index] = gradient;
+    bottom_diff[index] = fp32tofp16_gpu(gradient);
   }
 }
 
@@ -339,7 +339,7 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
   const __half* top_diff = top[0]->gpu_diff();
   __half* bottom_diff = bottom[0]->mutable_gpu_diff();
   const int count = bottom[0]->count();
-  caffe_gpu_set(count, Dtype(0.), bottom_diff);
+  caffe_gpu_set_half(count, Dtype(0.), bottom_diff);
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;
