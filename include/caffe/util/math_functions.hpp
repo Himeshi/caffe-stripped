@@ -165,6 +165,12 @@ template <typename Dtype>
 void caffe_gpu_axpy(const int N, const Dtype alpha, const Dtype* X,
     Dtype* Y);
 
+void caffe_gpu_axpby_half(const int N, const float alpha, const __half* X,
+    const float beta, __half* Y);
+
+void caffe_gpu_axpby_half(const int N, const double alpha, const __half* X,
+    const double beta, __half* Y);
+
 template <typename Dtype>
 void caffe_gpu_axpby(const int N, const Dtype alpha, const Dtype* X,
     const Dtype beta, Dtype* Y);
@@ -191,8 +197,14 @@ inline void caffe_gpu_memset(const size_t N, const int alpha, void* X) {
 #endif
 }
 
+void caffe_gpu_add_scalar_half(const int N, const float alpha, __half* Y);
+void caffe_gpu_add_scalar_half(const int N, const double alpha, __half* Y);
+
 template <typename Dtype>
 void caffe_gpu_add_scalar(const int N, const Dtype alpha, Dtype *X);
+
+void caffe_gpu_scal_half(const int N, const float alpha, __half *X);
+void caffe_gpu_scal_half(const int N, const double alpha, __half *X);
 
 template <typename Dtype>
 void caffe_gpu_scal(const int N, const Dtype alpha, Dtype *X);
@@ -211,6 +223,9 @@ void caffe_gpu_sub(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 template <typename Dtype>
 void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
+void caffe_gpu_div_half(const int N, const __half* a,
+    const __half* b, __half* y);
+
 template <typename Dtype>
 void caffe_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
@@ -223,6 +238,10 @@ void caffe_gpu_exp(const int n, const Dtype* a, Dtype* y);
 template <typename Dtype>
 void caffe_gpu_log(const int n, const Dtype* a, Dtype* y);
 
+void caffe_gpu_powx_half(const int N, const __half* a,
+    const float alpha, __half* y);
+void caffe_gpu_powx_half(const int N, const __half* a,
+    const double alpha, __half* y);
 template <typename Dtype>
 void caffe_gpu_powx(const int n, const Dtype* a, const Dtype b, Dtype* y);
 

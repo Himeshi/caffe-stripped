@@ -98,6 +98,20 @@ void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
   }
 }
 
+void caffe_gpu_scal_half(const int N, const float alpha, __half *X) {
+  float tempX[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
+  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), N, &alpha, tempX, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
+}
+
+void caffe_gpu_scal_half(const int N, const double alpha, __half *X) {
+  double tempX[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
+  CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), N, &alpha, tempX, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
+}
+
 template <>
 void caffe_gpu_scal<float>(const int N, const float alpha, float *X) {
   CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), N, &alpha, X, 1));
@@ -126,6 +140,18 @@ void caffe_gpu_scal<double>(const int N, const double alpha, double* X,
   CUBLAS_CHECK(cublasSetStream(Caffe::cublas_handle(), str));
   CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), N, &alpha, X, 1));
   CUBLAS_CHECK(cublasSetStream(Caffe::cublas_handle(), initial_stream));
+}
+
+void caffe_gpu_axpby_half(const int N, const float alpha, const __half* X,
+    const float beta, __half* Y) {
+  caffe_gpu_scal_half(N, beta, Y);
+  caffe_gpu_axpy_half(N, alpha, X, Y);
+}
+
+void caffe_gpu_axpby_half(const int N, const double alpha, const __half* X,
+    const double beta, __half* Y) {
+  caffe_gpu_scal_half(N, beta, Y);
+  caffe_gpu_axpy_half(N, alpha, X, Y);
 }
 
 template <>
@@ -249,6 +275,24 @@ __global__ void add_scalar_kernel(const int n, const Dtype alpha, Dtype* y) {
   }
 }
 
+void caffe_gpu_add_scalar_half(const int N, const float alpha, __half* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  float tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY);
+  add_scalar_kernel<float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, alpha, tempY);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
+}
+
+void caffe_gpu_add_scalar_half(const int N, const double alpha, __half* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  double tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY);
+  add_scalar_kernel<double><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, alpha, tempY);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
+}
+
 template <>
 void caffe_gpu_add_scalar(const int N, const float alpha, float* Y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
@@ -343,6 +387,32 @@ __global__ void div_kernel(const int n, const Dtype* a,
   }
 }
 
+void caffe_gpu_div_half(const int N, const __half* a,
+    const __half* b, __half* y) {
+  float tempA[N];
+  float tempB[N];
+  float tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, a, tempA);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, b, tempB);
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  div_kernel<float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, tempA, tempB, tempY);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+}
+
+void caffe_gpu_div_half(const int N, const __half* a,
+    const __half* b, __half* y) {
+  double tempA[N];
+  double tempB[N];
+  double tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, a, tempA);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, b, tempB);
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  div_kernel<double><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, tempA, tempB, tempY);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+}
+
 template <>
 void caffe_gpu_div<float>(const int N, const float* a,
     const float* b, float* y) {
@@ -429,6 +499,28 @@ __global__ void powx_kernel(const int n, const Dtype* a,
   CUDA_KERNEL_LOOP(index, n) {
     y[index] = pow(a[index], alpha);
   }
+}
+
+void caffe_gpu_powx_half(const int N, const __half* a,
+    const float alpha, __half* y) {
+  float tempA[N];
+  float tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, a, tempA);
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  powx_kernel<float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, tempA, alpha, tempY);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+}
+
+void caffe_gpu_powx_half(const int N, const __half* a,
+    const double alpha, __half* y) {
+  double tempA[N];
+  double tempY[N];
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, a, tempA);
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  powx_kernel<double><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, tempA, alpha, tempY);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
 }
 
 template <>
