@@ -27,7 +27,7 @@ void SplitLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   for (int i = 2; i < top.size(); ++i) {
     const fp16* top_diff = top[i]->gpu_diff();
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
-    caffe_gpu_axpy(count_, Dtype(1.), top_diff, bottom_diff);
+    caffe_gpu_axpy_half(count_, Dtype(1.), top_diff, bottom_diff);
   }
 }
 
