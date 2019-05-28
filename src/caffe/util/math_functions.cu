@@ -183,7 +183,7 @@ void caffe_gpu_dot_half(const int n, const fp16* x, const fp16* y,
   double tempY[n];
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY);
-  CUBLAS_CHECK(cublasSdot(Caffe::cublas_handle(), n, tempX, 1, tempY, 1, out));
+  CUBLAS_CHECK(cublasDdot(Caffe::cublas_handle(), n, tempX, 1, tempY, 1, out));
 }
 
 
@@ -200,13 +200,13 @@ void caffe_gpu_dot<double>(const int n, const double* x, const double* y,
 }
 
 void caffe_gpu_asum_half(const int n, const fp16* x, float* y) {
-  float tempX[N];
+  float tempX[n];
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
   CUBLAS_CHECK(cublasSasum(Caffe::cublas_handle(), n, tempX, 1, y));
 }
 
 void caffe_gpu_asum_half(const int n, const fp16* x, double* y) {
-  double tempX[N];
+  double tempX[n];
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
   CUBLAS_CHECK(cublasDasum(Caffe::cublas_handle(), n, tempX, 1, y));
 }
@@ -226,8 +226,8 @@ void caffe_gpu_scale_half(const int n, const float alpha, const fp16 *x,
   float tempX[n];
   float tempY[n];
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
-  CUBLAS_CHECK(cublasScopy(Caffe::cublas_handle(), n, x, 1, y, 1));
-  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), n, &alpha, y, 1));
+  CUBLAS_CHECK(cublasScopy(Caffe::cublas_handle(), n, tempX, 1, tempY, 1));
+  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), n, &alpha, tempY, 1));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
 }
 
@@ -236,8 +236,8 @@ void caffe_gpu_scale_half(const int n, const double alpha, const fp16 *x,
   double tempX[n];
   double tempY[n];
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
-  CUBLAS_CHECK(cublasDcopy(Caffe::cublas_handle(), n, x, 1, y, 1));
-  CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), n, &alpha, y, 1));
+  CUBLAS_CHECK(cublasDcopy(Caffe::cublas_handle(), n, tempX, 1, tempY, 1));
+  CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), n, &alpha, tempY, 1));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
 }
 
@@ -268,7 +268,7 @@ void caffe_gpu_set_half(const int N, const float alpha, fp16* Y) {
     return;
   }
   // NOLINT_NEXT_LINE(whitespace/operators)
-  fp16 alpha_temp = fp32tofp16_gpu(alpha);
+  fp16 alpha_temp = fp32tofp16(alpha);
   set_kernel<fp16><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, alpha_temp, Y);
 }
@@ -279,7 +279,7 @@ void caffe_gpu_set_half(const int N, const double alpha, fp16* Y) {
     return;
   }
   // NOLINT_NEXT_LINE(whitespace/operators)
-  fp16 alpha_temp = fp32tofp16_gpu(alpha);
+  fp16 alpha_temp = fp32tofp16(alpha);
   set_kernel<fp16><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, alpha_temp, Y);
 }
@@ -449,7 +449,7 @@ void caffe_gpu_div_half(const int N, const fp16* a,
     const fp16* b, fp16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   div_kernel_half<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
-      N, tempA, tempB, tempY);
+      N, a, b, y);
 }
 
 template <>
@@ -558,14 +558,14 @@ void caffe_gpu_powx_half(const int N, const fp16* a,
     const float alpha, fp16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   powx_kernel_half<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
-      N, tempA, alpha, tempY);
+      N, a, alpha, y);
 }
 
 void caffe_gpu_powx_half(const int N, const fp16* a,
     const double alpha, fp16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   powx_kernel_half<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
-      N, tempA, alpha, tempY);
+      N, a, alpha, y);
 }
 
 template <>
