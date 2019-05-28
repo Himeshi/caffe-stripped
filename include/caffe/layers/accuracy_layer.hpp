@@ -91,7 +91,7 @@ class AccuracyLayer : public Layer<Dtype> {
   /// The label indicating that an instance should be ignored.
   int ignore_label_;
   /// Keeps counts of the number of samples per class.
-  Blob<Dtype> nums_buffer_;
+  Blob<fp16> nums_buffer_;
 };
 
 }  // namespace caffe
