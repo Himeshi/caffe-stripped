@@ -46,7 +46,7 @@ class BaseDataLayer : public Layer<Dtype> {
 template <typename Dtype>
 class Batch {
  public:
-  Blob<Dtype> data_, label_;
+  Blob<fp16> data_, label_;
 };
 
 template <typename Dtype>
@@ -57,8 +57,8 @@ class BasePrefetchingDataLayer :
   // LayerSetUp: implements common data layer setup functionality, and calls
   // DataLayerSetUp to do special data layer setup for individual layer types.
   // This method may not be overridden.
-  void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+  void LayerSetUp(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
 
   virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top);
@@ -69,10 +69,10 @@ class BasePrefetchingDataLayer :
   virtual void InternalThreadEntry();
   virtual void load_batch(Batch<Dtype>* batch) = 0;
 
-  vector<shared_ptr<Batch<Dtype> > > prefetch_;
-  BlockingQueue<Batch<Dtype>*> prefetch_free_;
-  BlockingQueue<Batch<Dtype>*> prefetch_full_;
-  Batch<Dtype>* prefetch_current_;
+  vector<shared_ptr<Batch<fp16> > > prefetch_;
+  BlockingQueue<Batch<fp16>*> prefetch_free_;
+  BlockingQueue<Batch<fp16>*> prefetch_full_;
+  Batch<fp16>* prefetch_current_;
 
   Blob<fp16> transformed_data_;
 };
