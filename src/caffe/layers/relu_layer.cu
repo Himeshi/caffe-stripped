@@ -6,10 +6,10 @@
 namespace caffe {
 
 template <typename Dtype>
-__global__ void ReLUForward(const int n, const Dtype* in, Dtype* out,
+__global__ void ReLUForward(const int n, const fp16* in, fp16* out,
     Dtype negative_slope) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = in[index] > 0 ? in[index] : in[index] * negative_slope;
+    out[index] = in[index] > 0 ? in[index] : fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * negative_slope);
   }
 }
 
@@ -32,11 +32,11 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 }
 
 template <typename Dtype>
-__global__ void ReLUBackward(const int n, const Dtype* in_diff,
-    const Dtype* in_data, Dtype* out_diff, Dtype negative_slope) {
+__global__ void ReLUBackward(const int n, const fp16* in_diff,
+    const fp16* in_data, fp16* out_diff, Dtype negative_slope) {
   CUDA_KERNEL_LOOP(index, n) {
-    out_diff[index] = in_diff[index] * ((in_data[index] > 0)
-        + (in_data[index] <= 0) * negative_slope);
+    out_diff[index] = fp32tofp16_gpu(fp16tofp32_gpu(in_diff[index]) * ((in_data[index] > 0)
+        + (in_data[index] <= 0) * negative_slope));
   }
 }
 
