@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "caffe/util/device_alternate.hpp"
+#include "caffe/fp16.hpp"
 
 // Convert macro to string
 #define STRINGIFY(m) #m
@@ -45,21 +46,21 @@ private:\
 
 #define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
   template void classname<float>::Forward_gpu( \
-      const std::vector<Blob<__half>*>& bottom, \
-      const std::vector<Blob<__half>*>& top); \
+      const std::vector<Blob<fp16>*>& bottom, \
+      const std::vector<Blob<fp16>*>& top); \
   template void classname<double>::Forward_gpu( \
-      const std::vector<Blob<__half>*>& bottom, \
-      const std::vector<Blob<__half>*>& top);
+      const std::vector<Blob<fp16>*>& bottom, \
+      const std::vector<Blob<fp16>*>& top);
 
 #define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
   template void classname<float>::Backward_gpu( \
-      const std::vector<Blob<__half>*>& top, \
+      const std::vector<Blob<fp16>*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<__half>*>& bottom); \
+      const std::vector<Blob<fp16>*>& bottom); \
   template void classname<double>::Backward_gpu( \
-      const std::vector<Blob<__half>*>& top, \
+      const std::vector<Blob<fp16>*>& top, \
       const std::vector<bool>& propagate_down, \
-      const std::vector<Blob<__half>*>& bottom)
+      const std::vector<Blob<fp16>*>& bottom)
 
 #define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
   INSTANTIATE_LAYER_GPU_FORWARD(classname); \

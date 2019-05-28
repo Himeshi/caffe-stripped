@@ -33,10 +33,10 @@ class DropoutLayer : public NeuronLayer<Dtype> {
    */
   explicit DropoutLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Reshape(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
+  virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Reshape(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
 
   virtual inline const char* type() const { return "Dropout"; }
 
@@ -57,14 +57,14 @@ class DropoutLayer : public NeuronLayer<Dtype> {
    *      input at each iteration. At test time, we simply have
    *      @f$ y_{\mbox{test}} = \mathbb{E}[y_{\mbox{train}}] = x @f$.
    */
-  virtual void Forward_cpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Backward_cpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
+  virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Backward_cpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
 
   /// when divided by UINT_MAX, the randomly generated values @f$u\sim U(0,1)@f$
   Blob<unsigned int> rand_vec_;

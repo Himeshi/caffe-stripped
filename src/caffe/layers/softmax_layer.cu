@@ -11,7 +11,7 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void kernel_channel_max(const int num, const int channels,
-    const int spatial_dim, const __half* data, Dtype* out) {
+    const int spatial_dim, const fp16* data, Dtype* out) {
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
@@ -26,7 +26,7 @@ __global__ void kernel_channel_max(const int num, const int channels,
 template <typename Dtype>
 __global__ void kernel_channel_subtract(const int count,
     const int num, const int channels,
-    const int spatial_dim, const Dtype* channel_max, __half* data) {
+    const int spatial_dim, const Dtype* channel_max, fp16* data) {
   CUDA_KERNEL_LOOP(index, count) {
     int n = index / channels / spatial_dim;
     int s = index % spatial_dim;
@@ -35,7 +35,7 @@ __global__ void kernel_channel_subtract(const int count,
 }
 
 template <typename Dtype>
-__global__ void kernel_exp(const int count, const __half* data, __half* out) {
+__global__ void kernel_exp(const int count, const fp16* data, fp16* out) {
   CUDA_KERNEL_LOOP(index, count) {
     out[index] = fp32tofp16_gpu(exp(fp16tofp32_gpu(data[index])));
   }
@@ -43,7 +43,7 @@ __global__ void kernel_exp(const int count, const __half* data, __half* out) {
 
 template <typename Dtype>
 __global__ void kernel_channel_sum(const int num, const int channels,
-    const int spatial_dim, const __half* data, Dtype* channel_sum) {
+    const int spatial_dim, const fp16* data, Dtype* channel_sum) {
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
@@ -58,7 +58,7 @@ __global__ void kernel_channel_sum(const int num, const int channels,
 template <typename Dtype>
 __global__ void kernel_channel_div(const int count,
     const int num, const int channels,
-    const int spatial_dim, const Dtype* channel_sum, __half* data) {
+    const int spatial_dim, const Dtype* channel_sum, fp16* data) {
   CUDA_KERNEL_LOOP(index, count) {
     int n = index / channels / spatial_dim;
     int s = index % spatial_dim;
@@ -68,7 +68,7 @@ __global__ void kernel_channel_div(const int count,
 
 template <typename Dtype>
 __global__ void kernel_channel_dot(const int num, const int channels,
-    const int spatial_dim, const __half* data_1, const __half* data_2,
+    const int spatial_dim, const fp16* data_1, const fp16* data_2,
     Dtype* channel_dot) {
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
@@ -83,10 +83,10 @@ __global__ void kernel_channel_dot(const int num, const int channels,
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
-  const __half* bottom_data = bottom[0]->gpu_data();
-  __half* top_data = top[0]->mutable_gpu_data();
+void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
+  const fp16* bottom_data = bottom[0]->gpu_data();
+  fp16* top_data = top[0]->mutable_gpu_data();
   Dtype* scale_data = scale_.mutable_gpu_data();
   int count = bottom[0]->count();
   int channels = top[0]->shape(softmax_axis_);
@@ -120,11 +120,11 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
 }
 
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
-  const __half* top_diff = top[0]->gpu_diff();
-  const __half* top_data = top[0]->gpu_data();
-  __half* bottom_diff = bottom[0]->mutable_gpu_diff();
+void SoftmaxLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
+  const fp16* top_diff = top[0]->gpu_diff();
+  const fp16* top_data = top[0]->gpu_data();
+  fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
   Dtype* scale_data = scale_.mutable_gpu_data();
   int count = top[0]->count();
   int channels = top[0]->shape(softmax_axis_);

@@ -10,8 +10,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void RecurrentLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
+void RecurrentLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
   // Hacky fix for test time... reshare all the shared blobs.
   // TODO: somehow make this work non-hackily.
   if (this->phase_ == TEST) {
@@ -23,8 +23,8 @@ void RecurrentLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
     for (int i = 0; i < recur_input_blobs_.size(); ++i) {
       const int count = recur_input_blobs_[i]->count();
       DCHECK_EQ(count, recur_output_blobs_[i]->count());
-      const __half* timestep_T_data = recur_output_blobs_[i]->gpu_data();
-      __half* timestep_0_data = recur_input_blobs_[i]->mutable_gpu_data();
+      const fp16* timestep_T_data = recur_output_blobs_[i]->gpu_data();
+      fp16* timestep_0_data = recur_input_blobs_[i]->mutable_gpu_data();
       caffe_copy(count, timestep_T_data, timestep_0_data);
     }
   }

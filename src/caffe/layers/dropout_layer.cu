@@ -6,9 +6,9 @@
 namespace caffe {
 
 template <typename Dtype>
-__global__ void DropoutForward(const int n, const __half* in,
+__global__ void DropoutForward(const int n, const fp16* in,
     const unsigned int* mask, const unsigned int threshold, const float scale,
-    __half* out) {
+    fp16* out) {
   CUDA_KERNEL_LOOP(index, n) {
     float temp_in = fp16tofp32_gpu(in[index]);
     float temp_out = temp_in * (mask[index] > threshold) * scale;
@@ -17,10 +17,10 @@ __global__ void DropoutForward(const int n, const __half* in,
 }
 
 template <typename Dtype>
-void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
-  const __half* bottom_data = bottom[0]->gpu_data();
-  __half* top_data = top[0]->mutable_gpu_data();
+void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
+  const fp16* bottom_data = bottom[0]->gpu_data();
+  fp16* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
   if (this->phase_ == TRAIN) {
     unsigned int* mask =
@@ -37,9 +37,9 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
 }
 
 template <typename Dtype>
-__global__ void DropoutBackward(const int n, const __half* in_diff,
+__global__ void DropoutBackward(const int n, const fp16* in_diff,
     const unsigned int* mask, const unsigned int threshold, const float scale,
-    __half* out_diff) {
+    fp16* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
     float temp_in = fp16tofp32_gpu(in_diff[index]);
     float temp_out = temp_in * scale * (mask[index] > threshold);
@@ -48,12 +48,12 @@ __global__ void DropoutBackward(const int n, const __half* in_diff,
 }
 
 template <typename Dtype>
-void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
+void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<__half>*>& bottom) {
+    const vector<Blob<fp16>*>& bottom) {
   if (propagate_down[0]) {
-    const __half* top_diff = top[0]->gpu_diff();
-    __half* bottom_diff = bottom[0]->mutable_gpu_diff();
+    const fp16* top_diff = top[0]->gpu_diff();
+    fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
     if (this->phase_ == TRAIN) {
       const unsigned int* mask =
           static_cast<const unsigned int*>(rand_vec_.gpu_data());

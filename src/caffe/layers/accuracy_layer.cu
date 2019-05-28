@@ -65,9 +65,9 @@ __global__ void AccuracyForwardWithPerClassGPU(const int nthreads,
 
 template <typename Dtype>
 void AccuracyLayer<Dtype>::Forward_gpu(
-    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
-  const __half* bottom_data = bottom[0]->gpu_data();
-  const __half* bottom_label = bottom[1]->gpu_data();
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
+  const fp16* bottom_data = bottom[0]->gpu_data();
+  const fp16* bottom_label = bottom[1]->gpu_data();
   const int dim = bottom[0]->count() / outer_num_;
   const int num_labels = bottom[0]->shape(label_axis_);
   const int nthreads = outer_num_ * inner_num_;
@@ -139,8 +139,8 @@ void AccuracyLayer<Dtype>::Forward_gpu(
 
 
 template <typename Dtype>
-void AccuracyLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
+void AccuracyLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
   if (propagate_down[1]) {  NOT_IMPLEMENTED;  }
 }
 

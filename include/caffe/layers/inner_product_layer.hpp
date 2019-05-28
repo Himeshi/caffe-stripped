@@ -20,24 +20,24 @@ class InnerProductLayer : public Layer<Dtype> {
  public:
   explicit InnerProductLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Reshape(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
+  virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Reshape(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
 
   virtual inline const char* type() const { return "InnerProduct"; }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
-  virtual void Forward_cpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Backward_cpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
+  virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Backward_cpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
 
   int M_;
   int K_;

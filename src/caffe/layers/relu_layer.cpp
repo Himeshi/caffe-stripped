@@ -6,10 +6,10 @@
 namespace caffe {
 
 template <typename Dtype>
-void ReLULayer<Dtype>::Forward_cpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
+void ReLULayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
-  __half* top_data = top[0]->mutable_cpu_data();
+  fp16* top_data = top[0]->mutable_cpu_data();
   const int count = bottom[0]->count();
   Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
   for (int i = 0; i < count; ++i) {
@@ -19,13 +19,13 @@ void ReLULayer<Dtype>::Forward_cpu(const vector<Blob<__half>*>& bottom,
 }
 
 template <typename Dtype>
-void ReLULayer<Dtype>::Backward_cpu(const vector<Blob<__half>*>& top,
+void ReLULayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<__half>*>& bottom) {
+    const vector<Blob<fp16>*>& bottom) {
   if (propagate_down[0]) {
-    const __half* bottom_data = bottom[0]->cpu_data();
-    const __half* top_diff = top[0]->cpu_diff();
-    __half* bottom_diff = bottom[0]->mutable_cpu_diff();
+    const fp16* bottom_data = bottom[0]->cpu_data();
+    const fp16* top_diff = top[0]->cpu_diff();
+    fp16* bottom_diff = bottom[0]->mutable_cpu_diff();
     const int count = bottom[0]->count();
     Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
     for (int i = 0; i < count; ++i) {

@@ -6,8 +6,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void CuDNNPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
+void CuDNNPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
   PoolingLayer<Dtype>::LayerSetUp(bottom, top);
   CUDNN_CHECK(cudnnCreate(&handle_));
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
@@ -20,8 +20,8 @@ void CuDNNPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom,
 }
 
 template <typename Dtype>
-void CuDNNPoolingLayer<Dtype>::Reshape(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
+void CuDNNPoolingLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
   PoolingLayer<Dtype>::Reshape(bottom, top);
   cudnn::setTensor4dDesc<Dtype>(&bottom_desc_, bottom[0]->num(),
       this->channels_, this->height_, this->width_);

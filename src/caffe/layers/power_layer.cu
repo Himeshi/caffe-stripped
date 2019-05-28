@@ -6,9 +6,9 @@
 namespace caffe {
 
 template <typename Dtype>
-void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
-  __half* top_data = top[0]->mutable_gpu_data();
+void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
+  fp16* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
   // Special case where we can ignore the input: scale or power is 0.
   if (diff_scale_ == Dtype(0)) {
@@ -16,7 +16,7 @@ void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
     caffe_gpu_set_half(count, value, top_data);
     return;
   }
-  const __half* bottom_data = bottom[0]->gpu_data();
+  const fp16* bottom_data = bottom[0]->gpu_data();
   caffe_copy(count, bottom_data, top_data);
   if (scale_ != Dtype(1)) {
     caffe_gpu_scal_half(count, scale_, top_data);
@@ -30,17 +30,17 @@ void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
 }
 
 template <typename Dtype>
-void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
+void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<__half>*>& bottom) {
+    const vector<Blob<fp16>*>& bottom) {
   if (propagate_down[0]) {
-    __half* bottom_diff = bottom[0]->mutable_gpu_diff();
+    fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
     const int count = bottom[0]->count();
-    const __half* top_diff = top[0]->gpu_diff();
+    const fp16* top_diff = top[0]->gpu_diff();
     if (diff_scale_ == Dtype(0) || power_ == Dtype(1)) {
       caffe_gpu_set_half(count, diff_scale_, bottom_diff);
     } else {
-      const __half* bottom_data = bottom[0]->gpu_data();
+      const fp16* bottom_data = bottom[0]->gpu_data();
       // Compute dy/dx = scale * power * (shift + scale * x)^(power - 1)
       //               = diff_scale * y / (shift + scale * x)
       if (power_ == Dtype(2)) {
@@ -57,7 +57,7 @@ void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
         //     -> dy/dx = scale * power * (scale * x)^(power - 1)
         //              = scale * power * (scale * x)^power * (scale * x)^(-1)
         //              = power * y / x
-        const __half* top_data = top[0]->gpu_data();
+        const fp16* top_data = top[0]->gpu_data();
         caffe_gpu_div_half(count, top_data, bottom_data, bottom_diff);
         caffe_gpu_scal_half(count, power_, bottom_diff);
       } else {
@@ -68,7 +68,7 @@ void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
         if (shift_ != Dtype(0)) {
           caffe_gpu_add_scalar_half(count, shift_, bottom_diff);
         }
-        const __half* top_data = top[0]->gpu_data();
+        const fp16* top_data = top[0]->gpu_data();
         caffe_gpu_div_half(count, top_data, bottom_diff, bottom_diff);
         if (diff_scale_ != Dtype(1)) {
           caffe_gpu_scal_half(count, diff_scale_, bottom_diff);

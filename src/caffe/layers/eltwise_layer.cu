@@ -7,8 +7,8 @@
 namespace caffe {
 
 template <typename Dtype>
-__global__ void MaxForward(const int nthreads, const __half* bottom_data_a,
-    const __half* bottom_data_b, const int blob_idx, __half* top_data,
+__global__ void MaxForward(const int nthreads, const fp16* bottom_data_a,
+    const fp16* bottom_data_b, const int blob_idx, fp16* top_data,
     int* mask) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     float temp_bottom_data_a = fp16tofp32_gpu(bottom_data_a[index]);
@@ -35,11 +35,11 @@ __global__ void MaxForward(const int nthreads, const __half* bottom_data_a,
 }
 
 template <typename Dtype>
-void EltwiseLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
+void EltwiseLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
   int* mask = NULL;
   const int count = top[0]->count();
-  __half* top_data = top[0]->mutable_gpu_data();
+  fp16* top_data = top[0]->mutable_gpu_data();
   switch (op_) {
   case EltwiseParameter_EltwiseOp_PROD:
     caffe_gpu_mul(count, bottom[0]->gpu_data(), bottom[1]->gpu_data(),
@@ -72,8 +72,8 @@ void EltwiseLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
 }
 
 template <typename Dtype>
-__global__ void MaxBackward(const int nthreads, const __half* top_diff,
-    const int blob_idx, const int* mask, __half* bottom_diff) {
+__global__ void MaxBackward(const int nthreads, const fp16* top_diff,
+    const int blob_idx, const int* mask, fp16* bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     float temp_top_diff, temp_bottom_diff;
     temp_top_diff = fp16tofp32_gpu(top_diff[index]);
@@ -87,16 +87,16 @@ __global__ void MaxBackward(const int nthreads, const __half* top_diff,
 }
 
 template <typename Dtype>
-void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
+void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
   const int* mask = NULL;
   const int count = top[0]->count();
-  const __half* top_data = top[0]->gpu_data();
-  const __half* top_diff = top[0]->gpu_diff();
+  const fp16* top_data = top[0]->gpu_data();
+  const fp16* top_diff = top[0]->gpu_diff();
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
-      const __half* bottom_data = bottom[i]->gpu_data();
-      __half* bottom_diff = bottom[i]->mutable_gpu_diff();
+      const fp16* bottom_data = bottom[i]->gpu_data();
+      fp16* bottom_diff = bottom[i]->mutable_gpu_diff();
       switch (op_) {
       case EltwiseParameter_EltwiseOp_PROD:
         if (stable_prod_grad_) {

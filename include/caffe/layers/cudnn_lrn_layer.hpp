@@ -17,17 +17,17 @@ class CuDNNLRNLayer : public LRNLayer<Dtype> {
  public:
   explicit CuDNNLRNLayer(const LayerParameter& param)
       : LRNLayer<Dtype>(param), handles_setup_(false) {}
-  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Reshape(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
+  virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Reshape(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
   virtual ~CuDNNLRNLayer();
 
  protected:
-  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Backward_gpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
+  virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
 
   bool handles_setup_;
   cudnnHandle_t             handle_;

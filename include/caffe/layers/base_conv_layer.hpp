@@ -19,10 +19,10 @@ class BaseConvolutionLayer : public Layer<Dtype> {
  public:
   explicit BaseConvolutionLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Reshape(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
+  virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Reshape(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
 
   virtual inline int MinBottomBlobs() const { return 1; }
   virtual inline int MinTopBlobs() const { return 1; }

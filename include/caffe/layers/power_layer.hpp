@@ -28,8 +28,8 @@ class PowerLayer : public NeuronLayer<Dtype> {
    */
   explicit PowerLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
+  virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
 
   virtual inline const char* type() const { return "Power"; }
 
@@ -44,10 +44,10 @@ class PowerLayer : public NeuronLayer<Dtype> {
    *        y = (\alpha x + \beta) ^ \gamma
    *      @f$
    */
-  virtual void Forward_cpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
-  virtual void Forward_gpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top);
+  virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
+  virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top);
 
   /**
    * @brief Computes the error gradient w.r.t. the power inputs.
@@ -69,10 +69,10 @@ class PowerLayer : public NeuronLayer<Dtype> {
    *            \frac{\alpha \gamma y}{\alpha x + \beta}
    *      @f$ if propagate_down[0]
    */
-  virtual void Backward_cpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom);
+  virtual void Backward_cpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
 
   /// @brief @f$ \gamma @f$ from layer_param_.power_param()
   Dtype power_;

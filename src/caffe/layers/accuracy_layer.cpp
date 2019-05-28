@@ -9,7 +9,7 @@ namespace caffe {
 
 template <typename Dtype>
 void AccuracyLayer<Dtype>::LayerSetUp(
-  const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
+  const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
   top_k_ = this->layer_param_.accuracy_param().top_k();
 
   has_ignore_label_ =
@@ -20,7 +20,7 @@ void AccuracyLayer<Dtype>::LayerSetUp(
 }
 
 template <typename Dtype>
-void AccuracyLayer<__half>::Reshape(
+void AccuracyLayer<fp16>::Reshape(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   CHECK_LE(top_k_, bottom[0]->count() / bottom[1]->count())
       << "top_k must be less than or equal to the number of classes.";
@@ -45,11 +45,11 @@ void AccuracyLayer<__half>::Reshape(
 }
 
 template <typename Dtype>
-void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
+void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
   Dtype accuracy = 0;
-  const __half* bottom_data = bottom[0]->cpu_data();
-  const __half* bottom_label = bottom[1]->cpu_data();
+  const fp16* bottom_data = bottom[0]->cpu_data();
+  const fp16* bottom_label = bottom[1]->cpu_data();
   const int dim = bottom[0]->count() / outer_num_;
   const int num_labels = bottom[0]->shape(label_axis_);
   if (top.size() > 1) {

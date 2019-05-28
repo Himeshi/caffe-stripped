@@ -5,8 +5,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void NeuronLayer<Dtype>::Reshape(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top) {
+void NeuronLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top) {
   top[0]->ReshapeLike(*bottom[0]);
 }
 

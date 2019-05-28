@@ -9,8 +9,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top) {
+void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top) {
   // Configure the kernel size, padding, stride, and inputs.
   ConvolutionParameter conv_param = this->layer_param_.convolution_param();
   force_nd_im2col_ = conv_param.force_nd_im2col();
@@ -182,8 +182,8 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<__half>*>& bottom
 }
 
 template <typename Dtype>
-void BaseConvolutionLayer<Dtype>::Reshape(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top) {
+void BaseConvolutionLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top) {
   const int first_spatial_axis = channel_axis_ + 1;
   CHECK_EQ(bottom[0]->num_axes(), first_spatial_axis + num_spatial_axes_)
       << "bottom num_axes may not change.";

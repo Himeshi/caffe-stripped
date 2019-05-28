@@ -9,11 +9,11 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void MaxPoolForward(const int nthreads,
-    const __half* const bottom_data, const int num, const int channels,
+    const fp16* const bottom_data, const int num, const int channels,
     const int height, const int width, const int pooled_height,
     const int pooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
-    __half* const top_data, int* mask, __half* top_mask) {
+    fp16* const top_data, int* mask, fp16* top_mask) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -27,7 +27,7 @@ __global__ void MaxPoolForward(const int nthreads,
     wstart = max(wstart, 0);
     Dtype maxval = -FLT_MAX;
     int maxidx = -1;
-    const __half* const bottom_slice =
+    const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
@@ -48,11 +48,11 @@ __global__ void MaxPoolForward(const int nthreads,
 
 template <typename Dtype>
 __global__ void AvePoolForward(const int nthreads,
-    const __half* const bottom_data, const int num, const int channels,
+    const fp16* const bottom_data, const int num, const int channels,
     const int height, const int width, const int pooled_height,
     const int pooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
-    __half* const top_data) {
+    fp16* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -68,7 +68,7 @@ __global__ void AvePoolForward(const int nthreads,
     hend = min(hend, height);
     wend = min(wend, width);
     Dtype aveval = 0;
-    const __half* const bottom_slice =
+    const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
@@ -81,11 +81,11 @@ __global__ void AvePoolForward(const int nthreads,
 
 template <typename Dtype>
 __global__ void StoPoolForwardTrain(const int nthreads,
-    const __half* const bottom_data,
+    const fp16* const bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, Dtype* const rand_idx, __half* const top_data) {
+    const int stride_w, Dtype* const rand_idx, fp16* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -96,7 +96,7 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     const int wstart = pw * stride_w;
     const int wend = min(wstart + kernel_w, width);
     Dtype cumsum = 0.;
-    const __half* const bottom_slice =
+    const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
@@ -123,11 +123,11 @@ __global__ void StoPoolForwardTrain(const int nthreads,
 
 template <typename Dtype>
 __global__ void StoPoolForwardTest(const int nthreads,
-    const __half* const bottom_data,
+    const fp16* const bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, __half* const top_data) {
+    const int stride_w, fp16* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -140,7 +140,7 @@ __global__ void StoPoolForwardTest(const int nthreads,
     // We set cumsum to be 0 to avoid divide-by-zero problems
     Dtype cumsum = 0.;
     Dtype cumvalues = 0.;
-    const __half* const bottom_slice =
+    const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
@@ -155,15 +155,15 @@ __global__ void StoPoolForwardTest(const int nthreads,
 
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
-      const vector<Blob<__half>*>& top) {
-  const __half* bottom_data = bottom[0]->gpu_data();
-  __half* top_data = top[0]->mutable_gpu_data();
+void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top) {
+  const fp16* bottom_data = bottom[0]->gpu_data();
+  fp16* top_data = top[0]->mutable_gpu_data();
   int count = top[0]->count();
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   int* mask = NULL;
-  __half* top_mask = NULL;
+  fp16* top_mask = NULL;
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
@@ -214,12 +214,12 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
 
 
 template <typename Dtype>
-__global__ void MaxPoolBackward(const int nthreads, const __half* const top_diff,
-    const int* const mask, const __half* const top_mask, const int num,
+__global__ void MaxPoolBackward(const int nthreads, const fp16* const top_diff,
+    const int* const mask, const fp16* const top_mask, const int num,
     const int channels, const int height, const int width,
     const int pooled_height, const int pooled_width, const int kernel_h,
     const int kernel_w, const int stride_h, const int stride_w, const int pad_h,
-    const int pad_w, __half* const bottom_diff) {
+    const int pad_w, fp16* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -235,7 +235,7 @@ __global__ void MaxPoolBackward(const int nthreads, const __half* const top_diff
     const int pwend = min((w + pad_w) / stride_w + 1, pooled_width);
     Dtype gradient = 0;
     const int offset = (n * channels + c) * pooled_height * pooled_width;
-    const __half* const top_diff_slice = top_diff + offset;
+    const fp16* const top_diff_slice = top_diff + offset;
     if (mask) {
       const int* const mask_slice = mask + offset;
       for (int ph = phstart; ph < phend; ++ph) {
@@ -246,7 +246,7 @@ __global__ void MaxPoolBackward(const int nthreads, const __half* const top_diff
         }
       }
     } else {
-      const __half* const top_mask_slice = top_mask + offset;
+      const fp16* const top_mask_slice = top_mask + offset;
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
           if (fp16tofp32_gpu(top_mask_slice[ph * pooled_width + pw]) == h * width + w) {
@@ -260,12 +260,12 @@ __global__ void MaxPoolBackward(const int nthreads, const __half* const top_diff
 }
 
 template <typename Dtype>
-__global__ void AvePoolBackward(const int nthreads, const __half* const top_diff,
+__global__ void AvePoolBackward(const int nthreads, const fp16* const top_diff,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
     const int stride_w, const int pad_h, const int pad_w,
-    __half* const bottom_diff) {
+    fp16* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -278,7 +278,7 @@ __global__ void AvePoolBackward(const int nthreads, const __half* const top_diff
     const int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     const int pwend = min(w / stride_w + 1, pooled_width);
     Dtype gradient = 0;
-    const __half* const top_diff_slice =
+    const fp16* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
@@ -298,11 +298,11 @@ __global__ void AvePoolBackward(const int nthreads, const __half* const top_diff
 
 template <typename Dtype>
 __global__ void StoPoolBackward(const int nthreads,
-    const Dtype* const rand_idx, const __half* const top_diff,
+    const Dtype* const rand_idx, const fp16* const top_diff,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, __half* const bottom_diff) {
+    const int stride_w, fp16* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -317,7 +317,7 @@ __global__ void StoPoolBackward(const int nthreads,
     Dtype gradient = 0;
     const Dtype* const rand_idx_slice =
         rand_idx + (n * channels + c) * pooled_height * pooled_width;
-    const __half* const top_diff_slice =
+    const fp16* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
@@ -331,19 +331,19 @@ __global__ void StoPoolBackward(const int nthreads,
 
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
+void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
   if (!propagate_down[0]) {
     return;
   }
-  const __half* top_diff = top[0]->gpu_diff();
-  __half* bottom_diff = bottom[0]->mutable_gpu_diff();
+  const fp16* top_diff = top[0]->gpu_diff();
+  fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
   const int count = bottom[0]->count();
   caffe_gpu_set_half(count, Dtype(0.), bottom_diff);
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;
-  const __half* top_mask = NULL;
+  const fp16* top_mask = NULL;
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {

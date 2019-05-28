@@ -7,10 +7,10 @@
 namespace caffe {
 
 template <typename Dtype>
-void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
-    const vector<Blob<__half>*>& top) {
+void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+    const vector<Blob<fp16>*>& top) {
 
-  const __half* bottom_data = bottom[0]->gpu_data();
+  const fp16* bottom_data = bottom[0]->gpu_data();
   Blob<Dtype>* temp_bottom = &(this->temp_bottom_);
   temp_bottom->Reshape(bottom[0]->shape());
   Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
@@ -18,13 +18,13 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
   convert_to_float<<<CAFFE_GET_BLOCKS(bottom_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_count, bottom_data, temp_bottom_converted);
   const Dtype* temp_bottom_data = temp_bottom->gpu_data();
 
-  const __half* weight = this->blobs_[0]->gpu_data();
+  const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
   convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
-  const __half* bias_data = this->blobs_[1]->gpu_data();
+  const fp16* bias_data = this->blobs_[1]->gpu_data();
   Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
   int bias_count = this->blobs_[1]->count();
   convert_to_float<<<CAFFE_GET_BLOCKS(bias_count), CAFFE_CUDA_NUM_THREADS>>>(bias_count, bias_data, bias_temp);
@@ -50,18 +50,18 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<__half>*>& bottom,
                             bias_multiplier_.gpu_data(),
                             bias_temp_data, (Dtype)1., top_data_temp);
   }
-  __half* top_data = top[0]->mutable_gpu_data();
+  fp16* top_data = top[0]->mutable_gpu_data();
   int top_data_count = top[0]->count();
   convert_to_fp16<<<CAFFE_GET_BLOCKS(top_data_count), CAFFE_CUDA_NUM_THREADS>>>(top_data_count, top_data_temp, top_data);
 }
 
 template <typename Dtype>
-void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
+void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<__half>*>& bottom) {
+    const vector<Blob<fp16>*>& bottom) {
 
   if (this->param_propagate_down_[0]) {
-    const __half* top_diff = top[0]->gpu_diff();
+    const fp16* top_diff = top[0]->gpu_diff();
     Blob<Dtype>* temp_top = &(this->temp_top_);
     temp_top->Reshape(top[0]->shape());
     Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
@@ -69,7 +69,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
     convert_to_float<<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(top_count, top_diff, temp_top_converted);
     const Dtype* temp_top_diff = temp_top->gpu_diff();
 
-    const __half* bottom_data = bottom[0]->gpu_data();
+    const fp16* bottom_data = bottom[0]->gpu_data();
     Blob<Dtype>* temp_bottom = &(this->temp_bottom_);
     temp_bottom->Reshape(bottom[0]->shape());
     Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
@@ -92,7 +92,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
           (Dtype)1., weight_diff_temp);
     }
 
-    __half* weight_diff = this->blobs_[0]->mutable_gpu_diff();
+    fp16* weight_diff = this->blobs_[0]->mutable_gpu_diff();
     int weight_diff_count = this->blobs_[0]->count();
     convert_to_fp16<<<CAFFE_GET_BLOCKS(weight_diff_count), CAFFE_CUDA_NUM_THREADS>>>(weight_diff_count, weight_diff_temp, weight_diff);
   }
@@ -100,7 +100,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
   if (bias_term_ && this->param_propagate_down_[1]) {
     Dtype* bias_diff_temp = this->blobs_dtype_[1]->mutable_gpu_diff();
 
-    const __half* top_diff = top[0]->gpu_diff();
+    const fp16* top_diff = top[0]->gpu_diff();
     Blob<Dtype>* temp_top = &(this->temp_top_);
     temp_top->Reshape(top[0]->shape());
     Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
@@ -113,7 +113,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
         bias_multiplier_.gpu_data(), (Dtype)1.,
         bias_diff_temp);
 
-    __half* bias_diff = this->blobs_[1]->mutable_gpu_diff();
+    fp16* bias_diff = this->blobs_[1]->mutable_gpu_diff();
     int bias_diff_count = this->blobs_[1]->count();
     convert_to_fp16<<<CAFFE_GET_BLOCKS(bias_diff_count), CAFFE_CUDA_NUM_THREADS>>>(bias_diff_count, bias_diff_temp, bias_diff);
   }
@@ -123,7 +123,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
 	temp_bottom->Reshape(bottom[0]->shape());
 	Dtype* bottom_diff_temp = temp_bottom->mutable_gpu_diff();
 
-    const __half* top_diff = top[0]->gpu_diff();
+    const fp16* top_diff = top[0]->gpu_diff();
     Blob<Dtype>* temp_top = &(this->temp_top_);
     temp_top->Reshape(top[0]->shape());
     Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
@@ -131,7 +131,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
     convert_to_float<<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(top_count, top_diff, temp_top_converted);
     const Dtype* temp_top_diff = temp_top->gpu_diff();
 
-    const __half* weight = this->blobs_[0]->gpu_data();
+    const fp16* weight = this->blobs_[0]->gpu_data();
     Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
     int weight_count = this->blobs_[0]->count();
     convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
@@ -150,7 +150,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<__half>*>& top,
          (Dtype)0., bottom_diff_temp);
     }
 
-    __half* bottom_diff = bottom[0]->mutable_gpu_diff();
+    fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
     int bottom_diff_count = bottom[0]->count();
     convert_to_fp16<<<CAFFE_GET_BLOCKS(bottom_diff_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_diff_count, bottom_diff_temp, bottom_diff);
   }

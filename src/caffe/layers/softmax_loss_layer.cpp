@@ -9,7 +9,7 @@ namespace caffe {
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::LayerSetUp(
-    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
   LossLayer<Dtype>::LayerSetUp(bottom, top);
   LayerParameter softmax_param(this->layer_param_);
   softmax_param.set_type("Softmax");
@@ -37,7 +37,7 @@ void SoftmaxWithLossLayer<Dtype>::LayerSetUp(
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Reshape(
-    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
   LossLayer<Dtype>::Reshape(bottom, top);
   softmax_layer_->Reshape(softmax_bottom_vec_, softmax_top_vec_);
   softmax_axis_ =
@@ -87,11 +87,11 @@ Dtype SoftmaxWithLossLayer<Dtype>::get_normalizer(
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
-    const vector<Blob<__half>*>& bottom, const vector<Blob<__half>*>& top) {
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
   // The forward pass computes the softmax prob values.
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
-  const __half* prob_data = prob_.cpu_data();
-  const __half* label = bottom[1]->cpu_data();
+  const fp16* prob_data = prob_.cpu_data();
+  const fp16* label = bottom[1]->cpu_data();
   int dim = prob_.count() / outer_num_;
   int count = 0;
   Dtype loss = 0;
@@ -115,17 +115,17 @@ void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
 }
 
 template <typename Dtype>
-void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<__half>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<__half>*>& bottom) {
+void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
   if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-	__half* bottom_diff = bottom[0]->mutable_cpu_diff();
-    const __half* prob_data = prob_.cpu_data();
+	fp16* bottom_diff = bottom[0]->mutable_cpu_diff();
+    const fp16* prob_data = prob_.cpu_data();
     caffe_copy(prob_.count(), prob_data, bottom_diff);
-    const __half* label = bottom[1]->cpu_data();
+    const fp16* label = bottom[1]->cpu_data();
     int dim = prob_.count() / outer_num_;
     int count = 0;
     for (int i = 0; i < outer_num_; ++i) {
