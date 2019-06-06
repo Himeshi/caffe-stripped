@@ -30,7 +30,7 @@ void DropoutLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 void DropoutLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+  /*const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = top[0]->mutable_cpu_data();
   unsigned int* mask = rand_vec_.mutable_cpu_data();
   const int count = bottom[0]->count();
@@ -42,14 +42,14 @@ void DropoutLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     }
   } else {
     caffe_copy(bottom[0]->count(), bottom_data, top_data);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void DropoutLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<fp16>*>& bottom) {
-  if (propagate_down[0]) {
+  /*if (propagate_down[0]) {
     const Dtype* top_diff = top[0]->cpu_diff();
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
     if (this->phase_ == TRAIN) {
@@ -61,7 +61,7 @@ void DropoutLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     } else {
       caffe_copy(top[0]->count(), top_diff, bottom_diff);
     }
-  }
+  }*/
 }
 
 

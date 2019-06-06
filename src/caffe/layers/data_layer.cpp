@@ -112,12 +112,12 @@ void DataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     // Apply data transformations (mirror, scale, crop...)
     timer.Start();
     int offset = batch->data_.offset(item_id);
-    Dtype* top_data = batch->data_.mutable_cpu_data();
+    fp16* top_data = batch->data_.mutable_cpu_data();
     this->transformed_data_.set_cpu_data(top_data + offset);
     this->data_transformer_->Transform(datum, &(this->transformed_data_));
     // Copy label.
     if (this->output_labels_) {
-      Dtype* top_label = batch->label_.mutable_cpu_data();
+      fp16* top_label = batch->label_.mutable_cpu_data();
       top_label[item_id] = datum.label();
     }
     trans_time += timer.MicroSeconds();

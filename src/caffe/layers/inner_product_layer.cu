@@ -11,7 +11,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top) {
 
   const fp16* bottom_data = bottom[0]->gpu_data();
-  Blob<Dtype>* temp_bottom = &(this->temp_bottom_);
+  Blob<Dtype>* temp_bottom = (this->temp_bottom_);
   temp_bottom->Reshape(bottom[0]->shape());
   Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
   int bottom_count = bottom[0]->count();
@@ -30,7 +30,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   convert_to_float<<<CAFFE_GET_BLOCKS(bias_count), CAFFE_CUDA_NUM_THREADS>>>(bias_count, bias_data, bias_temp);
   const Dtype* bias_temp_data = this->blobs_dtype_[1]->gpu_data();
 
-  Blob<Dtype>* top_temp = &(this->temp_top_);
+  Blob<Dtype>* top_temp = (this->temp_top_);
   top_temp->Reshape(top[0]->shape());
   Dtype* top_data_temp = top_temp->mutable_gpu_data();
 
@@ -62,7 +62,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
   if (this->param_propagate_down_[0]) {
     const fp16* top_diff = top[0]->gpu_diff();
-    Blob<Dtype>* temp_top = &(this->temp_top_);
+    Blob<Dtype>* temp_top = (this->temp_top_);
     temp_top->Reshape(top[0]->shape());
     Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
     int top_count = top[0]->count();
@@ -70,7 +70,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const Dtype* temp_top_diff = temp_top->gpu_diff();
 
     const fp16* bottom_data = bottom[0]->gpu_data();
-    Blob<Dtype>* temp_bottom = &(this->temp_bottom_);
+    Blob<Dtype>* temp_bottom = (this->temp_bottom_);
     temp_bottom->Reshape(bottom[0]->shape());
     Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
     int bottom_count = bottom[0]->count();
@@ -101,7 +101,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     Dtype* bias_diff_temp = this->blobs_dtype_[1]->mutable_gpu_diff();
 
     const fp16* top_diff = top[0]->gpu_diff();
-    Blob<Dtype>* temp_top = &(this->temp_top_);
+    Blob<Dtype>* temp_top = (this->temp_top_);
     temp_top->Reshape(top[0]->shape());
     Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
     int top_count = top[0]->count();
@@ -119,12 +119,12 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   }
 
   if (propagate_down[0]) {
-	Blob<Dtype>* temp_bottom = &(this->temp_bottom_);
+	Blob<Dtype>* temp_bottom = (this->temp_bottom_);
 	temp_bottom->Reshape(bottom[0]->shape());
 	Dtype* bottom_diff_temp = temp_bottom->mutable_gpu_diff();
 
     const fp16* top_diff = top[0]->gpu_diff();
-    Blob<Dtype>* temp_top = &(this->temp_top_);
+    Blob<Dtype>* temp_top = (this->temp_top_);
     temp_top->Reshape(top[0]->shape());
     Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
     int top_count = top[0]->count();

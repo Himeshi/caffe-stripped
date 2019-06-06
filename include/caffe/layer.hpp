@@ -309,8 +309,8 @@ class Layer {
   vector<shared_ptr<Blob<fp16> > > blobs_;
   /** The vector that stores the learnable parameters as a set of dtype blobs. */
   vector<shared_ptr<Blob<Dtype> > > blobs_dtype_;
-  Blob<Dtype> temp_top_;
-  Blob<Dtype> temp_bottom_;
+  Blob<Dtype>* temp_top_;
+  Blob<Dtype>* temp_bottom_;
   /** Vector indicating whether to compute the diff of each param blob. */
   vector<bool> param_propagate_down_;
 

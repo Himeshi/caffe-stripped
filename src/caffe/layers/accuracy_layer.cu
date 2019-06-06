@@ -122,7 +122,7 @@ void AccuracyLayer<Dtype>::Forward_gpu(
     }
 
     // get per-class accuracy
-    Blob<Dtype>* top_temp = &(this->temp_top_);
+    Blob<Dtype>* top_temp = (this->temp_top_);
     top_temp->Reshape(top[1]->shape());
     Dtype* top_data_temp = top_temp->mutable_cpu_data();
     for (int l = 0; l < num_labels; l++) {

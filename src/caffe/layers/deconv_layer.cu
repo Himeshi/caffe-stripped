@@ -15,14 +15,14 @@ void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 
   for (int i = 0; i < bottom.size(); ++i) {
     const fp16* bottom_data = bottom[i]->gpu_data();
-    Blob<Dtype>* temp_bottom = &(this->temp_bottom_);
+    Blob<Dtype>* temp_bottom = (this->temp_bottom_);
     temp_bottom->Reshape(bottom[i]->shape());
     Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
     int bottom_count = bottom[i]->count();
     convert_to_float<<<CAFFE_GET_BLOCKS(bottom_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_count, bottom_data, temp_bottom_converted);
     const Dtype* temp_bottom_data = temp_bottom->gpu_data();
 
-    Blob<Dtype>* top_temp = &(this->temp_top_);
+    Blob<Dtype>* top_temp = (this->temp_top_);
     top_temp->Reshape(top[i]->shape());
     Dtype* top_data_temp = top_temp->mutable_gpu_data();
 
@@ -59,7 +59,7 @@ void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
   for (int i = 0; i < top.size(); ++i) {
     const fp16* top_diff = top[i]->gpu_diff();
-    Blob<Dtype>* temp_top = &(this->temp_top_);
+    Blob<Dtype>* temp_top = (this->temp_top_);
     temp_top->Reshape(top[i]->shape());
     Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
     int top_count = top[i]->count();
@@ -67,7 +67,7 @@ void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const Dtype* temp_top_diff = temp_top->gpu_diff();
 
     const fp16* bottom_data = bottom[i]->gpu_data();
-    Blob<Dtype>* temp_bottom = &(this->temp_bottom_);
+    Blob<Dtype>* temp_bottom = (this->temp_bottom_);
     temp_bottom->Reshape(bottom[i]->shape());
     Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
     int bottom_count = bottom[i]->count();
