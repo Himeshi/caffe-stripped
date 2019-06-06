@@ -39,7 +39,7 @@ BasePrefetchingDataLayer<Dtype>::BasePrefetchingDataLayer(
       prefetch_(param.data_param().prefetch()),
       prefetch_free_(), prefetch_full_(), prefetch_current_() {
   for (int i = 0; i < prefetch_.size(); ++i) {
-    prefetch_[i].reset(new Batch<Dtype>());
+    prefetch_[i].reset(new Batch<fp16>());
     prefetch_free_.push(prefetch_[i].get());
   }
 }
@@ -86,7 +86,7 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
 
   try {
     while (!must_stop()) {
-      Batch<Dtype>* batch = prefetch_free_.pop();
+      Batch<fp16>* batch = prefetch_free_.pop();
       load_batch(batch);
 #ifndef CPU_ONLY
       if (Caffe::mode() == Caffe::GPU) {

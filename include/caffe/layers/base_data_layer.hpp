@@ -67,7 +67,7 @@ class BasePrefetchingDataLayer :
 
  protected:
   virtual void InternalThreadEntry();
-  virtual void load_batch(Batch<Dtype>* batch) = 0;
+  virtual void load_batch(Batch<fp16>* batch) = 0;
 
   vector<shared_ptr<Batch<fp16> > > prefetch_;
   BlockingQueue<Batch<fp16>*> prefetch_free_;

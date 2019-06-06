@@ -28,7 +28,7 @@ class DataLayer : public BasePrefetchingDataLayer<Dtype> {
  protected:
   void Next();
   bool Skip();
-  virtual void load_batch(Batch<Dtype>* batch);
+  virtual void load_batch(Batch<fp16>* batch);
 
   shared_ptr<db::DB> db_;
   shared_ptr<db::Cursor> cursor_;

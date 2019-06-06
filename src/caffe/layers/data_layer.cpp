@@ -79,7 +79,7 @@ void DataLayer<Dtype>::Next() {
 
 // This function is called on prefetch thread
 template<typename Dtype>
-void DataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
+void DataLayer<Dtype>::load_batch(Batch<fp16>* batch) {
   CPUTimer batch_timer;
   batch_timer.Start();
   double read_time = 0;
