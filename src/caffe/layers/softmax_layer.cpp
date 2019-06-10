@@ -15,7 +15,7 @@ void SoftmaxLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
   vector<int> mult_dims(1, bottom[0]->shape(softmax_axis_));
   sum_multiplier_.Reshape(mult_dims);
   fp16* multiplier_data = sum_multiplier_.mutable_cpu_data();
-  caffe_set(sum_multiplier_.count(), Dtype(1), multiplier_data);
+  caffe_set(sum_multiplier_.count(), fp32tofp16(Dtype(1)), multiplier_data);
   outer_num_ = bottom[0]->count(0, softmax_axis_);
   inner_num_ = bottom[0]->count(softmax_axis_ + 1);
   vector<int> scale_dims = bottom[0]->shape();
@@ -26,7 +26,7 @@ void SoftmaxLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top) {
-  const fp16* bottom_data = bottom[0]->cpu_data();
+  /*const fp16* bottom_data = bottom[0]->cpu_data();
   fp16* top_data = top[0]->mutable_cpu_data();
   fp16* scale_data = scale_.mutable_cpu_data();
   int channels = bottom[0]->shape(softmax_axis_);
@@ -56,14 +56,14 @@ void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
       caffe_div(inner_num_, top_data, scale_data, top_data);
       top_data += inner_num_;
     }
-  }
+  }*/
 }
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<fp16>*>& bottom) {
-  const fp16* top_diff = top[0]->cpu_diff();
+  /*const fp16* top_diff = top[0]->cpu_diff();
   const fp16* top_data = top[0]->cpu_data();
   fp16* bottom_diff = bottom[0]->mutable_cpu_diff();
   fp16* scale_data = scale_.mutable_cpu_data();
@@ -82,7 +82,7 @@ void SoftmaxLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
         -1., sum_multiplier_.cpu_data(), scale_data, 1., bottom_diff + i * dim);
   }
   // elementwise multiplication
-  caffe_mul(top[0]->count(), bottom_diff, top_data, bottom_diff);
+  caffe_mul(top[0]->count(), bottom_diff, top_data, bottom_diff);*/
 }
 
 

@@ -408,8 +408,8 @@ class Layer {
         if (loss_weight == Dtype(0)) { continue; }
         this->set_loss(top_id, loss_weight);
         const int count = top[top_id]->count();
-        Dtype* loss_multiplier = top[top_id]->mutable_cpu_diff();
-        caffe_set(count, loss_weight, loss_multiplier);
+        fp16* loss_multiplier = top[top_id]->mutable_cpu_diff();
+        caffe_set(count, fp32tofp16(loss_weight), loss_multiplier);
       }
     }
   }

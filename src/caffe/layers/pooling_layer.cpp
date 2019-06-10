@@ -140,7 +140,7 @@ void PoolingLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top) {
-  const fp16* bottom_data = bottom[0]->cpu_data();
+  /*const fp16* bottom_data = bottom[0]->cpu_data();
   fp16* top_data = top[0]->mutable_cpu_data();
   const int top_count = top[0]->count();
   // We'll output the mask to top[1] if it's of size >1.
@@ -236,13 +236,13 @@ void PoolingLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     break;
   default:
     LOG(FATAL) << "Unknown pooling method.";
-  }
+  }*/
 }
 
 template <typename Dtype>
 void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  if (!propagate_down[0]) {
+  /*if (!propagate_down[0]) {
     return;
   }
   const fp16* top_diff = top[0]->cpu_diff();
@@ -316,7 +316,7 @@ void PoolingLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     break;
   default:
     LOG(FATAL) << "Unknown pooling method.";
-  }
+  }*/
 }
 
 

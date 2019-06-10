@@ -46,7 +46,7 @@ void EltwiseLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 void EltwiseLayer<Dtype>::Forward_cpu(
     const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
-  int* mask = NULL;
+  /*int* mask = NULL;
   const Dtype* bottom_data_a = NULL;
   const Dtype* bottom_data_b = NULL;
   const int count = top[0]->count();
@@ -95,13 +95,13 @@ void EltwiseLayer<Dtype>::Forward_cpu(
     break;
   default:
     LOG(FATAL) << "Unknown elementwise operation.";
-  }
+  }*/
 }
 
 template <typename Dtype>
 void EltwiseLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  const int* mask = NULL;
+  /*const int* mask = NULL;
   const int count = top[0]->count();
   const Dtype* top_data = top[0]->cpu_data();
   const Dtype* top_diff = top[0]->cpu_diff();
@@ -149,7 +149,7 @@ void EltwiseLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
         LOG(FATAL) << "Unknown elementwise operation.";
       }
     }
-  }
+  }*/
 }
 
 #ifdef CPU_ONLY

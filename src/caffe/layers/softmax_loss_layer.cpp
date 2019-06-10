@@ -89,7 +89,7 @@ template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
     const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
   // The forward pass computes the softmax prob values.
-  softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
+  /*softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
   const fp16* prob_data = prob_.cpu_data();
   const fp16* label = bottom[1]->cpu_data();
   int dim = prob_.count() / outer_num_;
@@ -111,13 +111,13 @@ void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
   top[0]->mutable_cpu_data()[0] = loss / get_normalizer(normalization_, count);
   if (top.size() == 2) {
     top[1]->ShareData(prob_);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  if (propagate_down[1]) {
+  /*if (propagate_down[1]) {
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
   }
@@ -145,7 +145,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     Dtype loss_weight = top[0]->cpu_diff()[0] /
                         get_normalizer(normalization_, count);
     caffe_scal(prob_.count(), loss_weight, bottom_diff);
-  }
+  }*/
 }
 
 #ifdef CPU_ONLY

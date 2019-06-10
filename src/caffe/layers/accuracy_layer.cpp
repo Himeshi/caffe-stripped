@@ -20,8 +20,8 @@ void AccuracyLayer<Dtype>::LayerSetUp(
 }
 
 template <typename Dtype>
-void AccuracyLayer<fp16>::Reshape(
-  const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+void AccuracyLayer<Dtype>::Reshape(
+  const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
   CHECK_LE(top_k_, bottom[0]->count() / bottom[1]->count())
       << "top_k must be less than or equal to the number of classes.";
   label_axis_ =
@@ -47,7 +47,7 @@ void AccuracyLayer<fp16>::Reshape(
 template <typename Dtype>
 void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top) {
-  Dtype accuracy = 0;
+  /*Dtype accuracy = 0;
   const fp16* bottom_data = bottom[0]->cpu_data();
   const fp16* bottom_label = bottom[1]->cpu_data();
   const int dim = bottom[0]->count() / outer_num_;
@@ -93,7 +93,7 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
           nums_buffer_.cpu_data()[i] == 0 ? 0
           : top[1]->cpu_data()[i] / nums_buffer_.cpu_data()[i];
     }
-  }
+  }*/
   // Accuracy layer should not be used as a loss function.
 }
 

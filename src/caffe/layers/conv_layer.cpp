@@ -24,7 +24,7 @@ void ConvolutionLayer<Dtype>::compute_output_shape() {
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top) {
-  const Dtype* weight = this->blobs_[0]->cpu_data();
+  /*const Dtype* weight = this->blobs_[0]->cpu_data();
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = top[i]->mutable_cpu_data();
@@ -36,13 +36,13 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
         this->forward_cpu_bias(top_data + n * this->top_dim_, bias);
       }
     }
-  }
+  }*/
 }
 
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  const Dtype* weight = this->blobs_[0]->cpu_data();
+  /*const Dtype* weight = this->blobs_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
   for (int i = 0; i < top.size(); ++i) {
     const Dtype* top_diff = top[i]->cpu_diff();
@@ -69,7 +69,7 @@ void ConvolutionLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
         }
       }
     }
-  }
+  }*/
 }
 
 #ifdef CPU_ONLY

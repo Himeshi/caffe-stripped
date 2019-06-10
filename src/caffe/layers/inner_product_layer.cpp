@@ -37,7 +37,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
       weight_shape[0] = N_;
       weight_shape[1] = K_;
     }
-    this->blobs_[0].reset(new Blob<Dtype>(weight_shape));
+    this->blobs_[0].reset(new Blob<fp16>(weight_shape));
     // fill the weights
     shared_ptr<Filler<Dtype> > weight_filler(GetFiller<Dtype>(
         this->layer_param_.inner_product_param().weight_filler()));
@@ -45,7 +45,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     // If necessary, initialize and fill the bias term
     if (bias_term_) {
       vector<int> bias_shape(1, N_);
-      this->blobs_[1].reset(new Blob<Dtype>(bias_shape));
+      this->blobs_[1].reset(new Blob<fp16>(bias_shape));
       shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
           this->layer_param_.inner_product_param().bias_filler()));
       bias_filler->Fill(this->blobs_[1].get());
@@ -83,7 +83,7 @@ void InnerProductLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top) {
-  const fp16* bottom_data = bottom[0]->cpu_data();
+  /*const fp16* bottom_data = bottom[0]->cpu_data();
   fp16* top_data = top[0]->mutable_cpu_data();
   const fp16* weight = this->blobs_[0]->cpu_data();
   caffe_cpu_gemm<Dtype>(CblasNoTrans, transpose_ ? CblasNoTrans : CblasTrans,
@@ -93,14 +93,13 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, 1, (Dtype)1.,
         bias_multiplier_.cpu_data(),
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
-  if (this->param_propagate_down_[0]) {
+	      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
+  /*if (this->param_propagate_down_[0]) {
     const fp16* top_diff = top[0]->cpu_diff();
     const fp16* bottom_data = bottom[0]->cpu_data();
     // Gradient with respect to weight
@@ -137,7 +136,7 @@ void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
           (Dtype)1., top_diff, this->blobs_[0]->cpu_data(),
           (Dtype)0., bottom[0]->mutable_cpu_diff());
     }
-  }
+  }*/
 }
 
 #ifdef CPU_ONLY

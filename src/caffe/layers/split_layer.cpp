@@ -25,15 +25,15 @@ void SplitLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 void SplitLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top) {
-  for (int i = 0; i < top.size(); ++i) {
+  /*for (int i = 0; i < top.size(); ++i) {
     top[i]->ShareData(*bottom[0]);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void SplitLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  if (!propagate_down[0]) { return; }
+  /*if (!propagate_down[0]) { return; }
   if (top.size() == 1) {
     caffe_copy(count_, top[0]->cpu_diff(), bottom[0]->mutable_cpu_diff());
     return;
@@ -45,7 +45,7 @@ void SplitLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     const fp16* top_diff = top[i]->cpu_diff();
     fp16* bottom_diff = bottom[0]->mutable_cpu_diff();
     caffe_axpy(count_, Dtype(1.), top_diff, bottom_diff);
-  }
+  }*/
 }
 
 

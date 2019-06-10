@@ -92,7 +92,7 @@ void LRNLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 void LRNLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top) {
-  switch (this->layer_param_.lrn_param().norm_region()) {
+  /*switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelForward_cpu(bottom, top);
     break;
@@ -101,13 +101,13 @@ void LRNLayer<Dtype>::Forward_cpu(const vector<Blob<fp16>*>& bottom,
     break;
   default:
     LOG(FATAL) << "Unknown normalization region.";
-  }
+  }*/
 }
 
 template <typename Dtype>
 void LRNLayer<Dtype>::CrossChannelForward_cpu(
     const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
-  const Dtype* bottom_data = bottom[0]->cpu_data();
+  /*const Dtype* bottom_data = bottom[0]->cpu_data();
   fp16* top_data = top[0]->mutable_cpu_data();
   fp16* scale_data = scale_.mutable_cpu_data();
   // start with the constant value
@@ -148,7 +148,7 @@ void LRNLayer<Dtype>::CrossChannelForward_cpu(
 
   // In the end, compute output
   caffe_powx<Dtype>(scale_.count(), scale_data, -beta_, top_data);
-  caffe_mul<Dtype>(scale_.count(), top_data, bottom_data, top_data);
+  caffe_mul<Dtype>(scale_.count(), top_data, bottom_data, top_data);*/
 }
 
 template <typename Dtype>
@@ -164,7 +164,7 @@ void LRNLayer<Dtype>::WithinChannelForward(
 template <typename Dtype>
 void LRNLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  switch (this->layer_param_.lrn_param().norm_region()) {
+  /*switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelBackward_cpu(top, propagate_down, bottom);
     break;
@@ -173,14 +173,14 @@ void LRNLayer<Dtype>::Backward_cpu(const vector<Blob<fp16>*>& top,
     break;
   default:
     LOG(FATAL) << "Unknown normalization region.";
-  }
+  }*/
 }
 
 template <typename Dtype>
 void LRNLayer<Dtype>::CrossChannelBackward_cpu(
     const vector<Blob<fp16>*>& top, const vector<bool>& propagate_down,
     const vector<Blob<fp16>*>& bottom) {
-  const fp16* top_diff = top[0]->cpu_diff();
+  /*const fp16* top_diff = top[0]->cpu_diff();
   const fp16* top_data = top[0]->cpu_data();
   const fp16* bottom_data = bottom[0]->cpu_data();
   const fp16* scale_data = scale_.cpu_data();
@@ -228,7 +228,7 @@ void LRNLayer<Dtype>::CrossChannelBackward_cpu(
       caffe_axpy<Dtype>(height_ * width_, -1.,
           padded_ratio_data + padded_ratio.offset(0, c), accum_ratio_data);
     }
-  }
+  }*/
 }
 
 template <typename Dtype>
