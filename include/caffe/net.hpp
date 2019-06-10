@@ -197,7 +197,7 @@ class Net {
   /// @brief Input and output blob numbers
   inline int num_inputs() const { return net_input_blobs_.size(); }
   inline int num_outputs() const { return net_output_blobs_.size(); }
-  inline const vector<Blob<Dtype>*>& input_blobs() const {
+  inline const vector<Blob<fp16>*>& input_blobs() const {
     return net_input_blobs_;
   }
   inline const vector<Blob<Dtype>*>& output_blobs() const {
@@ -283,7 +283,7 @@ class Net {
   map<string, int> layer_names_index_;
   vector<bool> layer_need_backward_;
   /// @brief the blobs storing intermediate results between the layer.
-  vector<shared_ptr<Blob<Dtype> > > blobs_;
+  vector<shared_ptr<Blob<fp16> > > blobs_;
   vector<string> blob_names_;
   map<string, int> blob_names_index_;
   vector<bool> blob_need_backward_;
@@ -307,7 +307,7 @@ class Net {
   /// blob indices for the input and the output of the net
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
-  vector<Blob<Dtype>*> net_input_blobs_;
+  vector<Blob<fp16>*> net_input_blobs_;
   vector<Blob<Dtype>*> net_output_blobs_;
   /// The parameters in the network.
   vector<shared_ptr<Blob<Dtype> > > params_;

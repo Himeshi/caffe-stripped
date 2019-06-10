@@ -679,12 +679,12 @@ void Net<Dtype>::ShareTrainedLayersWith(const Net* other) {
       continue;
     }
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<Blob<fp16> > >& target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer->blobs().size())
         << "Incompatible number of blobs for layer " << source_layer_name;
     for (int j = 0; j < target_blobs.size(); ++j) {
-      Blob<Dtype>* source_blob = source_layer->blobs()[j].get();
+      Blob<fp16>* source_blob = source_layer->blobs()[j].get();
       CHECK(target_blobs[j]->shape() == source_blob->shape())
           << "Cannot share param " << j << " weights from layer '"
           << source_layer_name << "'; shape mismatch.  Source param shape is "
@@ -747,7 +747,7 @@ void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param) {
       continue;
     }
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<Blob<fp16> > >& target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer.blobs_size())
         << "Incompatible number of blobs for layer " << source_layer_name;
@@ -803,7 +803,7 @@ void Net<Dtype>::CopyTrainedLayersFromHDF5(const string& trained_filename) {
     }
     int target_layer_id = layer_names_index_[source_layer_name];
     DLOG(INFO) << "Copying source layer " << source_layer_name;
-    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+    vector<shared_ptr<Blob<fp16> > >& target_blobs =
         layers_[target_layer_id]->blobs();
     hid_t layer_hid = H5Gopen2(data_hid, source_layer_name.c_str(),
         H5P_DEFAULT);
