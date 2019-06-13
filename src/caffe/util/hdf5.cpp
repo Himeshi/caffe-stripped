@@ -85,6 +85,25 @@ void hdf5_load_nd_dataset_helper(
 }
 
 template <>
+void hdf5_load_nd_dataset<unsigned short>(hid_t file_id, const char* dataset_name_,
+        int min_dim, int max_dim, Blob<fp16>* blob, bool reshape) {
+  Blob<float>* temp_blob = new Blob<float>();
+  temp_blob->Reshape(blob->shape());
+  float* temp_blob_data = temp_blob->mutable_cpu_data();
+  hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, temp_blob,
+                                reshape);
+  herr_t status = H5LTread_dataset_float(
+    file_id, dataset_name_, temp_blob_data);
+  CHECK_GE(status, 0) << "Failed to read unsigned short dataset " << dataset_name_;
+  //copy data into blob
+  int i;
+  fp16* blob_data = blob->mutable_cpu_data();
+  for (i = 0; i < blob->count(); i++) {
+	  blob_data[i] = fp32tofp16(temp_blob_data[i]);
+  }
+}
+
+template <>
 void hdf5_load_nd_dataset<float>(hid_t file_id, const char* dataset_name_,
         int min_dim, int max_dim, Blob<float>* blob, bool reshape) {
   hdf5_load_nd_dataset_helper(file_id, dataset_name_, min_dim, max_dim, blob,
@@ -102,6 +121,42 @@ void hdf5_load_nd_dataset<double>(hid_t file_id, const char* dataset_name_,
   herr_t status = H5LTread_dataset_double(
     file_id, dataset_name_, blob->mutable_cpu_data());
   CHECK_GE(status, 0) << "Failed to read double dataset " << dataset_name_;
+}
+
+template <>
+void hdf5_save_nd_dataset<unsigned short>(
+    const hid_t file_id, const string& dataset_name, const Blob<unsigned short>& blob,
+    bool write_diff) {
+  int num_axes = blob.num_axes();
+  hsize_t *dims = new hsize_t[num_axes];
+  for (int i = 0; i < num_axes; ++i) {
+    dims[i] = blob.shape(i);
+  }
+  const fp16* data;
+  const float* temp_data;
+  int i;
+  Blob<float>* temp_blob = new Blob<float>();
+  temp_blob->Reshape(blob.shape());
+  if (write_diff) {
+    data = blob.cpu_diff();
+    float* temp_blob_data = temp_blob->mutable_cpu_diff();
+    for (i = 0; i < blob.count(); i++) {
+        temp_blob_data[i] = fp16tofp32(data[i]);
+    }
+    temp_data = temp_blob->cpu_diff();
+  } else {
+    data = blob.cpu_data();
+    float* temp_blob_data = temp_blob->mutable_cpu_data();
+    for (i = 0; i < blob.count(); i++) {
+        temp_blob_data[i] = fp16tofp32(data[i]);
+    }
+    temp_data = temp_blob->cpu_data();
+  }
+
+  herr_t status = H5LTmake_dataset_float(
+      file_id, dataset_name.c_str(), num_axes, dims, temp_data);
+  CHECK_GE(status, 0) << "Failed to make short dataset " << dataset_name;
+  delete[] dims;
 }
 
 template <>

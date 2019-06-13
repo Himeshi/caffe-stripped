@@ -70,6 +70,13 @@ template void caffe_set<float>(const int N, const float alpha, float* Y);
 template void caffe_set<double>(const int N, const double alpha, double* Y);
 
 template <>
+void caffe_add_scalar(const int N, const fp16 alpha, fp16* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = fp32tofp16(fp16tofp32(Y[i]) + fp16tofp32(alpha));
+  }
+}
+
+template <>
 void caffe_add_scalar(const int N, const float alpha, float* Y) {
   for (int i = 0; i < N; ++i) {
     Y[i] += alpha;
@@ -106,6 +113,18 @@ template void caffe_copy<float>(const int N, const float* X, float* Y);
 template void caffe_copy<double>(const int N, const double* X, double* Y);
 
 template <>
+void caffe_scal<fp16>(const int N, const fp16 alpha, fp16 *X) {
+  float tempX[N];
+  for (int i = 0; i < N; i++) {
+	  tempX[i] = fp16tofp32(X[i]);
+  }
+  cblas_sscal(N, fp16tofp32(alpha), tempX, 1);
+  for (int i = 0; i < N; i++) {
+	  X[i] = fp32tofp16(tempX[i]);
+  }
+}
+
+template <>
 void caffe_scal<float>(const int N, const float alpha, float *X) {
   cblas_sscal(N, alpha, X, 1);
 }
@@ -137,6 +156,15 @@ template <>
 void caffe_add<double>(const int n, const double* a, const double* b,
     double* y) {
   vdAdd(n, a, b, y);
+}
+
+template <>
+void caffe_sub<fp16>(const int n, const fp16* a, const fp16* b,
+		fp16* y) {
+  int i;
+  for (i = 0; i < n; i++) {
+	  y[i] = fp32tofp16(fp16tofp32(a[i]) - fp16tofp32(b[i]));
+  }
 }
 
 template <>

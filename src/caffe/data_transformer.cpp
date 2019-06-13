@@ -40,7 +40,7 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const Datum& datum,
-                                       Dtype* transformed_data) {
+                                       fp16* transformed_data) {
   const string& data = datum.data();
   const int datum_channels = datum.channels();
   const int datum_height = datum.height();
@@ -57,7 +57,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   CHECK_GE(datum_height, crop_size);
   CHECK_GE(datum_width, crop_size);
 
-  Dtype* mean = NULL;
+  fp16* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(datum_channels, data_mean_.channels());
     CHECK_EQ(datum_height, data_mean_.height());
@@ -112,13 +112,13 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
         }
         if (has_mean_file) {
           transformed_data[top_index] =
-            (datum_element - mean[data_index]) * scale;
+          fp32tofp16((datum_element - mean[data_index]) * scale);
         } else {
           if (has_mean_values) {
             transformed_data[top_index] =
-              (datum_element - mean_values_[c]) * scale;
+            fp32tofp16((datum_element - mean_values_[c]) * scale);
           } else {
-            transformed_data[top_index] = datum_element * scale;
+            transformed_data[top_index] = fp32tofp16(datum_element * scale);
           }
         }
       }
@@ -177,13 +177,13 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
     CHECK_EQ(datum_width, width);
   }
 
-  Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+  fp16* transformed_data = transformed_blob->mutable_cpu_data();
   Transform(datum, transformed_data);
 }
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
-                                       Blob<Dtype>* transformed_blob) {
+                                       Blob<fp16>* transformed_blob) {
   const int datum_num = datum_vector.size();
   const int num = transformed_blob->num();
   const int channels = transformed_blob->channels();
@@ -193,7 +193,7 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
   CHECK_GT(datum_num, 0) << "There is no datum to add";
   CHECK_LE(datum_num, num) <<
     "The size of datum_vector must be no greater than transformed_blob->num()";
-  Blob<Dtype> uni_blob(1, channels, height, width);
+  Blob<fp16> uni_blob(1, channels, height, width);
   for (int item_id = 0; item_id < datum_num; ++item_id) {
     int offset = transformed_blob->offset(item_id);
     uni_blob.set_cpu_data(transformed_blob->mutable_cpu_data() + offset);
@@ -204,7 +204,7 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
 #ifdef USE_OPENCV
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
-                                       Blob<Dtype>* transformed_blob) {
+                                       Blob<fp16>* transformed_blob) {
   const int mat_num = mat_vector.size();
   const int num = transformed_blob->num();
   const int channels = transformed_blob->channels();
@@ -214,7 +214,7 @@ void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
   CHECK_GT(mat_num, 0) << "There is no MAT to add";
   CHECK_EQ(mat_num, num) <<
     "The size of mat_vector must be equals to transformed_blob->num()";
-  Blob<Dtype> uni_blob(1, channels, height, width);
+  Blob<fp16> uni_blob(1, channels, height, width);
   for (int item_id = 0; item_id < mat_num; ++item_id) {
     int offset = transformed_blob->offset(item_id);
     uni_blob.set_cpu_data(transformed_blob->mutable_cpu_data() + offset);
@@ -224,7 +224,7 @@ void DataTransformer<Dtype>::Transform(const vector<cv::Mat> & mat_vector,
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
-                                       Blob<Dtype>* transformed_blob) {
+                                       Blob<fp16>* transformed_blob) {
   const int crop_size = param_.crop_size();
   const int img_channels = cv_img.channels();
   const int img_height = cv_img.rows;
@@ -252,7 +252,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   CHECK_GE(img_height, crop_size);
   CHECK_GE(img_width, crop_size);
 
-  Dtype* mean = NULL;
+  fp16* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(img_channels, data_mean_.channels());
     CHECK_EQ(img_height, data_mean_.height());
@@ -293,7 +293,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 
   CHECK(cv_cropped_img.data);
 
-  Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+  fp16* transformed_data = transformed_blob->mutable_cpu_data();
   int top_index;
   for (int h = 0; h < height; ++h) {
     const uchar* ptr = cv_cropped_img.ptr<uchar>(h);
@@ -310,13 +310,13 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
         if (has_mean_file) {
           int mean_index = (c * img_height + h_off + h) * img_width + w_off + w;
           transformed_data[top_index] =
-            (pixel - mean[mean_index]) * scale;
+            fp32tofp16((pixel - mean[mean_index]) * scale);
         } else {
           if (has_mean_values) {
             transformed_data[top_index] =
-              (pixel - mean_values_[c]) * scale;
+              fp32tofp16((pixel - mean_values_[c]) * scale);
           } else {
-            transformed_data[top_index] = pixel * scale;
+            transformed_data[top_index] = fp32tofp16(pixel * scale);
           }
         }
       }
@@ -326,8 +326,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 #endif  // USE_OPENCV
 
 template<typename Dtype>
-void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
-                                       Blob<Dtype>* transformed_blob) {
+void DataTransformer<Dtype>::Transform(Blob<fp16>* input_blob,
+                                       Blob<fp16>* transformed_blob) {
   const int crop_size = param_.crop_size();
   const int input_num = input_blob->num();
   const int input_channels = input_blob->channels();
@@ -380,7 +380,7 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
     CHECK_EQ(input_width, width);
   }
 
-  Dtype* input_data = input_blob->mutable_cpu_data();
+  fp16* input_data = input_blob->mutable_cpu_data();
   if (has_mean_file) {
     CHECK_EQ(input_channels, data_mean_.channels());
     CHECK_EQ(input_height, data_mean_.height());
@@ -396,19 +396,19 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
     CHECK(mean_values_.size() == 1 || mean_values_.size() == input_channels) <<
      "Specify either 1 mean_value or as many as channels: " << input_channels;
     if (mean_values_.size() == 1) {
-      caffe_add_scalar(input_blob->count(), -(mean_values_[0]), input_data);
+      caffe_add_scalar(input_blob->count(), fp32tofp16(-(mean_values_[0])), input_data);
     } else {
       for (int n = 0; n < input_num; ++n) {
         for (int c = 0; c < input_channels; ++c) {
           int offset = input_blob->offset(n, c);
-          caffe_add_scalar(input_height * input_width, -(mean_values_[c]),
+          caffe_add_scalar(input_height * input_width, fp32tofp16(-(mean_values_[c])),
             input_data + offset);
         }
       }
     }
   }
 
-  Dtype* transformed_data = transformed_blob->mutable_cpu_data();
+  fp16* transformed_data = transformed_blob->mutable_cpu_data();
 
   for (int n = 0; n < input_num; ++n) {
     int top_index_n = n * channels;
@@ -434,7 +434,7 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
   }
   if (scale != Dtype(1)) {
     DLOG(INFO) << "Scale: " << scale;
-    caffe_scal(size, scale, transformed_data);
+    caffe_scal(size, fp32tofp16(scale), transformed_data);
   }
 }
 

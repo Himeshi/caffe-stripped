@@ -35,9 +35,9 @@ class Net {
    * @brief Run Forward and return the result.
    *
    */
-  const vector<Blob<Dtype>*>& Forward(Dtype* loss = NULL);
+  const vector<Blob<fp16>*>& Forward(Dtype* loss = NULL);
   /// @brief DEPRECATED; use Forward() instead.
-  const vector<Blob<Dtype>*>& ForwardPrefilled(Dtype* loss = NULL) {
+  const vector<Blob<fp16>*>& ForwardPrefilled(Dtype* loss = NULL) {
     LOG_EVERY_N(WARNING, 1000) << "DEPRECATED: ForwardPrefilled() "
         << "will be removed in a future version. Use Forward().";
     return Forward(loss);
@@ -55,7 +55,7 @@ class Net {
   Dtype ForwardFrom(int start);
   Dtype ForwardTo(int end);
   /// @brief DEPRECATED; set input blobs then use Forward() instead.
-  const vector<Blob<Dtype>*>& Forward(const vector<Blob<Dtype>* > & bottom,
+  const vector<Blob<fp16>*>& Forward(const vector<Blob<fp16>* > & bottom,
       Dtype* loss = NULL);
 
   /**
@@ -126,7 +126,7 @@ class Net {
   /// @brief returns the blob names
   inline const vector<string>& blob_names() const { return blob_names_; }
   /// @brief returns the blobs
-  inline const vector<shared_ptr<Blob<Dtype> > >& blobs() const {
+  inline const vector<shared_ptr<Blob<fp16> > >& blobs() const {
     return blobs_;
   }
   /// @brief returns the layers
@@ -171,10 +171,10 @@ class Net {
     return layer_need_backward_;
   }
   /// @brief returns the parameters
-  inline const vector<shared_ptr<Blob<Dtype> > >& params() const {
+  inline const vector<shared_ptr<Blob<fp16> > >& params() const {
     return params_;
   }
-  inline const vector<Blob<Dtype>*>& learnable_params() const {
+  inline const vector<Blob<fp16>*>& learnable_params() const {
     return learnable_params_;
   }
   /// @brief returns the learnable parameter learning rate multipliers
@@ -200,7 +200,7 @@ class Net {
   inline const vector<Blob<fp16>*>& input_blobs() const {
     return net_input_blobs_;
   }
-  inline const vector<Blob<Dtype>*>& output_blobs() const {
+  inline const vector<Blob<fp16>*>& output_blobs() const {
     return net_output_blobs_;
   }
   inline const vector<int>& input_blob_indices() const {
@@ -210,7 +210,7 @@ class Net {
     return net_output_blob_indices_;
   }
   bool has_blob(const string& blob_name) const;
-  const shared_ptr<Blob<Dtype> > blob_by_name(const string& blob_name) const;
+  const shared_ptr<Blob<fp16> > blob_by_name(const string& blob_name) const;
   bool has_layer(const string& layer_name) const;
   const shared_ptr<Layer<Dtype> > layer_by_name(const string& layer_name) const;
 
@@ -308,10 +308,10 @@ class Net {
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
   vector<Blob<fp16>*> net_input_blobs_;
-  vector<Blob<Dtype>*> net_output_blobs_;
+  vector<Blob<fp16>*> net_output_blobs_;
   /// The parameters in the network.
-  vector<shared_ptr<Blob<Dtype> > > params_;
-  vector<Blob<Dtype>*> learnable_params_;
+  vector<shared_ptr<Blob<fp16> > > params_;
+  vector<Blob<fp16>*> learnable_params_;
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),

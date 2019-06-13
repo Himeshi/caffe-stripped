@@ -48,7 +48,7 @@ class DataTransformer {
    *    set_cpu_data() is used. See memory_layer.cpp for an example.
    */
   void Transform(const vector<Datum> & datum_vector,
-                Blob<Dtype>* transformed_blob);
+                Blob<fp16>* transformed_blob);
 
 #ifdef USE_OPENCV
   /**
@@ -62,7 +62,7 @@ class DataTransformer {
    *    set_cpu_data() is used. See memory_layer.cpp for an example.
    */
   void Transform(const vector<cv::Mat> & mat_vector,
-                Blob<Dtype>* transformed_blob);
+                Blob<fp16>* transformed_blob);
 
   /**
    * @brief Applies the transformation defined in the data layer's
@@ -74,7 +74,7 @@ class DataTransformer {
    *    This is destination blob. It can be part of top blob's data if
    *    set_cpu_data() is used. See image_data_layer.cpp for an example.
    */
-  void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
+  void Transform(const cv::Mat& cv_img, Blob<fp16>* transformed_blob);
 #endif  // USE_OPENCV
 
   /**
@@ -88,7 +88,7 @@ class DataTransformer {
    *    This is destination blob, it will contain as many images as the
    *    input blob. It can be part of top blob's data.
    */
-  void Transform(Blob<Dtype>* input_blob, Blob<Dtype>* transformed_blob);
+  void Transform(Blob<fp16>* input_blob, Blob<fp16>* transformed_blob);
 
   /**
    * @brief Infers the shape of transformed_blob will have when
@@ -138,14 +138,14 @@ class DataTransformer {
    */
   virtual int Rand(int n);
 
-  void Transform(const Datum& datum, Dtype* transformed_data);
+  void Transform(const Datum& datum, fp16* transformed_data);
   // Tranformation parameters
   TransformationParameter param_;
 
 
   shared_ptr<Caffe::RNG> rng_;
   Phase phase_;
-  Blob<Dtype> data_mean_;
+  Blob<fp16> data_mean_;
   vector<Dtype> mean_values_;
 };
 

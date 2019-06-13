@@ -8,6 +8,7 @@
 #include "hdf5_hl.h"
 
 #include "caffe/blob.hpp"
+#include "caffe/fp16.hpp"
 
 namespace caffe {
 

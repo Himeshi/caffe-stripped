@@ -72,15 +72,15 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
 template <typename Dtype>
 void SGDSolver<Dtype>::PreSolve() {
   // Initialize the history
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
   history_.clear();
   update_.clear();
   temp_.clear();
   for (int i = 0; i < net_params.size(); ++i) {
     const vector<int>& shape = net_params[i]->shape();
-    history_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
-    update_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
-    temp_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
+    history_.push_back(shared_ptr<Blob<fp16> >(new Blob<fp16>(shape)));
+    update_.push_back(shared_ptr<Blob<fp16> >(new Blob<fp16>(shape)));
+    temp_.push_back(shared_ptr<Blob<fp16> >(new Blob<fp16>(shape)));
   }
 }
 
@@ -88,7 +88,7 @@ template <typename Dtype>
 void SGDSolver<Dtype>::ClipGradients() {
   const Dtype clip_gradients = this->param_.clip_gradients();
   if (clip_gradients < 0) { return; }
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
   Dtype sumsq_diff = 0;
   for (int i = 0; i < net_params.size(); ++i) {
     sumsq_diff += net_params[i]->sumsq_diff();
@@ -130,17 +130,17 @@ template <typename Dtype>
 void SGDSolver<Dtype>::Normalize(int param_id) {
   if (this->param_.iter_size() == 1) { return; }
   // Scale gradient to counterbalance accumulation.
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
   const Dtype accum_normalization = Dtype(1.) / this->param_.iter_size();
   switch (Caffe::mode()) {
   case Caffe::CPU: {
-    caffe_scal(net_params[param_id]->count(), accum_normalization,
-        net_params[param_id]->mutable_cpu_diff());
+    /*caffe_scal(net_params[param_id]->count(), accum_normalization,
+        net_params[param_id]->mutable_cpu_diff());*/
     break;
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
-    caffe_gpu_scal(net_params[param_id]->count(), accum_normalization,
+    caffe_gpu_scal_half(net_params[param_id]->count(), accum_normalization,
         net_params[param_id]->mutable_gpu_diff());
 #else
     NO_GPU;
@@ -154,7 +154,7 @@ void SGDSolver<Dtype>::Normalize(int param_id) {
 
 template <typename Dtype>
 void SGDSolver<Dtype>::Regularize(int param_id) {
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_weight_decay =
       this->net_->params_weight_decay();
   Dtype weight_decay = this->param_.weight_decay();
@@ -162,7 +162,7 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
   Dtype local_decay = weight_decay * net_params_weight_decay[param_id];
   switch (Caffe::mode()) {
   case Caffe::CPU: {
-    if (local_decay) {
+    /*if (local_decay) {
       if (regularization_type == "L2") {
         // add weight decay
         caffe_axpy(net_params[param_id]->count(),
@@ -180,7 +180,7 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
       } else {
         LOG(FATAL) << "Unknown regularization type: " << regularization_type;
       }
-    }
+    }*/
     break;
   }
   case Caffe::GPU: {
@@ -188,7 +188,7 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
     if (local_decay) {
       if (regularization_type == "L2") {
         // add weight decay
-        caffe_gpu_axpy(net_params[param_id]->count(),
+        caffe_gpu_axpy_half(net_params[param_id]->count(),
             local_decay,
             net_params[param_id]->gpu_data(),
             net_params[param_id]->mutable_gpu_diff());
@@ -196,7 +196,7 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
         caffe_gpu_sign(net_params[param_id]->count(),
             net_params[param_id]->gpu_data(),
             temp_[param_id]->mutable_gpu_data());
-        caffe_gpu_axpy(net_params[param_id]->count(),
+        caffe_gpu_axpy_half(net_params[param_id]->count(),
             local_decay,
             temp_[param_id]->gpu_data(),
             net_params[param_id]->mutable_gpu_diff());
@@ -216,25 +216,25 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
 
 #ifndef CPU_ONLY
 template <typename Dtype>
-void sgd_update_gpu(int N, Dtype* g, Dtype* h, Dtype momentum,
-    Dtype local_rate);
+void sgd_update_gpu(int N, fp16* g, fp16* h, Dtype momentum,
+		Dtype local_rate);
 #endif
 
 template <typename Dtype>
 void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Dtype momentum = this->param_.momentum();
   Dtype local_rate = rate * net_params_lr[param_id];
   // Compute the update to history, then copy it to the parameter diff.
   switch (Caffe::mode()) {
   case Caffe::CPU: {
-    caffe_cpu_axpby(net_params[param_id]->count(), local_rate,
+    /*caffe_cpu_axpby(net_params[param_id]->count(), local_rate,
               net_params[param_id]->cpu_diff(), momentum,
               history_[param_id]->mutable_cpu_data());
     caffe_copy(net_params[param_id]->count(),
         history_[param_id]->cpu_data(),
-        net_params[param_id]->mutable_cpu_diff());
+        net_params[param_id]->mutable_cpu_diff());*/
     break;
   }
   case Caffe::GPU: {
@@ -308,7 +308,7 @@ void SGDSolver<Dtype>::SnapshotSolverStateToHDF5(
   for (int i = 0; i < history_.size(); ++i) {
     ostringstream oss;
     oss << i;
-    hdf5_save_nd_dataset<Dtype>(history_hid, oss.str(), *history_[i]);
+    hdf5_save_nd_dataset<unsigned short>(history_hid, oss.str(), *history_[i]);
   }
   H5Gclose(history_hid);
   H5Fclose(file_hid);
@@ -358,7 +358,7 @@ void SGDSolver<Dtype>::RestoreSolverStateFromHDF5(const string& state_file) {
   for (int i = 0; i < history_.size(); ++i) {
     ostringstream oss;
     oss << i;
-    hdf5_load_nd_dataset<Dtype>(history_hid, oss.str().c_str(), 0,
+    hdf5_load_nd_dataset<unsigned short>(history_hid, oss.str().c_str(), 0,
                                 kMaxBlobAxes, history_[i].get());
   }
   H5Gclose(history_hid);
