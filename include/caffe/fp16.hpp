@@ -76,6 +76,7 @@ __global__ void convert_to_float(const int n, const fp16* in, float* out);
 
 __global__ void convert_to_float(const int n, const fp16* in, double* out);
 
+
 __device__ float fp16tofp32_gpu(fp16 f16value);
 
 __device__ fp16 fp32tofp16_gpu(float f);
