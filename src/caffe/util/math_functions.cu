@@ -352,6 +352,21 @@ __global__ void add_kernel(const int n, const Dtype* a,
   }
 }
 
+__global__ void add_kernel_half(const int n, const fp16* a,
+    const fp16* b, fp16* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = fp32tofp16_gpu(fp16tofp32_gpu(a[index]) + fp16tofp32_gpu(b[index]));
+  }
+}
+
+template <>
+void caffe_gpu_add<fp16>(const int N, const fp16* a, const fp16* b,
+    fp16* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  add_kernel_half<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, a, b, y);
+}
+
 template <>
 void caffe_gpu_add<float>(const int N, const float* a, const float* b,
     float* y) {
@@ -407,7 +422,8 @@ __global__ void mul_kernel_half(const int n, const fp16* a,
   }
 }
 
-void caffe_gpu_mul_half(const int N, const fp16* a,
+template <>
+void caffe_gpu_mul<fp16>(const int N, const fp16* a,
     const fp16* b, fp16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   mul_kernel_half<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
@@ -445,7 +461,8 @@ __global__ void div_kernel_half(const int n, const fp16* a,
   }
 }
 
-void caffe_gpu_div_half(const int N, const fp16* a,
+template <>
+void caffe_gpu_div<fp16>(const int N, const fp16* a,
     const fp16* b, fp16* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   div_kernel_half<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
@@ -607,6 +624,20 @@ void caffe_gpu_sqrt<double>(const int N, const double* a, double* y) {
 
 DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(sign, y[index] = (Dtype(0) < x[index])
                                       - (x[index] < Dtype(0)));
+
+__global__ void sign_kernel_half(const int n, const fp16* x, fp16* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = (0 < x[index]) - (x[index] < 0);
+  }
+}
+
+template <>
+void caffe_gpu_sign<fp16>(const int n, const fp16* x, fp16* y) {
+  /* NOLINT_NEXT_LINE(whitespace/operators) */
+  sign_kernel_half<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(
+      n, x, y);
+}
+
 DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(sgnbit, y[index] = signbit(x[index]));
 
 void caffe_gpu_rng_uniform(const int n, unsigned int* r) {

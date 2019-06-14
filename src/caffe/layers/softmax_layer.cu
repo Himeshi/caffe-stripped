@@ -139,7 +139,7 @@ void SoftmaxLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       CAFFE_CUDA_NUM_THREADS>>>(count, outer_num_, channels, inner_num_,
       scale_data, bottom_diff);
   // elementwise multiplication
-  caffe_gpu_mul_half(top[0]->count(), bottom_diff, top_data, bottom_diff);
+  caffe_gpu_mul(top[0]->count(), bottom_diff, top_data, bottom_diff);
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(SoftmaxLayer);

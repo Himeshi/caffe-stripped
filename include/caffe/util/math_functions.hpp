@@ -220,14 +220,8 @@ void caffe_gpu_add(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 template <typename Dtype>
 void caffe_gpu_sub(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
-void caffe_gpu_mul_half(const int N, const fp16* a,
-    const fp16* b, fp16* y);
-
 template <typename Dtype>
 void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
-
-void caffe_gpu_div_half(const int N, const fp16* a,
-    const fp16* b, fp16* y);
 
 template <typename Dtype>
 void caffe_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
