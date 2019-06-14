@@ -53,6 +53,13 @@ template <>
 void caffe_axpy<double>(const int N, const double alpha, const double* X,
     double* Y) { cblas_daxpy(N, alpha, X, 1, Y, 1); }
 
+template <>
+void caffe_axpy<fp16>(const int N, const fp16 alpha, const fp16* X,
+    fp16* Y) {
+      //missing implementation
+     }
+
+
 template <typename Dtype>
 void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
   if (alpha == 0) {
@@ -111,6 +118,7 @@ template void caffe_copy<unsigned int>(const int N, const unsigned int* X,
     unsigned int* Y);
 template void caffe_copy<float>(const int N, const float* X, float* Y);
 template void caffe_copy<double>(const int N, const double* X, double* Y);
+template void caffe_copy<fp16>(const int N, const fp16* X, fp16* Y);
 
 template <>
 void caffe_scal<fp16>(const int N, const fp16 alpha, fp16 *X) {
@@ -376,6 +384,12 @@ double caffe_cpu_strided_dot<double>(const int n, const double* x,
   return cblas_ddot(n, x, incx, y, incy);
 }
 
+template <>
+fp16 caffe_cpu_strided_dot<fp16>(const int n, const fp16* x,
+    const int incx, const fp16* y, const int incy) {
+//missing implementation
+}
+
 template <typename Dtype>
 Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y) {
   return caffe_cpu_strided_dot(n, x, 1, y, 1);
@@ -387,6 +401,9 @@ float caffe_cpu_dot<float>(const int n, const float* x, const float* y);
 template
 double caffe_cpu_dot<double>(const int n, const double* x, const double* y);
 
+template
+fp16 caffe_cpu_dot<fp16>(const int n, const fp16* x, const fp16* y);
+
 template <>
 float caffe_cpu_asum<float>(const int n, const float* x) {
   return cblas_sasum(n, x, 1);
@@ -396,6 +413,12 @@ template <>
 double caffe_cpu_asum<double>(const int n, const double* x) {
   return cblas_dasum(n, x, 1);
 }
+
+template <>
+fp16 caffe_cpu_asum<fp16>(const int n, const fp16* x) {
+//missing implementation
+}
+
 
 template <>
 void caffe_cpu_scale<float>(const int n, const float alpha, const float *x,
