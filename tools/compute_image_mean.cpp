@@ -11,7 +11,7 @@
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/db.hpp"
 #include "caffe/util/io.hpp"
-
+#include "caffe/fp16.hpp"
 using namespace caffe;  // NOLINT(build/namespaces)
 
 using std::max;

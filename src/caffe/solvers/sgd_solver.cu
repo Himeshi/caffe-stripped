@@ -19,5 +19,6 @@ void sgd_update_gpu(int N, unsigned short* g, unsigned short* h, Dtype momentum,
   CUDA_POST_KERNEL_CHECK;
 }
 template void sgd_update_gpu<float>(int, unsigned short*, unsigned short*, float, float);
+template void sgd_update_gpu<double>(int, unsigned short*, unsigned short*, double, double);
 
 }  // namespace caffe
