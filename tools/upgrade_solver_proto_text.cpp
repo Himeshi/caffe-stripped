@@ -10,7 +10,7 @@
 #include "caffe/caffe.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/upgrade_proto.hpp"
-
+#include "caffe/fp16.hpp"
 using std::ofstream;
 
 using namespace caffe;  // NOLINT(build/namespaces)

@@ -13,18 +13,30 @@ __global__ void convert_to_fp16(const int n, double* in, fp16* out) {
    out[index] = fp32tofp16_gpu(in[index]);
   }
 }
-
-__global__ void convert_to_float(const int n, fp16* in, float* out) {
+__global__ void convert_to_float(const int n,  fp16* in, float* out) {
   CUDA_KERNEL_LOOP(index, n) {
    out[index] = fp16tofp32_gpu(in[index]);
   }
 }
 
-__global__ void convert_to_float(const int n, fp16* in, double* out) {
+__global__ void convert_to_float(const int n,  fp16* in, double* out) {
   CUDA_KERNEL_LOOP(index, n) {
    out[index] = fp16tofp32_gpu(in[index]);
   }
 }
+
+__global__ void convert_to_float(const int n, const fp16* in, float* out) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu(in[index]);
+  }
+}
+
+__global__ void convert_to_float(const int n, const fp16* in, double* out) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu(in[index]);
+  }
+}
+
 
 __device__ float fp16tofp32_gpu(fp16 f16value) {
   union Bits v;

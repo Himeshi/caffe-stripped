@@ -11,7 +11,7 @@
 #include "caffe/util/db.hpp"
 #include "caffe/util/format.hpp"
 #include "caffe/util/io.hpp"
-
+#include "caffe/fp16.hpp"
 using caffe::Blob;
 using caffe::Caffe;
 using caffe::Datum;
