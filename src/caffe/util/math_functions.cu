@@ -95,7 +95,13 @@ void caffe_gpu_axpy<double>(const int N, const double alpha, const double* X,
 template <>
 void caffe_gpu_axpy<fp16>(const int N, const fp16 alpha, const fp16* X,
     fp16* Y) {
-//missing implementation
+  float tempX[N];
+  float tempY[N];
+  const float alpha_float = fp16tofp32(alpha);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY);
+  CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha_float, tempX, 1, tempY, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
 }
 
 void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
@@ -124,7 +130,11 @@ void caffe_gpu_scal<float>(const int N, const float alpha, float *X) {
 }
 template <>
 void caffe_gpu_scal<fp16>(const int N, const fp16 alpha, fp16 *X) {
-  //missing implementation
+  float tempX[N];
+  const float alpha_float = fp16tofp32(alpha);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
+  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), N, &alpha_float, tempX, 1));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
 }
 
 template <>
@@ -212,7 +222,13 @@ void caffe_gpu_dot<double>(const int n, const double* x, const double* y,
 template <>
 void caffe_gpu_dot<fp16>(const int n, const fp16* x, const fp16* y,
     fp16 * out) {
-//missing implementation
+  float tempX[n];
+  float tempY[n];
+  float tempOut[n];
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY);
+  CUBLAS_CHECK(cublasSdot(Caffe::cublas_handle(), n, tempX, 1, tempY, 1, tempOut));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempOut, out);
 }
 
 void caffe_gpu_asum_half(const int n, const fp16* x, float* y) {
@@ -239,7 +255,12 @@ void caffe_gpu_asum<double>(const int n, const double* x, double* y) {
 
 template <>
 void caffe_gpu_asum<fp16>(const int n, const fp16* x, fp16* y) {
-//missing implementation
+  float tempX[n];
+  float tempY[n];
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY);
+  CUBLAS_CHECK(cublasSasum(Caffe::cublas_handle(), n, tempX, 1, tempY));
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
 }
 
 void caffe_gpu_scale_half(const int n, const float alpha, const fp16 *x,
@@ -648,7 +669,8 @@ DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(sign, y[index] = (Dtype(0) < x[index])
 
 __global__ void sign_kernel_half(const int n, const fp16* x, fp16* y) {
   CUDA_KERNEL_LOOP(index, n) {
-    y[index] = (0 < x[index]) - (x[index] < 0);
+    short x_index = x[index];
+    y[index] = (fp16(0) < x_index) - (x_index < fp16(0));
   }
 }
 

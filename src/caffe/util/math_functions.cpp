@@ -54,10 +54,19 @@ void caffe_axpy<double>(const int N, const double alpha, const double* X,
     double* Y) { cblas_daxpy(N, alpha, X, 1, Y, 1); }
 
 template <>
-void caffe_axpy<fp16>(const int N, const fp16 alpha, const fp16* X,
-    fp16* Y) {
-      //missing implementation
-     }
+void caffe_axpy<fp16>(const int N, const fp16 alpha, const fp16* X, fp16* Y) {
+	int i;
+	float tempX[N];
+	float tempY[N];
+	for (i = 0; i < N; i++) {
+		tempX[i] = fp16tofp32(X[i]);
+		tempY[i] = fp16tofp32(Y[i]);
+	}
+	cblas_saxpy(N, fp16tofp32(alpha), tempX, 1, tempY, 1);
+	for (i = 0; i < N; i++) {
+		Y[i] = fp32tofp16(tempY[i]);
+	}
+}
 
 
 template <typename Dtype>
@@ -387,7 +396,14 @@ double caffe_cpu_strided_dot<double>(const int n, const double* x,
 template <>
 fp16 caffe_cpu_strided_dot<fp16>(const int n, const fp16* x,
     const int incx, const fp16* y, const int incy) {
-//missing implementation
+	int i;
+	float tempx[n];
+	float tempy[n];
+	for (i = 0; i < n; i++) {
+		tempx[i] = fp16tofp32(x[i]);
+		tempy[i] = fp16tofp32(y[i]);
+	}
+	return fp32tofp16(cblas_sdot(n, tempx, incx, tempy, incy));
 }
 
 template <typename Dtype>
@@ -414,9 +430,14 @@ double caffe_cpu_asum<double>(const int n, const double* x) {
   return cblas_dasum(n, x, 1);
 }
 
-template <>
+template<>
 fp16 caffe_cpu_asum<fp16>(const int n, const fp16* x) {
-//missing implementation
+	int i;
+	float tempX[n];
+	for (i = 0; i < n; i++) {
+		tempX[i] = fp16tofp32(x[i]);
+	}
+	return fp32tofp16(cblas_sasum(n, tempX, 1));
 }
 
 
