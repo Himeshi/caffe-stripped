@@ -25,8 +25,10 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
   } else {
     if (bias_term_) {
       this->blobs_.resize(2);
+      this->blobs_dtype_.resize(2);
     } else {
       this->blobs_.resize(1);
+      this->blobs_dtype_.resize(1);
     }
     // Initialize the weights
     vector<int> weight_shape(2);
@@ -38,6 +40,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
       weight_shape[1] = K_;
     }
     this->blobs_[0].reset(new Blob<fp16>(weight_shape));
+    this->blobs_dtype_[0].reset(new Blob<Dtype>(weight_shape));
     // fill the weights
     shared_ptr<Filler<Dtype> > weight_filler(GetFiller<Dtype>(
         this->layer_param_.inner_product_param().weight_filler()));
@@ -46,6 +49,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     if (bias_term_) {
       vector<int> bias_shape(1, N_);
       this->blobs_[1].reset(new Blob<fp16>(bias_shape));
+      this->blobs_dtype_[1].reset(new Blob<Dtype>(bias_shape));
       shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
           this->layer_param_.inner_product_param().bias_filler()));
       bias_filler->Fill(this->blobs_[1].get());

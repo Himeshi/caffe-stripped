@@ -382,8 +382,10 @@ void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
       LOG(INFO) << layer_param->name() << " -> " << blob_name;
     }
     shared_ptr<Blob<fp16> > blob_pointer(new Blob<fp16>());
+    shared_ptr<Blob<Dtype> > blob_pointer_dtype(new Blob<Dtype>());
     const int blob_id = blobs_.size();
     blobs_.push_back(blob_pointer);
+    blobs_dtype_.push_back(blob_pointer_dtype);
     blob_names_.push_back(blob_name);
     blob_need_backward_.push_back(false);
     if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
