@@ -8,7 +8,6 @@
 
 #ifndef INCLUDE_CAFFE_FP16_HPP_
 #define INCLUDE_CAFFE_FP16_HPP_
-
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
@@ -75,11 +74,6 @@ __global__ void convert_to_fp16(const int n, const double* in, fp16* out);
 __global__ void convert_to_float(const int n, const fp16* in, float* out);
 
 __global__ void convert_to_float(const int n, const fp16* in, double* out);
-
-
-__device__ float fp16tofp32_gpu(fp16 f16value);
-
-__device__ fp16 fp32tofp16_gpu(float f);
 
 __global__ void outputweights(const int n, float* in);
 

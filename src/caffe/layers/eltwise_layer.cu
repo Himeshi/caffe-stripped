@@ -3,7 +3,7 @@
 
 #include "caffe/layers/eltwise_layer.hpp"
 #include "caffe/util/math_functions.hpp"
-
+#include "caffe/fp16.cuh"
 namespace caffe {
 
 template <typename Dtype>

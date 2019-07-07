@@ -4,7 +4,7 @@
 
 #include "caffe/layers/pooling_layer.hpp"
 #include "caffe/util/math_functions.hpp"
-
+#include "caffe/fp16.cuh"
 namespace caffe {
 
 template <typename Dtype>
@@ -14,6 +14,8 @@ __global__ void MaxPoolForward(const int nthreads,
     const int pooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
     fp16* const top_data, int* mask, fp16* top_mask) {
+
+
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -25,24 +27,28 @@ __global__ void MaxPoolForward(const int nthreads,
     const int wend = min(wstart + kernel_w, width);
     hstart = max(hstart, 0);
     wstart = max(wstart, 0);
-    Dtype maxval = -FLT_MAX;
+    float maxval = -FLT_MAX;
     int maxidx = -1;
     const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
+		  
         if (fp16tofp32_gpu(bottom_slice[h * width + w]) > maxval) {
           maxidx = h * width + w;
           maxval = fp16tofp32_gpu(bottom_slice[maxidx]);
         }
+        
       }
     }
+    
     top_data[index] = fp32tofp16_gpu(maxval);
     if (mask) {
       mask[index] = maxidx;
     } else {
       top_mask[index] = fp32tofp16_gpu(maxidx);
     }
+    
   }
 }
 
@@ -164,6 +170,7 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const bool use_top_mask = top.size() > 1;
   int* mask = NULL;
   fp16* top_mask = NULL;
+ 
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
@@ -177,6 +184,11 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data,
         mask, top_mask);
+/* debug stuff
+	printf("1 %d %d dtype %d\n",CAFFE_GET_BLOCKS(count),CAFFE_CUDA_NUM_THREADS, sizeof(Dtype));
+	//caffe::MaxPoolForward<<<1,1>>>(count);     
+    printf("2 %d %d dtype %d\n",CAFFE_GET_BLOCKS(count),CAFFE_CUDA_NUM_THREADS, sizeof(Dtype));
+*/
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)

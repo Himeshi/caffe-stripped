@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "caffe/layers/relu_layer.hpp"
-
+#include "caffe/fp16.cuh"
 namespace caffe {
 
 template <typename Dtype>

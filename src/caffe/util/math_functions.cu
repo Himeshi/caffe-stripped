@@ -7,7 +7,7 @@
 
 #include "caffe/common.hpp"
 #include "caffe/util/math_functions.hpp"
-
+#include "caffe/fp16.cuh"
 namespace caffe {
 
 template <>
