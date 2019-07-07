@@ -39,7 +39,7 @@ __global__ void MaxPoolForward(const int nthreads,
     }
     top_data[index] = fp32tofp16_gpu(maxval);
     if (mask) {
-      mask[index] = fp32tofp16_gpu(maxidx);
+      mask[index] = maxidx;
     } else {
       top_mask[index] = fp32tofp16_gpu(maxidx);
     }
