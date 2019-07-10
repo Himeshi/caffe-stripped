@@ -90,7 +90,7 @@ void AccuracyLayer<Dtype>::Forward_gpu(
     Dtype valid_count;
     caffe_gpu_asum_half(nthreads, counts, &valid_count);
     if (valid_count > 0) {
-      top[0]->mutable_cpu_data()[0] = acc / valid_count;
+      top[0]->mutable_cpu_data()[0] = fp32tofp16(acc / valid_count);
     } else {
       top[0]->mutable_cpu_data()[0] = 0;
     }
@@ -116,27 +116,22 @@ void AccuracyLayer<Dtype>::Forward_gpu(
     Dtype valid_count;
     caffe_gpu_asum_half(nums_buffer_.count(), counts, &valid_count);
     if (valid_count > 0) {
-      top[0]->mutable_cpu_data()[0] = acc / valid_count;
+      top[0]->mutable_cpu_data()[0] = fp32tofp16(acc / valid_count);
     } else {
       top[0]->mutable_cpu_data()[0] = 0;
     }
 
     // get per-class accuracy
-    Blob<Dtype>* top_temp = (this->temp_top_);
-    top_temp->Reshape(top[1]->shape());
-    Dtype* top_data_temp = top_temp->mutable_cpu_data();
+    fp16* per_class_acc = top[1]->mutable_cpu_data();
     for (int l = 0; l < num_labels; l++) {
-      caffe_gpu_asum_half(nthreads, acc_data + l*nthreads, top_data_temp+l);
+      caffe_gpu_asum(nthreads, acc_data + l*nthreads, per_class_acc+l);
       caffe_gpu_asum_half(nthreads, counts + l*nthreads, &valid_count);
       if (valid_count > 0) {
-        top_data_temp[l] /= valid_count;
+        per_class_acc[l] = fp32tofp16(fp16tofp32(per_class_acc[l]) / valid_count);
       } else {
-        top_data_temp[l] = 0;
+        per_class_acc[l] = 0;
       }
     }
-    fp16* per_class_acc = top[1]->mutable_cpu_data();
-    int top_data_count = top[1]->count();
-    convert_to_fp16<<<CAFFE_GET_BLOCKS(top_data_count), CAFFE_CUDA_NUM_THREADS>>>(top_data_count, top_data_temp, per_class_acc);
   }
   // Clear scratch memory to prevent interfering with backward (see #6202).
   caffe_gpu_set_half(bottom[0]->count(), Dtype(0), bottom[0]->mutable_gpu_diff());

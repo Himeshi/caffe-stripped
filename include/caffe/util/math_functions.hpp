@@ -157,9 +157,20 @@ void caffe_gpu_gemm(const CBLAS_TRANSPOSE TransA,
     Dtype* C);
 
 template <typename Dtype>
+void caffe_gpu_gemm_half(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const Dtype alpha, const fp16* A, const fp16* B, const Dtype beta,
+	fp16* C);
+
+template <typename Dtype>
 void caffe_gpu_gemv(const CBLAS_TRANSPOSE TransA, const int M, const int N,
     const Dtype alpha, const Dtype* A, const Dtype* x, const Dtype beta,
     Dtype* y);
+
+template <typename Dtype>
+void caffe_gpu_gemv_half(const CBLAS_TRANSPOSE TransA, const int M, const int N,
+    const Dtype alpha, const fp16* A, const Dtype* x, const Dtype beta,
+	fp16* y);
 
 template <typename Dtype>
 void caffe_gpu_axpy(const int N, const Dtype alpha, const Dtype* X,
@@ -264,18 +275,15 @@ void caffe_gpu_rng_gaussian(const int n, const Dtype mu, const Dtype sigma,
 template <typename Dtype>
 void caffe_gpu_rng_bernoulli(const int n, const Dtype p, int* r);
 
+template <typename Dtype>
 void caffe_gpu_dot_half(const int n, const fp16* x, const fp16* y,
-    float* out);
-
-void caffe_gpu_dot_half(const int n, const fp16* x, const fp16* y,
-    double* out);
+    Dtype* out);
 
 template <typename Dtype>
 void caffe_gpu_dot(const int n, const Dtype* x, const Dtype* y, Dtype* out);
 
-void caffe_gpu_asum_half(const int n, const fp16* x, float* y);
-
-void caffe_gpu_asum_half(const int n, const fp16* x, double* y);
+template <typename Dtype>
+void caffe_gpu_asum_half(const int n, const fp16* x, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_asum(const int n, const Dtype* x, Dtype* y);
