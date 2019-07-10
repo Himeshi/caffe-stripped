@@ -130,10 +130,10 @@ void caffe_gpu_gemv_half<float>(const CBLAS_TRANSPOSE TransA, const int M,
   float* tempY;
   int asize = M * N;
   cudaMalloc(&tempA, asize * sizeof(float));
-  cudaMalloc(&tempY, M * sizeof(float));
+  cudaMalloc(&tempY, N * sizeof(float));
 
   convert_to_float<<<CAFFE_GET_BLOCKS(asize), CAFFE_CUDA_NUM_THREADS>>>(asize, A, tempA);
-  convert_to_float<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, y, tempY);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, y, tempY);
 
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
