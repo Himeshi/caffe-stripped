@@ -77,24 +77,11 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     }
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
-    Dtype* bias_diff_temp = this->blobs_dtype_[1]->mutable_gpu_diff();
-
     const fp16* top_diff = top[0]->gpu_diff();
-    Blob<Dtype>* temp_top = (this->temp_top_);
-    temp_top->Reshape(top[0]->shape());
-    Dtype* temp_top_converted = temp_top->mutable_gpu_diff();
-    int top_count = top[0]->count();
-    convert_to_float<<<CAFFE_GET_BLOCKS(top_count), CAFFE_CUDA_NUM_THREADS>>>(top_count, top_diff, temp_top_converted);
-    const Dtype* temp_top_diff = temp_top->gpu_diff();
-
     // Gradient with respect to bias
-    caffe_gpu_gemv<Dtype>(CblasTrans, M_, N_, (Dtype)1., temp_top_diff,
+    caffe_gpu_gemv_half<Dtype>(CblasTrans, M_, N_, (Dtype)1., top_diff,
         bias_multiplier_.gpu_data(), (Dtype)1.,
-        bias_diff_temp);
-
-    fp16* bias_diff = this->blobs_[1]->mutable_gpu_diff();
-    int bias_diff_count = this->blobs_[1]->count();
-    convert_to_fp16<<<CAFFE_GET_BLOCKS(bias_diff_count), CAFFE_CUDA_NUM_THREADS>>>(bias_diff_count, bias_diff_temp, bias_diff);
+        this->blobs_[1]->mutable_gpu_diff());
   }
   if (propagate_down[0]) {
     const fp16* top_diff = top[0]->gpu_diff();
