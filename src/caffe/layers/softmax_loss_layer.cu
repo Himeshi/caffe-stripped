@@ -100,6 +100,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
     const fp16* prob_data = prob_.gpu_data();
     const fp16* top_data = top[0]->gpu_data();
+
     caffe_gpu_memcpy(prob_.count() * sizeof(fp16), prob_data, bottom_diff);
     const fp16* label = bottom[1]->gpu_data();
     const int dim = prob_.count() / outer_num_;
@@ -111,7 +112,6 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     SoftmaxLossBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
         CAFFE_CUDA_NUM_THREADS>>>(nthreads, top_data, label, bottom_diff,
         outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
-
     Dtype valid_count = -1;
     // Only launch another CUDA kernel if we actually need the count of valid
     // outputs.
@@ -122,6 +122,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const Dtype loss_weight = fp16tofp32(fp16tofp32(top[0]->cpu_diff()[0]) /
                               get_normalizer(normalization_, valid_count));
     caffe_gpu_scal_half(prob_.count(), loss_weight , bottom_diff);
+
   }
 }
 

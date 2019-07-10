@@ -123,6 +123,7 @@ void DataLayer<Dtype>::load_batch(Batch<fp16>* batch) {
     trans_time += timer.MicroSeconds();
     Next();
   }
+
   timer.Stop();
   batch_timer.Stop();
   DLOG(INFO) << "Prefetch batch: " << batch_timer.MilliSeconds() << " ms.";

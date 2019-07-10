@@ -17,7 +17,7 @@
 #include <cuda_fp16.h>
 
 #include "caffe/util/device_alternate.hpp"
-#include "caffe/util/mkl_alternate.hpp"
+//#include "caffe/util/mkl_alternate.hpp"
 
 union Bits {
 	float f;

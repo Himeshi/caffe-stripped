@@ -20,6 +20,7 @@
 namespace caffe {
 	
 __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
+	
   union Bits v;
   v.ui = f16value;
   int32_t sign = v.si & signC;
@@ -35,9 +36,11 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
   v.si ^= (s.si ^ v.si) & mask;
   v.si |= sign;
   return v.f;
+
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
+
   union Bits v, s;
   v.f = f;
   uint32_t sign = v.si & signN;

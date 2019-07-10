@@ -667,6 +667,7 @@ void Net<Dtype>::UpdateDebugInfo(const int param_id) {
 
 template <typename Dtype>
 void Net<Dtype>::ShareTrainedLayersWith(const Net* other) {
+
   int num_source_layers = other->layers().size();
   for (int i = 0; i < num_source_layers; ++i) {
     Layer<Dtype>* source_layer = other->layers()[i].get();
@@ -685,6 +686,8 @@ void Net<Dtype>::ShareTrainedLayersWith(const Net* other) {
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer->blobs().size())
         << "Incompatible number of blobs for layer " << source_layer_name;
+        
+
     for (int j = 0; j < target_blobs.size(); ++j) {
       Blob<fp16>* source_blob = source_layer->blobs()[j].get();
       CHECK(target_blobs[j]->shape() == source_blob->shape())
@@ -695,6 +698,7 @@ void Net<Dtype>::ShareTrainedLayersWith(const Net* other) {
       target_blobs[j]->ShareData(*source_blob);
     }
   }
+  
 }
 
 template <typename Dtype>
