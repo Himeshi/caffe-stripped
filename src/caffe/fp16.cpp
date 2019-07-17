@@ -9,38 +9,206 @@
 
 namespace caffe {
 
-float fp16tofp32(fp16 f16value) {
-	union Bits v;
-	v.ui = f16value;
-	int32_t sign = v.si & signC;
-	v.si ^= sign;
-	sign <<= shiftSign;
-	v.si ^= ((v.si + minD) ^ v.si) & -(v.si > subC);
-	v.si ^= ((v.si + maxD) ^ v.si) & -(v.si > maxC);
-	union Bits s;
-	s.si = mulC;
-	s.f *= v.si;
-	int32_t mask = -(norC > v.si);
-	v.si <<= fp16shift;
-	v.si ^= (s.si ^ v.si) & mask;
-	v.si |= sign;
-	return v.f;
+int _g_nbits;
+int _g_esize;
+int _g_useed;
+int _g_useed_zeros;
+int _g_posit_shift_amount;
+int _g_maxrealexp;
+POSIT_TYPE _g_maxrealp;
+POSIT_TYPE _g_minrealp;
+POSIT_TYPE _g_infp;
+float _g_maxreal;
+float _g_minreal;
+
+void setpositenv(int nbits, int esize) {
+  //@TODO: Check if esize < nbits
+  // compute the global variables
+  _g_nbits = nbits;
+  _g_esize = esize;
+  _g_useed = 1 << (1 << esize);
+  _g_useed_zeros = (1 << esize);
+  _g_posit_shift_amount = POSIT_LIMB_SIZE - _g_nbits;
+  _g_maxreal = pow(_g_useed, (_g_nbits - 2));
+  _g_minreal = 1 / _g_maxreal;
+  _g_infp = 1 << (POSIT_LIMB_SIZE - 1);
+  _g_maxrealp = ((1 << (nbits - 1)) - 1) << _g_posit_shift_amount;
+  _g_maxrealexp = (1 << esize) * (_g_nbits - 2);
+  _g_minrealp = 1 << _g_posit_shift_amount;
+  // ignore maxpos, minpos, qsize, qextra for now
+
+#ifndef CPU_ONLY
+  copy_posit_globals_to_gpu(_g_nbits, _g_esize, _g_useed, _g_useed_zeros, _g_posit_shift_amount,
+		  _g_maxrealexp, _g_maxrealp, _g_minrealp, _g_infp, _g_maxreal, _g_minreal);
+#endif
+  return;
+}
+
+fp16 get_posit_from_parts(int exponent, unsigned int fraction,
+                           unsigned int fraction_size) {
+  // assume the fraction is normalized and it's MSB is hidden already
+  fp16 p = 0;
+  int regime, regime_length, exponentp, ob, hb, sb, rb;
+  TEMP_TYPE temp;
+
+  // find regime and exponent
+  if (exponent >= 0) {
+    regime = exponent / _g_useed_zeros;
+    exponentp = exponent - (_g_useed_zeros * regime);
+    regime_length = regime + 2;
+    regime = ((1 << (regime + 1)) - 1) << 1;
+  } else {
+    regime = abs(exponent / _g_useed_zeros);
+    if (exponent % _g_useed_zeros)
+      regime += 1;
+    regime_length = regime + 1;
+    exponentp = exponent + (_g_useed_zeros * regime);
+    regime = 1;
+  }
+
+  // assemble the regime
+  temp = regime;
+  int running_size = regime_length + 1;
+
+  // assemble the exponent
+  temp <<= _g_esize;
+  int exponent_length = FLOAT_SIZE - __builtin_clz(abs(exponentp));
+  exponentp >>= (((exponent_length - _g_esize)
+			+ abs((exponent_length - _g_esize))) >> 1);
+  temp |= exponentp;
+  running_size += _g_esize;
+
+  // assemble the fraction
+  temp <<= fraction_size;
+  temp |= fraction;
+  running_size += fraction_size;
+
+  int extra_bits = (running_size - _g_nbits);
+
+  if (extra_bits > 0) {
+    // round
+    p = temp >> extra_bits;
+    ob = p & 0x0001;
+    hb = (temp >> (extra_bits - 1)) & 1ULL;
+    sb = ((1ULL << (extra_bits - 1)) - 1) & temp;
+    rb = (ob && hb) || (hb && sb);
+    p = p + rb;
+  } else {
+    // no need to round
+    p = temp << -extra_bits;
+  }
+
+  return p;
+}
+
+float fp16tofp32(fp16 p) {
+	// handle zero
+	if (p == 0)
+		return 0.0;
+
+	// handle infinity
+	if (p == _g_infp)
+		return INFINITY;
+
+	if (p == _g_maxrealp)
+		return _g_maxreal;
+
+	if (p == _g_minrealp)
+		return _g_minreal;
+
+	double f = 1.0;
+
+	// check sign bit
+	POSIT_TYPE sign = p & SIGN_MASK;
+	// if negative, get the two's complement
+	if (sign) {
+		p = ~p + 1;
+		f = -f;
+	}
+
+	// get the regime
+	POSIT_TYPE second_bit = p & SECOND_BIT_MASK;
+	// remove the sign
+	p <<= 1;
+	int regime = 0;
+	int regime_length = 0;
+	if (second_bit) {
+		// sign of regime is +ve, find first 0
+		// Here we have to subtract the posit limb size, because clz takes an
+		// int which aligns the short to the right
+		POSIT_TYPE flipped = ~p;
+		regime = __builtin_clz(flipped) - POSIT_LIMB_SIZE - 1;
+		regime_length = regime + 2;
+	} else {
+		// sign of regime is -ve, find first 1
+		regime = POSIT_LIMB_SIZE - __builtin_clz(p);
+		regime_length = 1 - regime;
+	}
+
+	// remove regime and get exponent
+	p <<= regime_length;
+	int exponent = p >> (POSIT_LIMB_SIZE - _g_esize);
+
+	// remove exponent and get fraction
+	p <<= _g_esize;
+	int running_length = (regime_length + 1 + _g_esize);
+	int fraction_size = ((_g_nbits - running_length)
+			+ abs((_g_nbits - running_length))) >> 1;
+	int fraction = p >> (POSIT_LIMB_SIZE - fraction_size);
+	fraction = fraction | (1 << fraction_size);
+
+	return f * ((float) fraction / (float) (1 << fraction_size))
+			* pow(_g_useed, regime) * (1 << exponent);
 }
 
 fp16 fp32tofp16(float f) {
-	union Bits v, s;
-	v.f = f;
-	uint32_t sign = v.si & signN;
-	v.si ^= sign;
-	sign >>= shiftSign; // logical shift
-	s.si = mulN;
-	s.si = s.f * v.f; // correct subnormals
-	v.si ^= (s.si ^ v.si) & -(minN > v.si);
-	v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxfp16N));
-	v.si ^= (nanN ^ v.si) & -((nanN > v.si) & (v.si > infN));
-	v.ui >>= fp16shift; // logical shift
-	v.si ^= ((v.si - maxD) ^ v.si) & -(v.si > maxC);
-	v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
-	return v.ui | sign;
+	fp16 p = 0;
+	if (f == 0.0) {
+		return p;
+	}
+
+	if (f == INFINITY || f == -INFINITY) {
+		return _g_infp;
+	}
+
+	if (fabs(f) >= _g_maxreal) {
+		p = _g_maxrealp;
+		if (f < 0)
+			p = ~p + 1;
+		return p;
+	}
+
+	if (fabs(f) <= _g_minreal) {
+		p = _g_minrealp;
+		if (f < 0)
+			p = ~p + 1;
+		return p;
+	}
+
+	if (f == NAN)
+		return _g_infp;
+
+	// get sign, exponent and fraction from float
+	unsigned int temp;
+	memcpy(&temp, &f, sizeof(temp));
+	int exponent = (temp & FLOAT_EXPONENT_MASK) >> FLOAT_EXPONENT_SHIFT;
+	unsigned int fraction = (temp & FLOAT_FRACTION_MASK);
+	if (exponent) {
+		exponent -= SINGLE_PRECISION_BIAS;
+	} else {
+		exponent = FLOAT_DENORMAL_EXPONENT;
+		int normalization = __builtin_clz(fraction)
+				- FLOAT_SIGN_PLUS_EXP_LENGTH_MINUS_ONE;
+		exponent -= normalization;
+		// hide the most significant bit
+		fraction &= ~(1 << normalization);
+	}
+
+	p = get_posit_from_parts(exponent, fraction, FLOAT_EXPONENT_SHIFT);
+
+	if (f < 0)
+		p = ~p + 1;
+
+	return p << _g_posit_shift_amount;
 }
 }

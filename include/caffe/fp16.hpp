@@ -14,48 +14,70 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
-#include <cuda_fp16.h>
 
 #include "caffe/util/device_alternate.hpp"
 //#include "caffe/util/mkl_alternate.hpp"
 
-union Bits {
-	float f;
-	int32_t si;
-	uint32_t ui;
-};
-
 #define FP16_LIMB_SIZE 16
 #define FP16_TYPE uint16_t
 
-#define fp16shift 13
-#define shiftSign 16
+#define NBITS 16
+#define EBITS 2
 
-#define infN 0x7F800000 // flt32 infinity
-#define maxfp16N 0x477FE000 // max flt16 normal as a flt32
-#define minN 0x38800000 // min flt16 normal as a flt32
-#define signN 0x80000000 // flt32 sign bit
+#define POSIT_LIMB_SIZE 16
+#define POSIT_TYPE unsigned short
 
-#define infC 0x3FC00
-#define nanN 0x7F802000 // minimum flt16 nan as a flt32
-#define maxC 0x23BFF
-#define minC 0x1C400
-#define signC 0xFFFF8000 // flt16 sign bit
+#define SIGN_MASK 0x8000
+#define SECOND_BIT_MASK 0x4000
+#define POSIT_INF 0x0000
+#define POSIT_LIMB_ALL_BITS_SET 0xffff
+#define SINGLE_PRECISION_BIAS 127
+#define FLOAT_SIZE 32
+#define FLOAT_EXPONENT_MASK 0x7f800000
+#define FLOAT_FRACTION_MASK 0x007fffff
+#define FLOAT_SIGN_SHIFT 31
+#define FLOAT_EXPONENT_SHIFT 23
+#define FLOAT_DENORMAL_EXPONENT -126
+#define FLOAT_HIDDEN_BIT_SET_MASK 0x00800000
+#define FLOAT_SIGN_PLUS_EXP_LENGTH_MINUS_ONE 8
+#define TEMP_TYPE unsigned long long
+#define UNSIGNED_LONG_LONG_SIZE 64
+#define EDP_ACC_SIZE 63
 
-#define mulN 0x52000000 // (1 << 23) / minN
-#define mulC 0x33800000 // minN / (1 << (23 - shift))
-
-#define subC 0x003FF // max flt32 subnormal down shifted
-#define norC 0x00400 // min flt32 normal down shifted
-
-#define maxD 0x1C000
-#define minD 0x1C000
+#define GET_MAX(a, b)                                                          \
+  ({                                                                           \
+    __typeof__(a) _a = (a);                                                    \
+    __typeof__(b) _b = (b);                                                    \
+    _a > _b ? _a : _b;                                                         \
+  })
 
 namespace caffe {
 
 typedef FP16_TYPE fp16;
 
-float fp16tofp32(fp16 f16value);
+typedef POSIT_TYPE posit;
+
+extern int _g_nbits;
+extern int _g_esize;
+extern int _g_useed;
+extern int _g_useed_zeros;
+extern int _g_posit_shift_amount;
+extern int _g_maxrealexp;
+extern POSIT_TYPE _g_maxrealp;
+extern POSIT_TYPE _g_minrealp;
+extern POSIT_TYPE _g_infp;
+extern float _g_maxreal;
+extern float _g_minreal;
+
+void setpositenv(int nbits, int esize);
+
+fp16 get_posit_from_parts(int exponent, unsigned int fraction,
+                           unsigned int fraction_size);
+
+void copy_posit_globals_to_gpu(int nbits, int esize, int useed, int useed_zeros, int posit_shift_amount,
+  int maxrealexp, POSIT_TYPE maxrealp, POSIT_TYPE minrealp, POSIT_TYPE infp, float maxreal, float minreal);
+
+float fp16tofp32(fp16 p);
 
 fp16 fp32tofp16(float f);
 
