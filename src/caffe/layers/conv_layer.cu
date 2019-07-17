@@ -20,7 +20,6 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     Blob<Dtype>* bottom_temp = (this->temp_bottom_);
     bottom_temp->Reshape(bottom[i]->shape());
     Dtype* bottom_data_temp = bottom_temp->mutable_gpu_data();
-    //int bottom_data_count = top[i]->count();// bug
     int bottom_data_count = bottom[i]->count();
     convert_to_float<<<CAFFE_GET_BLOCKS(bottom_data_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_data_count, bottom_data, bottom_data_temp);
     const Dtype* bottom_data_converted = bottom_temp->gpu_data();
