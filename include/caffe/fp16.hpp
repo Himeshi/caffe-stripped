@@ -24,9 +24,6 @@
 #define NBITS 16
 #define EBITS 2
 
-#define POSIT_LIMB_SIZE 16
-#define POSIT_TYPE unsigned short
-
 #define SIGN_MASK 0x8000
 #define SECOND_BIT_MASK 0x4000
 #define POSIT_INF 0x0000
@@ -55,17 +52,15 @@ namespace caffe {
 
 typedef FP16_TYPE fp16;
 
-typedef POSIT_TYPE posit;
-
 extern int _g_nbits;
 extern int _g_esize;
 extern int _g_useed;
 extern int _g_useed_zeros;
 extern int _g_posit_shift_amount;
 extern int _g_maxrealexp;
-extern POSIT_TYPE _g_maxrealp;
-extern POSIT_TYPE _g_minrealp;
-extern POSIT_TYPE _g_infp;
+extern FP16_TYPE _g_maxrealp;
+extern FP16_TYPE _g_minrealp;
+extern FP16_TYPE _g_infp;
 extern float _g_maxreal;
 extern float _g_minreal;
 
@@ -75,7 +70,7 @@ fp16 get_posit_from_parts(int exponent, unsigned int fraction,
                            unsigned int fraction_size);
 
 void copy_posit_globals_to_gpu(int nbits, int esize, int useed, int useed_zeros, int posit_shift_amount,
-  int maxrealexp, POSIT_TYPE maxrealp, POSIT_TYPE minrealp, POSIT_TYPE infp, float maxreal, float minreal);
+  int maxrealexp, FP16_TYPE maxrealp, FP16_TYPE minrealp, FP16_TYPE infp, float maxreal, float minreal);
 
 float fp16tofp32(fp16 p);
 

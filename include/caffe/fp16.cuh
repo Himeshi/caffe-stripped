@@ -23,9 +23,9 @@ __constant__ int _g_useed_gpu;
 __constant__ int _g_useed_zeros_gpu;
 __constant__ int _g_posit_shift_amount_gpu;
 __constant__ int _g_maxrealexp_gpu;
-__constant__ POSIT_TYPE _g_maxrealp_gpu;
-__constant__ POSIT_TYPE _g_minrealp_gpu;
-__constant__ POSIT_TYPE _g_infp_gpu;
+__constant__ FP16_TYPE _g_maxrealp_gpu;
+__constant__ FP16_TYPE _g_minrealp_gpu;
+__constant__ FP16_TYPE _g_infp_gpu;
 __constant__ float _g_maxreal_gpu;
 __constant__ float _g_minreal_gpu;
 #endif
@@ -105,7 +105,7 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
   double f = 1.0;
 
   // check sign bit
-  POSIT_TYPE sign = p & SIGN_MASK;
+  FP16_TYPE sign = p & SIGN_MASK;
   // if negative, get the two's complement
   if (sign) {
     p = ~p + 1;
@@ -113,7 +113,7 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
   }
 
   // get the regime
-  POSIT_TYPE second_bit = p & SECOND_BIT_MASK;
+  FP16_TYPE second_bit = p & SECOND_BIT_MASK;
   // remove the sign
   p <<= 1;
   int regime = 0;
@@ -122,24 +122,24 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
     // sign of regime is +ve, find first 0
 	// Here we have to subtract the posit limb size, because clz takes an
 	// int which aligns the short to the right
-    POSIT_TYPE flipped = ~p;
-    regime = __clz(flipped) - POSIT_LIMB_SIZE - 1;
+    FP16_TYPE flipped = ~p;
+    regime = __clz(flipped) - FP16_LIMB_SIZE - 1;
     regime_length = regime + 2;
   } else {
     // sign of regime is -ve, find first 1
-	regime = POSIT_LIMB_SIZE - __clz(p);
+	regime = FP16_LIMB_SIZE - __clz(p);
     regime_length = 1 - regime;
   }
 
   // remove regime and get exponent
   p <<= regime_length;
-  int exponent = p >> (POSIT_LIMB_SIZE - _g_esize_gpu);
+  int exponent = p >> (FP16_LIMB_SIZE - _g_esize_gpu);
 
   // remove exponent and get fraction
   p <<= _g_esize_gpu;
   int running_length = (regime_length + 1 + _g_esize_gpu);
   int fraction_size = ((_g_nbits_gpu - running_length) + abs((_g_nbits_gpu - running_length))) >> 1;
-  int fraction = p >> (POSIT_LIMB_SIZE - fraction_size);
+  int fraction = p >> (FP16_LIMB_SIZE - fraction_size);
   fraction = fraction | (1 << fraction_size);
 
   return f * ((float)fraction / (float)(1 << fraction_size)) *
