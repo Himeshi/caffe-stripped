@@ -65,4 +65,15 @@ printf("%d %f\n", index, in[index]);
   }
 }
 
+void print_gpu_float_array(float* d_data, int size) {
+	float *h_data;
+	h_data = (float *) malloc(size * sizeof(float));
+	cudaMemcpy(h_data, d_data, size * sizeof(float), cudaMemcpyDeviceToHost);
+	printf("size = %d\n", size);
+	int i;
+	for (i = 0; i < 100; i++) {
+		printf("data[%d] = %f ", i, h_data[i]);
+	}
+	free(h_data);
+}
 }
