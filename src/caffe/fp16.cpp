@@ -9,41 +9,6 @@
 
 namespace caffe {
 
-int _g_nbits;
-int _g_esize;
-int _g_useed;
-int _g_useed_zeros;
-int _g_posit_shift_amount;
-int _g_maxrealexp;
-FP16_TYPE _g_maxrealp;
-FP16_TYPE _g_minrealp;
-FP16_TYPE _g_infp;
-float _g_maxreal;
-float _g_minreal;
-
-void setpositenv(int nbits, int esize) {
-  //@TODO: Check if esize < nbits
-  // compute the global variables
-  _g_nbits = nbits;
-  _g_esize = esize;
-  _g_useed = 1 << (1 << esize);
-  _g_useed_zeros = (1 << esize);
-  _g_posit_shift_amount = FP16_LIMB_SIZE - _g_nbits;
-  _g_maxreal = pow(_g_useed, (_g_nbits - 2));
-  _g_minreal = 1 / _g_maxreal;
-  _g_infp = 1 << (FP16_LIMB_SIZE - 1);
-  _g_maxrealp = ((1 << (nbits - 1)) - 1) << _g_posit_shift_amount;
-  _g_maxrealexp = (1 << esize) * (_g_nbits - 2);
-  _g_minrealp = 1 << _g_posit_shift_amount;
-  // ignore maxpos, minpos, qsize, qextra for now
-
-#ifndef CPU_ONLY
-  copy_posit_globals_to_gpu(_g_nbits, _g_esize, _g_useed, _g_useed_zeros, _g_posit_shift_amount,
-		  _g_maxrealexp, _g_maxrealp, _g_minrealp, _g_infp, _g_maxreal, _g_minreal);
-#endif
-  return;
-}
-
 fp16 get_posit_from_parts(int exponent, unsigned int fraction,
                            unsigned int fraction_size) {
   // assume the fraction is normalized and it's MSB is hidden already
@@ -53,16 +18,16 @@ fp16 get_posit_from_parts(int exponent, unsigned int fraction,
 
   // find regime and exponent
   if (exponent >= 0) {
-    regime = exponent / _g_useed_zeros;
-    exponentp = exponent - (_g_useed_zeros * regime);
+    regime = exponent / _G_USEED_ZEROS;
+    exponentp = exponent - (_G_USEED_ZEROS * regime);
     regime_length = regime + 2;
     regime = ((1 << (regime + 1)) - 1) << 1;
   } else {
-    regime = abs(exponent / _g_useed_zeros);
-    if (exponent % _g_useed_zeros)
+    regime = abs(exponent / _G_USEED_ZEROS);
+    if (exponent % _G_USEED_ZEROS)
       regime += 1;
     regime_length = regime + 1;
-    exponentp = exponent + (_g_useed_zeros * regime);
+    exponentp = exponent + (_G_USEED_ZEROS * regime);
     regime = 1;
   }
 
@@ -71,19 +36,19 @@ fp16 get_posit_from_parts(int exponent, unsigned int fraction,
   int running_size = regime_length + 1;
 
   // assemble the exponent
-  temp <<= _g_esize;
+  temp <<= _G_ESIZE;
   int exponent_length = FLOAT_SIZE - __builtin_clz(abs(exponentp));
-  exponentp >>= (((exponent_length - _g_esize)
-			+ abs((exponent_length - _g_esize))) >> 1);
+  exponentp >>= (((exponent_length - _G_ESIZE)
+			+ abs((exponent_length - _G_ESIZE))) >> 1);
   temp |= exponentp;
-  running_size += _g_esize;
+  running_size += _G_ESIZE;
 
   // assemble the fraction
   temp <<= fraction_size;
   temp |= fraction;
   running_size += fraction_size;
 
-  int extra_bits = (running_size - _g_nbits);
+  int extra_bits = (running_size - _G_NBITS);
 
   if (extra_bits > 0) {
     // round
@@ -107,14 +72,14 @@ float fp16tofp32(fp16 p) {
 		return 0.0;
 
 	// handle infinity
-	if (p == _g_infp)
+	if (p == _G_INFP)
 		return INFINITY;
 
-	if (p == _g_maxrealp)
-		return _g_maxreal;
+	if (p == _G_MAXREALP)
+		return _G_MAXREAL;
 
-	if (p == _g_minrealp)
-		return _g_minreal;
+	if (p == _G_MINREALP)
+		return _G_MINREAL;
 
 	double f = 1.0;
 
@@ -147,18 +112,18 @@ float fp16tofp32(fp16 p) {
 
 	// remove regime and get exponent
 	p <<= regime_length;
-	int exponent = p >> (FP16_LIMB_SIZE - _g_esize);
+	int exponent = p >> (FP16_LIMB_SIZE - _G_ESIZE);
 
 	// remove exponent and get fraction
-	p <<= _g_esize;
-	int running_length = (regime_length + 1 + _g_esize);
-	int fraction_size = ((_g_nbits - running_length)
-			+ abs((_g_nbits - running_length))) >> 1;
+	p <<= _G_ESIZE;
+	int running_length = (regime_length + 1 + _G_ESIZE);
+	int fraction_size = ((_G_NBITS - running_length)
+			+ abs((_G_NBITS - running_length))) >> 1;
 	int fraction = p >> (FP16_LIMB_SIZE - fraction_size);
 	fraction = fraction | (1 << fraction_size);
 
 	return f * ((float) fraction / (float) (1 << fraction_size))
-			* pow(_g_useed, regime) * (1 << exponent);
+			* pow(_G_USEED, regime) * (1 << exponent);
 }
 
 fp16 fp32tofp16(float f) {
@@ -168,25 +133,25 @@ fp16 fp32tofp16(float f) {
 	}
 
 	if (f == INFINITY || f == -INFINITY) {
-		return _g_infp;
+		return _G_INFP;
 	}
 
-	if (fabs(f) >= _g_maxreal) {
-		p = _g_maxrealp;
+	if (fabs(f) >= _G_MAXREAL) {
+		p = _G_MAXREALP;
 		if (f < 0)
 			p = ~p + 1;
 		return p;
 	}
 
-	if (fabs(f) <= _g_minreal) {
-		p = _g_minrealp;
+	if (fabs(f) <= _G_MINREAL) {
+		p = _G_MINREALP;
 		if (f < 0)
 			p = ~p + 1;
 		return p;
 	}
 
 	if (f == NAN)
-		return _g_infp;
+		return _G_INFP;
 
 	// get sign, exponent and fraction from float
 	unsigned int temp;
@@ -209,6 +174,6 @@ fp16 fp32tofp16(float f) {
 	if (f < 0)
 		p = ~p + 1;
 
-	return p << _g_posit_shift_amount;
+	return p << _G_POSIT_SHIFT_AMOUNT;
 }
 }

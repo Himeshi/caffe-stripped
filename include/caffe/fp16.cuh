@@ -13,22 +13,9 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
+#include "caffe/fp16.hpp"
 
 namespace caffe {
-
-#ifndef CPU_ONLY
-__constant__ int _g_nbits_gpu;
-__constant__ int _g_esize_gpu;
-__constant__ int _g_useed_gpu;
-__constant__ int _g_useed_zeros_gpu;
-__constant__ int _g_posit_shift_amount_gpu;
-__constant__ int _g_maxrealexp_gpu;
-__constant__ FP16_TYPE _g_maxrealp_gpu;
-__constant__ FP16_TYPE _g_minrealp_gpu;
-__constant__ FP16_TYPE _g_infp_gpu;
-__constant__ float _g_maxreal_gpu;
-__constant__ float _g_minreal_gpu;
-#endif
 
 __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int fraction, unsigned int fraction_size) {
     //assume the fraction is normalized and it's MSB is hidden already
@@ -38,16 +25,16 @@ __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int f
 
 	//find regime and exponent
 	if (exponent >= 0) {
-		regime = exponent / _g_useed_zeros_gpu;
-		exponentp = exponent - (_g_useed_zeros_gpu * regime);
+		regime = exponent / _G_USEED_ZEROS;
+		exponentp = exponent - (_G_USEED_ZEROS * regime);
 		regime_length = regime + 2;
 		regime = ((1 << (regime + 1)) - 1) << 1;
 	} else {
-		regime = abs(exponent / _g_useed_zeros_gpu);
-		if (exponent % _g_useed_zeros_gpu)
+		regime = abs(exponent / _G_USEED_ZEROS);
+		if (exponent % _G_USEED_ZEROS)
 			regime += 1;
 		regime_length = regime + 1;
-		exponentp = exponent + (_g_useed_zeros_gpu * regime);
+		exponentp = exponent + (_G_USEED_ZEROS * regime);
 		regime = 1;
 	}
 
@@ -56,19 +43,19 @@ __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int f
 	int running_size = regime_length + 1;
 
 	//assemble the exponent
-	temp <<= _g_esize_gpu;
+	temp <<= _G_ESIZE;
 	int exponent_length = FLOAT_SIZE - __clz(abs(exponentp));
-	exponentp >>= (((exponent_length - _g_esize_gpu)
-			+ abs((exponent_length - _g_esize_gpu))) >> 1);
+	exponentp >>= (((exponent_length - _G_ESIZE)
+			+ abs((exponent_length - _G_ESIZE))) >> 1);
 	temp |= exponentp;
-	running_size += _g_esize_gpu;
+	running_size += _G_ESIZE;
 
 	//assemble the fraction
 	temp <<= fraction_size;
 	temp |= fraction;
 	running_size += fraction_size;
 
-	int extra_bits = (running_size - _g_nbits_gpu);
+	int extra_bits = (running_size - _G_NBITS);
 
 	if (extra_bits > 0) {
 		//round
@@ -93,14 +80,14 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
     return 0.0;
 
   // handle infinity
-  if (p == _g_infp_gpu)
+  if (p == _G_INFP)
     return INFINITY;
 
-  if (p == _g_maxrealp_gpu)
-    return _g_maxreal_gpu;
+  if (p == _G_MAXREALP)
+    return _G_MAXREAL;
 
-  if (p == _g_minrealp_gpu)
-    return _g_minreal_gpu;
+  if (p == _G_MINREALP)
+    return _G_MINREAL;
 
   double f = 1.0;
 
@@ -133,17 +120,17 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
 
   // remove regime and get exponent
   p <<= regime_length;
-  int exponent = p >> (FP16_LIMB_SIZE - _g_esize_gpu);
+  int exponent = p >> (FP16_LIMB_SIZE - _G_ESIZE);
 
   // remove exponent and get fraction
-  p <<= _g_esize_gpu;
-  int running_length = (regime_length + 1 + _g_esize_gpu);
-  int fraction_size = ((_g_nbits_gpu - running_length) + abs((_g_nbits_gpu - running_length))) >> 1;
+  p <<= _G_ESIZE;
+  int running_length = (regime_length + 1 + _G_ESIZE);
+  int fraction_size = ((_G_NBITS - running_length) + abs((_G_NBITS - running_length))) >> 1;
   int fraction = p >> (FP16_LIMB_SIZE - fraction_size);
   fraction = fraction | (1 << fraction_size);
 
   return f * ((float)fraction / (float)(1 << fraction_size)) *
-         powf(_g_useed_gpu, regime) * (1 << exponent);
+         powf(_G_USEED, regime) * (1 << exponent);
 
 }
 
@@ -155,25 +142,25 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   }
 
   if (f == INFINITY || f == -INFINITY) {
-    return _g_infp_gpu;
+    return _G_INFP;
   }
 
-  if (fabs(f) >= _g_maxreal_gpu) {
-    p = _g_maxrealp_gpu;
+  if (fabs(f) >= _G_MAXREAL) {
+    p = _G_MAXREALP;
     if (f < 0)
       p = ~p + 1;
     return p;
   }
 
-  if (fabs(f) <= _g_minreal_gpu) {
-    p = _g_minrealp_gpu;
+  if (fabs(f) <= _G_MINREAL) {
+    p = _G_MINREALP;
     if (f < 0)
       p = ~p + 1;
     return p;
   }
 
   if (f == NAN)
-    return _g_infp_gpu;
+    return _G_INFP;
 
   // get sign, exponent and fraction from float
   unsigned int temp;
@@ -196,7 +183,7 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   if (f < 0)
     p = ~p + 1;
 
-  return p << _g_posit_shift_amount_gpu;
+  return p << _G_POSIT_SHIFT_AMOUNT;
 }
 
 }

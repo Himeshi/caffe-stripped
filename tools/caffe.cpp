@@ -435,7 +435,6 @@ int main(int argc, char** argv) {
   caffe::GlobalInit(&argc, &argv);
   // computing with fp16
   LOG(INFO) << "Using compression with posit16";
-  caffe::setpositenv(16, 2);
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER
     try {
