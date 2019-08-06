@@ -1,6 +1,8 @@
 #ifndef _CAFFE_UTIL_IM2COL_HPP_
 #define _CAFFE_UTIL_IM2COL_HPP_
 
+#include "caffe/fp16.hpp"
+
 namespace caffe {
 
 template <typename Dtype>

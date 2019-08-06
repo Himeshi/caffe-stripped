@@ -2,6 +2,7 @@
 
 #include "caffe/common.hpp"
 #include "caffe/util/im2col.hpp"
+#include "caffe/fp16.cuh"
 
 namespace caffe {
 
@@ -62,6 +63,10 @@ void im2col_gpu(const Dtype* data_im, const int channels,
 }
 
 // Explicit instantiation
+template void im2col_gpu<fp16>(const fp16* data_im, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w, const int stride_h, const int stride_w,
+    const int dilation_h, const int dilation_w, fp16* data_col);
 template void im2col_gpu<float>(const float* data_im, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h, const int stride_w,
@@ -232,6 +237,11 @@ void im2col_nd_gpu(const Dtype* data_im, const int num_spatial_axes,
 }
 
 // Explicit instantiation
+template void im2col_nd_gpu<fp16>(const fp16* data_im,
+    const int num_spatial_axes, const int col_size,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+    const int* dilation, fp16* data_col);
 template void im2col_nd_gpu<float>(const float* data_im,
     const int num_spatial_axes, const int col_size,
     const int* im_shape, const int* col_shape,
@@ -253,7 +263,7 @@ __global__ void col2im_gpu_kernel(const int n, const Dtype* data_col,
     const int height_col, const int width_col,
     Dtype* data_im) {
   CUDA_KERNEL_LOOP(index, n) {
-    Dtype val = 0;
+    float val = 0;
     const int w_im = index % width + pad_w;
     const int h_im = (index / width) % height + pad_h;
     const int c_im = index / (width * height);
@@ -276,11 +286,11 @@ __global__ void col2im_gpu_kernel(const int n, const Dtype* data_col,
           w_k /= dilation_w;
           int data_col_index = (((c_im * kernel_h + h_k) * kernel_w + w_k) *
                                 height_col + h_col) * width_col + w_col;
-          val += data_col[data_col_index];
+          val += fp16tofp32_gpu(data_col[data_col_index]);
         }
       }
     }
-    data_im[index] = val;
+    data_im[index] = fp32tofp16_gpu(val);
   }
 }
 
@@ -307,16 +317,11 @@ void col2im_gpu(const Dtype* data_col, const int channels,
 }
 
 // Explicit instantiation
-template void col2im_gpu<float>(const float* data_col, const int channels,
+template void col2im_gpu<fp16>(const fp16* data_col, const int channels,
     const int height, const int width, const int kernel_h, const int kernel_w,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, const int dilation_h, const int dilation_w,
-    float* data_im);
-template void col2im_gpu<double>(const double* data_col, const int channels,
-    const int height, const int width, const int kernel_h, const int kernel_w,
-    const int pad_h, const int pad_w, const int stride_h,
-    const int stride_w, const int dilation_h, const int dilation_w,
-    double* data_im);
+    fp16* data_im);
 
 template <typename Dtype, int num_axes>
 __global__ void col2im_nd_gpu_kernel(const int n, const Dtype* data_col,
@@ -378,7 +383,7 @@ __global__ void col2im_nd_gpu_kernel(const int n, const Dtype* data_col,
       continue;  // CUDA_KERNEL_LOOP(index, n)
     }
     // Loop over the col to compute the output val.
-    Dtype val = 0;
+    float val = 0;
     bool incremented = true;
     bool skip = false;
     do {
@@ -403,7 +408,7 @@ __global__ void col2im_nd_gpu_kernel(const int n, const Dtype* data_col,
           final_offset *= shared_col_shape[i + 1];
           final_offset += d_col_iter[i];
         }
-        val += data_col[final_offset];
+        val += fp16tofp32_gpu(data_col[final_offset]);
       }
       skip = false;
       incremented = false;
@@ -418,7 +423,7 @@ __global__ void col2im_nd_gpu_kernel(const int n, const Dtype* data_col,
         }
       }  // for (int i = num_axes - 1; i >= 0; --i)
     }  while (incremented);
-    data_im[index] = val;
+    data_im[index] = fp32tofp16_gpu(val);
   }  // CUDA_KERNEL_LOOP(index, n)
 }
 
@@ -498,15 +503,10 @@ void col2im_nd_gpu(const Dtype* data_col, const int num_spatial_axes,
 }
 
 // Explicit instantiation
-template void col2im_nd_gpu<float>(const float* data_col,
+template void col2im_nd_gpu<fp16>(const fp16* data_col,
     const int num_spatial_axes, const int im_size,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
-    const int* dilation, float* data_im);
-template void col2im_nd_gpu<double>(const double* data_col,
-    const int num_spatial_axes, const int im_size,
-    const int* im_shape, const int* col_shape,
-    const int* kernel_shape, const int* pad, const int* stride,
-    const int* dilation, double* data_im);
+    const int* dilation, fp16* data_im);
 
 }  // namespace caffe

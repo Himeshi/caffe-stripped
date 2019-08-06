@@ -27,8 +27,8 @@ void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     Dtype* top_data_temp = top_temp->mutable_gpu_data();
 
     for (int n = 0; n < this->num_; ++n) {
-      this->backward_gpu_gemm(temp_bottom_data + n * this->bottom_dim_, weight_temp_data,
-          top_data_temp + n * this->top_dim_);
+      /*this->backward_gpu_gemm(temp_bottom_data + n * this->bottom_dim_, weight_temp_data,
+          top_data_temp + n * this->top_dim_);*/
 
       if (this->bias_term_) {
         const fp16* bias = this->blobs_[1]->gpu_data();
@@ -37,7 +37,7 @@ void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         convert_to_float<<<CAFFE_GET_BLOCKS(bias_count), CAFFE_CUDA_NUM_THREADS>>>(bias_count, bias, bias_temp);
         const Dtype* bias_data_temp = this->blobs_dtype_[1]->gpu_data();
 
-        this->forward_gpu_bias(top_data_temp + n * this->top_dim_, bias_data_temp);
+        //this->forward_gpu_bias(top_data_temp + n * this->top_dim_, bias_data_temp);
       }
     }
     fp16* top_data = top[i]->mutable_gpu_data();
@@ -80,7 +80,7 @@ void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     if (this->bias_term_ && this->param_propagate_down_[1]) {
       Dtype* bias_diff_temp = this->blobs_dtype_[1]->mutable_gpu_diff();
       for (int n = 0; n < this->num_; ++n) {
-        this->backward_gpu_bias(bias_diff_temp, temp_top_diff + n * this->top_dim_);
+        //this->backward_gpu_bias(bias_diff_temp, temp_top_diff + n * this->top_dim_);
       }
       fp16* bias_diff = this->blobs_[1]->mutable_gpu_diff();
       int bias_diff_count = this->blobs_[1]->count();
@@ -90,14 +90,14 @@ void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
-          this->weight_gpu_gemm(temp_top_diff + n * this->top_dim_,
-              temp_bottom_data + n * this->bottom_dim_, weight_diff_temp);
+          /*this->weight_gpu_gemm(temp_top_diff + n * this->top_dim_,
+              temp_bottom_data + n * this->bottom_dim_, weight_diff_temp);*/
         }
         // gradient w.r.t. bottom data, if necessary.
         if (propagate_down[i]) {
-          this->forward_gpu_gemm(temp_top_diff + n * this->top_dim_, weight_temp_data,
+          /*this->forward_gpu_gemm(temp_top_diff + n * this->top_dim_, weight_temp_data,
               bottom_diff_temp + n * this->bottom_dim_,
-              this->param_propagate_down_[0]);
+              this->param_propagate_down_[0]);*/
         }
       }
     }
