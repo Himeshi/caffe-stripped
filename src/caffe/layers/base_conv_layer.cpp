@@ -359,7 +359,7 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half(const fp16* input,
     caffe_gpu_gemm(CblasNoTrans, CblasNoTrans, conv_out_channels_ /
         group_, conv_out_spatial_dim_, kernel_dim_,
         fp32tofp16(1.), weights + weight_offset_ * g, col_buff + col_offset_ * g,
-        fp16(0), output + output_offset_ * g);
+		fp32tofp16(0), output + output_offset_ * g);
   }
 }
 
