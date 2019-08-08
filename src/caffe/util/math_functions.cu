@@ -28,6 +28,7 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
 
   convert_to_float<<<CAFFE_GET_BLOCKS(K * M), CAFFE_CUDA_NUM_THREADS>>>(K * M, A, tempA);
   convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
@@ -92,6 +93,7 @@ void caffe_gpu_gemm_half<float>(const CBLAS_TRANSPOSE TransA,
 
   convert_to_float<<<CAFFE_GET_BLOCKS(K * M), CAFFE_CUDA_NUM_THREADS>>>(K * M, A, tempA);
   convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
@@ -123,6 +125,7 @@ void caffe_gpu_gemm_half<double>(const CBLAS_TRANSPOSE TransA,
 
   convert_to_float<<<CAFFE_GET_BLOCKS(K * N), CAFFE_CUDA_NUM_THREADS>>>(K * M, A, tempA);
   convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
@@ -151,6 +154,7 @@ void caffe_gpu_gemm_half2<float>(const CBLAS_TRANSPOSE TransA,
   cudaMalloc(&tempC, M * N * sizeof(float));
 
   convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(M * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
@@ -177,6 +181,7 @@ void caffe_gpu_gemm_half2<double>(const CBLAS_TRANSPOSE TransA,
   cudaMalloc(&tempC, M * N * sizeof(double));
 
   convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(M * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
