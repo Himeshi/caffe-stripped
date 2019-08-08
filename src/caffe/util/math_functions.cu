@@ -22,12 +22,12 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
   float tempAlpha = fp16tofp32(alpha);
   float tempBeta = fp16tofp32(beta);
 
-  cudaMalloc(&tempA, K * N * sizeof(float));
-  cudaMalloc(&tempB, M * K * sizeof(float));
+  cudaMalloc(&tempA, K * M * sizeof(float));
+  cudaMalloc(&tempB, N * K * sizeof(float));
   cudaMalloc(&tempC, M * N * sizeof(float));
 
-  convert_to_float<<<CAFFE_GET_BLOCKS(K * N), CAFFE_CUDA_NUM_THREADS>>>(K * N, A, tempA);
-  convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(M * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(K * M), CAFFE_CUDA_NUM_THREADS>>>(K * M, A, tempA);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
@@ -86,12 +86,12 @@ void caffe_gpu_gemm_half<float>(const CBLAS_TRANSPOSE TransA,
   float* tempB;
   float* tempC;
  
-  cudaMalloc(&tempA, K * N * sizeof(float));
-  cudaMalloc(&tempB, M * K * sizeof(float));
+  cudaMalloc(&tempA, K * M * sizeof(float));
+  cudaMalloc(&tempB, N * K * sizeof(float));
   cudaMalloc(&tempC, M * N * sizeof(float));
 
-  convert_to_float<<<CAFFE_GET_BLOCKS(K * N), CAFFE_CUDA_NUM_THREADS>>>(K * N, A, tempA);
-  convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(M * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(K * M), CAFFE_CUDA_NUM_THREADS>>>(K * M, A, tempA);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
@@ -117,12 +117,12 @@ void caffe_gpu_gemm_half<double>(const CBLAS_TRANSPOSE TransA,
   double* tempA;
   double* tempB;
   double* tempC;
-  cudaMalloc(&tempA, K * N * sizeof(double));
-  cudaMalloc(&tempB, M * K * sizeof(double));
+  cudaMalloc(&tempA, K * M * sizeof(double));
+  cudaMalloc(&tempB, N * K * sizeof(double));
   cudaMalloc(&tempC, M * N * sizeof(double));
 
-  convert_to_float<<<CAFFE_GET_BLOCKS(K * N), CAFFE_CUDA_NUM_THREADS>>>(K * N, A, tempA);
-  convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(M * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(K * N), CAFFE_CUDA_NUM_THREADS>>>(K * M, A, tempA);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
 
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
