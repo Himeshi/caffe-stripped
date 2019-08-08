@@ -50,15 +50,43 @@ printf("%d %f\n", index, in[index]);
   }
 }
 
-void print_gpu_float_array(float* d_data, int size) {
+void print_gpu_float_array(const float* d_data, int size) {
 	float *h_data;
 	h_data = (float *) malloc(size * sizeof(float));
 	cudaMemcpy(h_data, d_data, size * sizeof(float), cudaMemcpyDeviceToHost);
 	printf("size = %d\n", size);
 	int i;
-	for (i = 0; i < 100; i++) {
-		printf("data[%d] = %f ", i, h_data[i]);
+	for (i = 0; i < size; i++) {
+	    if(h_data[i] != 0.0)
+		  printf("data[%d] = %f ", i, h_data[i]);
 	}
 	free(h_data);
 }
+
+void print_gpu_float_array(const double* d_data, int size) {
+	double *h_data;
+	h_data = (double *) malloc(size * sizeof(double));
+	cudaMemcpy(h_data, d_data, size * sizeof(double), cudaMemcpyDeviceToHost);
+	printf("size = %d\n", size);
+	int i;
+	for (i = 0; i < size; i++) {
+	    if(h_data[i] != 0.0)
+		  printf("data[%d] = %f ", i, h_data[i]);
+	}
+	free(h_data);
+}
+
+void print_gpu_fp16_array(const fp16* d_data, int size) {
+	fp16 *h_data;
+	h_data = (fp16 *) malloc(size * sizeof(fp16));
+	cudaMemcpy(h_data, d_data, size * sizeof(fp16), cudaMemcpyDeviceToHost);
+	printf("size = %d\n", size);
+	int i;
+	for (i = 0; i < size; i++) {
+	    if(h_data[i] != 0)
+		  printf("data[%d] = %f ", i, fp16tofp32(h_data[i]));
+	}
+	free(h_data);
+}
+
 }

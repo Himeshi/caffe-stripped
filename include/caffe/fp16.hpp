@@ -82,7 +82,11 @@ float fp16tofp32(fp16 p);
 
 fp16 fp32tofp16(float f);
 
-void print_gpu_float_array(float* d_data, int size);
+void print_gpu_float_array(const float* d_data, int size);
+
+void print_gpu_float_array(const double* d_data, int size);
+
+void print_gpu_fp16_array(const fp16* d_data, int size);
 
 __global__ void convert_to_fp16(const int n, float* in, fp16* out);
 
