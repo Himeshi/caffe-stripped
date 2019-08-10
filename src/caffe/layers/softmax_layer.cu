@@ -19,7 +19,7 @@ __global__ void kernel_channel_max(const int num, const int channels,
     for (int c = 0; c < channels; ++c) {
       maxval = max(fp16tofp32_gpu(data[(n * channels + c) * spatial_dim + s]), maxval);
     }
-    out[index] = fp32tofp16_gpu(maxval);
+    out[index] = maxval;
   }
 }
 
