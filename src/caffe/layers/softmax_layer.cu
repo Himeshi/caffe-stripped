@@ -30,7 +30,7 @@ __global__ void kernel_channel_subtract(const int count,
   CUDA_KERNEL_LOOP(index, count) {
     int n = index / channels / spatial_dim;
     int s = index % spatial_dim;
-    data[index] -= fp32tofp16_gpu(channel_max[n * spatial_dim + s]);
+    data[index] = fp32tofp16_gpu(fp16tofp32_gpu(data[index]) - channel_max[n * spatial_dim + s]);
   }
 }
 
@@ -62,7 +62,7 @@ __global__ void kernel_channel_div(const int count,
   CUDA_KERNEL_LOOP(index, count) {
     int n = index / channels / spatial_dim;
     int s = index % spatial_dim;
-    data[index] /= fp32tofp16_gpu(channel_sum[n * spatial_dim + s]);
+    data[index] = fp32tofp16_gpu(fp16tofp32_gpu(data[index]) / channel_sum[n * spatial_dim + s]);
   }
 }
 
