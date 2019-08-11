@@ -35,8 +35,7 @@ template <typename Dtype>
 __global__ void ReLUBackward(const int n, const fp16* in_diff,
     const fp16* in_data, fp16* out_diff, Dtype negative_slope) {
   CUDA_KERNEL_LOOP(index, n) {
-    out_diff[index] = fp32tofp16_gpu(fp16tofp32_gpu(in_diff[index]) * ((in_data[index] > 0)
-        + (in_data[index] <= 0) * negative_slope));
+    out_diff[index] = fp32tofp16_gpu(fp16tofp32_gpu(in_diff[index]) * ((fp16tofp32_gpu(in_data[index]) > 0) + (fp16tofp32_gpu(in_data[index]) <= 0) * negative_slope));
   }
 }
 
