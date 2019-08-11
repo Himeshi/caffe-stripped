@@ -16,14 +16,14 @@ __global__ void SoftmaxLossForwardGPU(const int nthreads,
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int n = index / spatial_dim;
     const int s = index % spatial_dim;
-    const int label_value = static_cast<int>(label[n * spatial_dim + s]);
+    const int label_value = static_cast<int>(fp16tofp32_gpu(label[n * spatial_dim + s]));
     if (has_ignore_label_ && label_value == ignore_label_) {
-      loss[index] = 0;
-      counts[index] = 0;
+      loss[index] = fp32tofp16_gpu(0);
+      counts[index] = fp32tofp16_gpu(0);
     } else {
       loss[index] = fp32tofp16_gpu(-log(max(fp16tofp32_gpu(prob_data[n * dim + label_value * spatial_dim + s]),
                       Dtype(FLT_MIN))));
-      counts[index] = 1;
+      counts[index] = fp32tofp16_gpu(1);
     }
   }
 }
