@@ -79,11 +79,11 @@ __global__ void SoftmaxLossBackwardGPU(const int nthreads, const fp16* top,
 
     if (has_ignore_label_ && label_value == ignore_label_) {
       for (int c = 0; c < channels; ++c) {
-        bottom_diff[n * dim + c * spatial_dim + s] = 0;
+        bottom_diff[n * dim + c * spatial_dim + s] = fp32tofp16_gpu(0);
       }
-      counts[index] = 0;
+      counts[index] = fp32tofp16_gpu(0);
     } else {
-      bottom_diff[n * dim + label_value * spatial_dim + s] -= 1;
+      bottom_diff[n * dim + label_value * spatial_dim + s] = fp32tofp16_gpu(fp16tofp32_gpu(bottom_diff[n * dim + label_value * spatial_dim + s]) - 1);
       counts[index] = fp32tofp16_gpu(1);
     }
   }
@@ -119,8 +119,8 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         has_ignore_label_) {
       caffe_gpu_asum_half(nthreads, counts, &valid_count);
     }
-    const Dtype loss_weight = fp16tofp32(fp16tofp32(top[0]->cpu_diff()[0]) /
-                              get_normalizer(normalization_, valid_count));
+    const Dtype loss_weight = fp16tofp32(top[0]->cpu_diff()[0]) /
+                              get_normalizer(normalization_, valid_count);
     caffe_gpu_scal_half(prob_.count(), loss_weight , bottom_diff);
 
   }
