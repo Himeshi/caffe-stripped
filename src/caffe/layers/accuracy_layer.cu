@@ -22,15 +22,15 @@ __global__ void AccuracyForwardGPU(const int nthreads,
                                                  + s]);
     int num_better_predictions = -1;  // true_class also counts as "better"
     if (has_ignore_label_ && label_value == ignore_label_) {
-      acc[index] = 0;
-      counts[index] = 0;
+      acc[index] = fp32tofp16_gpu(0);
+      counts[index] = fp32tofp16_gpu(0);
     } else {
       for (int k = 0; k < num_labels & num_better_predictions < top_k; k++) {
         num_better_predictions +=
           (fp16tofp32_gpu(bottom_data[n * dim + k * spatial_dim + s]) >= prob_of_true_class);
       }
       acc[index] = fp32tofp16_gpu((num_better_predictions < top_k));
-      counts[index] = 1;
+      counts[index] = fp32tofp16_gpu(1);
     }
   }
 }
@@ -57,8 +57,8 @@ __global__ void AccuracyForwardWithPerClassGPU(const int nthreads,
         num_better_predictions +=
           (fp16tofp32_gpu(bottom_data[n * dim + k * spatial_dim + s]) >= prob_of_true_class);
       }
-      acc[label_value*nthreads + index] += fp32tofp16_gpu(num_better_predictions < top_k);
-      counts[label_value*nthreads + index] = 1;
+      acc[label_value*nthreads + index] = fp32tofp16_gpu(fp16tofp32_gpu(acc[label_value*nthreads + index]) + (num_better_predictions < top_k));
+      counts[label_value*nthreads + index] = fp32tofp16_gpu(1);
     }
   }
 }
@@ -92,7 +92,7 @@ void AccuracyLayer<Dtype>::Forward_gpu(
     if (valid_count > 0) {
       top[0]->mutable_cpu_data()[0] = fp32tofp16(acc / valid_count);
     } else {
-      top[0]->mutable_cpu_data()[0] = 0;
+      top[0]->mutable_cpu_data()[0] = fp32tofp16(0);
     }
   } else {
     // need to report per-class accuracy as well
