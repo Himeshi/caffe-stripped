@@ -80,7 +80,7 @@ void InnerProductLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
   if (bias_term_) {
     vector<int> bias_shape(1, M_);
     bias_multiplier_.Reshape(bias_shape);
-    caffe_set(M_, Dtype(1), bias_multiplier_.mutable_cpu_data());
+    caffe_set(M_, fp32tofp16(1), bias_multiplier_.mutable_cpu_data());
   }
 }
 
