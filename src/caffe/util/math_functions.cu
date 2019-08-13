@@ -226,20 +226,35 @@ void caffe_gpu_gemv<fp16>(const CBLAS_TRANSPOSE TransA, const int M,
   float* tempY;
   int asize = M * N;
   cudaMalloc(&tempA, asize * sizeof(float));
-  cudaMalloc(&tempY, N * sizeof(float));
-  cudaMalloc(&tempX, M * sizeof(float));
   float tempAlpha = fp16tofp32(alpha);
   float tempBeta = fp16tofp32(beta);
 
-  convert_to_float<<<CAFFE_GET_BLOCKS(asize), CAFFE_CUDA_NUM_THREADS>>>(asize, A, tempA);
-  convert_to_float<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, x, tempX);
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, y, tempY);
-
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
+
+  if(cuTransA) {
+    cudaMalloc(&tempY, M * sizeof(float));
+    cudaMalloc(&tempX, N * sizeof(float));
+
+    convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, x, tempX);
+    convert_to_float<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, y, tempY);
+  } else {
+    cudaMalloc(&tempY, N * sizeof(float));
+    cudaMalloc(&tempX, M * sizeof(float));
+
+    convert_to_float<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, x, tempX);
+    convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, y, tempY);
+  }
+
+  convert_to_float<<<CAFFE_GET_BLOCKS(asize), CAFFE_CUDA_NUM_THREADS>>>(asize, A, tempA);
+
   CUBLAS_CHECK(cublasSgemv(Caffe::cublas_handle(), cuTransA, N, M, &tempAlpha,
       tempA, N, tempX, 1, &tempBeta, tempY, 1));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+  if(cuTransA) {
+    convert_to_fp16<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, tempY, y);
+  } else {
+    convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+  }
   cudaFree(tempA);
   cudaFree(tempX);
   cudaFree(tempY);
@@ -255,13 +270,24 @@ void caffe_gpu_gemv_half<float>(const CBLAS_TRANSPOSE TransA, const int M,
   cudaMalloc(&tempA, asize * sizeof(float));
   cudaMalloc(&tempY, N * sizeof(float));
 
-  convert_to_float<<<CAFFE_GET_BLOCKS(asize), CAFFE_CUDA_NUM_THREADS>>>(asize, A, tempA);
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, y, tempY);
-
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
+  if(cuTransA) {
+    cudaMalloc(&tempY, M * sizeof(float));
+    convert_to_float<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, y, tempY);
+  } else {
+    cudaMalloc(&tempY, N * sizeof(float));
+    convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, y, tempY);
+  }
+
+  convert_to_float<<<CAFFE_GET_BLOCKS(asize), CAFFE_CUDA_NUM_THREADS>>>(asize, A, tempA);
+
   CUBLAS_CHECK(cublasSgemv(Caffe::cublas_handle(), cuTransA, N, M, &alpha, tempA, N, x, 1, &beta, tempY, 1));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+  if(cuTransA) {
+    convert_to_fp16<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, tempY, y);
+  } else {
+    convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+  }
   cudaFree(tempA);
   cudaFree(tempY);
 }
@@ -273,17 +299,28 @@ void caffe_gpu_gemv_half<double>(const CBLAS_TRANSPOSE TransA, const int M,
   double* tempA;
   double* tempY;
   int asize = M * N;
-  cudaMalloc(&tempA, asize * sizeof(double));
-  cudaMalloc(&tempY, N * sizeof(double));
-
-  convert_to_float<<<CAFFE_GET_BLOCKS(asize), CAFFE_CUDA_NUM_THREADS>>>(asize, A, tempA);
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, y, tempY);
+  cudaMalloc(&tempA, asize * sizeof(float));
+  cudaMalloc(&tempY, N * sizeof(float));
 
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
+  if(cuTransA) {
+    cudaMalloc(&tempY, M * sizeof(float));
+    convert_to_float<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, y, tempY);
+  } else {
+    cudaMalloc(&tempY, N * sizeof(float));
+    convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, y, tempY);
+  }
+
+  convert_to_float<<<CAFFE_GET_BLOCKS(asize), CAFFE_CUDA_NUM_THREADS>>>(asize, A, tempA);
+
   CUBLAS_CHECK(cublasDgemv(Caffe::cublas_handle(), cuTransA, N, M, &alpha,
       tempA, N, x, 1, &beta, tempY, 1));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+  if(cuTransA) {
+    convert_to_fp16<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, tempY, y);
+  } else {
+    convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, y);
+  }
   cudaFree(tempA);
   cudaFree(tempY);
 }
@@ -334,8 +371,10 @@ void caffe_gpu_axpy<fp16>(const int N, const fp16 alpha, const fp16* X,
   cudaMalloc(&tempX, N * sizeof(float));
   cudaMalloc(&tempY, N * sizeof(float)); 
   const float alpha_float = fp16tofp32(alpha);
+
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY);
+
   CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha_float, tempX, 1, tempY, 1));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
   cudaFree(tempX);
