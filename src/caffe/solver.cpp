@@ -257,7 +257,7 @@ void Solver<Dtype>::Step(int iters) {
           }
           LOG_IF(INFO, Caffe::root_solver()) << "    Train net output #"
               << score_index++ << ": " << output_name << " = "
-              << result_vec[k] << loss_msg_stream.str();
+              << fp16tofp32(result_vec[k]) << loss_msg_stream.str();
         }
       }
     }
