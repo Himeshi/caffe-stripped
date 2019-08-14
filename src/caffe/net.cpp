@@ -930,6 +930,13 @@ void Net<Dtype>::Update() {
 }
 
 template <typename Dtype>
+void Net<Dtype>::Update_half() {
+  for (int i = 0; i < learnable_params_.size(); ++i) {
+    learnable_params_[i]->Update_half();
+  }
+}
+
+template <typename Dtype>
 void Net<Dtype>::ClearParamDiffs() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
     Blob<fp16>* blob = learnable_params_[i];

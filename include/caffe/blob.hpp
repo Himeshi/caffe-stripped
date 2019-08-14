@@ -222,12 +222,17 @@ class Blob {
   const Dtype* gpu_data() const;
   void set_gpu_data(Dtype* data);
   const Dtype* cpu_diff() const;
+  const fp16* cpu_diff_half() const;
   const Dtype* gpu_diff() const;
+  const fp16* gpu_diff_half() const;
   Dtype* mutable_cpu_data();
   Dtype* mutable_gpu_data();
   Dtype* mutable_cpu_diff();
+  fp16* mutable_cpu_diff_half();
   Dtype* mutable_gpu_diff();
+  fp16* mutable_gpu_diff_half();
   void Update();
+  void Update_half();
   void FromProto(const BlobProto& proto, bool reshape = true);
   void ToProto(BlobProto* proto, bool write_diff = false) const;
 
@@ -239,11 +244,13 @@ class Blob {
   Dtype sumsq_data() const;
   /// @brief Compute the sum of squares (L2 norm squared) of the diff.
   Dtype sumsq_diff() const;
+  fp16 sumsq_diff_half() const;
 
   /// @brief Scale the blob data by a constant factor.
   void scale_data(Dtype scale_factor);
   /// @brief Scale the blob diff by a constant factor.
   void scale_diff(Dtype scale_factor);
+  void scale_diff_half(Dtype scale_factor);
 
   /**
    * @brief Set the data_ shared_ptr to point to the SyncedMemory holding the

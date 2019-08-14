@@ -123,9 +123,21 @@ const Dtype* Blob<Dtype>::cpu_diff() const {
 }
 
 template <typename Dtype>
+const fp16* Blob<Dtype>::cpu_diff_half() const {
+  CHECK(diff_);
+  return (const fp16*)diff_->cpu_data();
+}
+
+template <typename Dtype>
 const Dtype* Blob<Dtype>::gpu_diff() const {
   CHECK(diff_);
   return (const Dtype*)diff_->gpu_data();
+}
+
+template <typename Dtype>
+const fp16* Blob<Dtype>::gpu_diff_half() const {
+  CHECK(diff_);
+  return (const fp16*)diff_->gpu_data();
 }
 
 template <typename Dtype>
@@ -147,9 +159,22 @@ Dtype* Blob<Dtype>::mutable_cpu_diff() {
 }
 
 template <typename Dtype>
+fp16* Blob<Dtype>::mutable_cpu_diff_half() {
+  CHECK(diff_);
+  return static_cast<fp16*>(diff_->mutable_cpu_data());
+}
+
+
+template <typename Dtype>
 Dtype* Blob<Dtype>::mutable_gpu_diff() {
   CHECK(diff_);
   return static_cast<Dtype*>(diff_->mutable_gpu_data());
+}
+
+template <typename Dtype>
+fp16* Blob<Dtype>::mutable_gpu_diff_half() {
+  CHECK(diff_);
+  return static_cast<fp16*>(diff_->mutable_gpu_data());
 }
 
 template <typename Dtype>
@@ -187,6 +212,32 @@ void Blob<Dtype>::Update() {
     caffe_gpu_axpy<Dtype>(count_, Dtype(-1),
         static_cast<const Dtype*>(diff_->gpu_data()),
         static_cast<Dtype*>(data_->mutable_gpu_data()));
+#else
+    NO_GPU;
+#endif
+    break;
+  default:
+    LOG(FATAL) << "Syncedmem not initialized.";
+  }
+}
+
+template <typename Dtype>
+void Blob<Dtype>::Update_half() {
+  // We will perform update based on where the data is located.
+  switch (data_->head()) {
+  case SyncedMemory::HEAD_AT_CPU:
+    // perform computation on CPU
+    caffe_axpy(count_, fp32tofp16(-1),
+        static_cast<const fp16*>(diff_->cpu_data()),
+        static_cast<fp16*>(data_->mutable_cpu_data()));
+    break;
+  case SyncedMemory::HEAD_AT_GPU:
+  case SyncedMemory::SYNCED:
+#ifndef CPU_ONLY
+    // perform computation on GPU
+    caffe_gpu_axpy(count_, fp32tofp16(-1),
+        static_cast<const fp16*>(diff_->gpu_data()),
+        static_cast<fp16*>(data_->mutable_gpu_data()));
 #else
     NO_GPU;
 #endif
@@ -340,6 +391,33 @@ Dtype Blob<Dtype>::sumsq_diff() const {
   return sumsq;
 }
 
+template <typename Dtype>
+fp16 Blob<Dtype>::sumsq_diff_half() const {
+  fp16 sumsq;
+  const fp16* diff;
+  if (!diff_) { return 0; }
+  switch (diff_->head()) {
+  case SyncedMemory::HEAD_AT_CPU:
+    diff = cpu_diff_half();
+    sumsq = caffe_cpu_dot(count_, diff, diff);
+    break;
+  case SyncedMemory::HEAD_AT_GPU:
+  case SyncedMemory::SYNCED:
+#ifndef CPU_ONLY
+    diff = gpu_diff_half();
+    caffe_gpu_dot(count_, diff, diff, &sumsq);
+    break;
+#else
+    NO_GPU;
+#endif
+  case SyncedMemory::UNINITIALIZED:
+    return 0;
+  default:
+    LOG(FATAL) << "Unknown SyncedMemory head state: " << data_->head();
+  }
+  return sumsq;
+}
+
 template <> void Blob<unsigned int>::scale_data(unsigned int scale_factor) {
   NOT_IMPLEMENTED;
 }
@@ -395,6 +473,31 @@ void Blob<Dtype>::scale_diff(Dtype scale_factor) {
 #ifndef CPU_ONLY
     diff = mutable_gpu_diff();
     caffe_gpu_scal(count_, scale_factor, diff);
+    return;
+#else
+    NO_GPU;
+#endif
+  case SyncedMemory::UNINITIALIZED:
+    return;
+  default:
+    LOG(FATAL) << "Unknown SyncedMemory head state: " << diff_->head();
+  }
+}
+
+template <typename Dtype>
+void Blob<Dtype>::scale_diff_half(Dtype scale_factor) {
+  fp16* diff;
+  if (!diff_) { return; }
+  switch (diff_->head()) {
+  case SyncedMemory::HEAD_AT_CPU:
+    diff = mutable_cpu_diff_half();
+    caffe_scal(count_, fp32tofp16(scale_factor), diff);
+    return;
+  case SyncedMemory::HEAD_AT_GPU:
+  case SyncedMemory::SYNCED:
+#ifndef CPU_ONLY
+    diff = mutable_gpu_diff_half();
+    caffe_gpu_scal(count_, fp32tofp16(scale_factor), diff);
     return;
 #else
     NO_GPU;

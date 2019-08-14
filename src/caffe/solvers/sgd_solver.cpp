@@ -91,7 +91,7 @@ void SGDSolver<Dtype>::ClipGradients() {
   const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
   Dtype sumsq_diff = 0;
   for (int i = 0; i < net_params.size(); ++i) {
-    sumsq_diff += net_params[i]->sumsq_diff();
+    sumsq_diff = sumsq_diff + fp16tofp32(net_params[i]->sumsq_diff_half());
   }
   const Dtype l2norm_diff = std::sqrt(sumsq_diff);
   if (l2norm_diff > clip_gradients) {
@@ -100,7 +100,7 @@ void SGDSolver<Dtype>::ClipGradients() {
         << l2norm_diff << " > " << clip_gradients << ") "
         << "by scale factor " << scale_factor;
     for (int i = 0; i < net_params.size(); ++i) {
-      net_params[i]->scale_diff(scale_factor);
+      net_params[i]->scale_diff_half(scale_factor);
     }
   }
 }
@@ -119,7 +119,7 @@ void SGDSolver<Dtype>::ApplyUpdate() {
     Regularize(param_id);
     ComputeUpdateValue(param_id, rate);
   }
-  this->net_->Update();
+  this->net_->Update_half();
 
   // Increment the internal iter_ counter -- its value should always indicate
   // the number of times the weights have been updated.
@@ -141,7 +141,7 @@ void SGDSolver<Dtype>::Normalize(int param_id) {
   case Caffe::GPU: {
 #ifndef CPU_ONLY
     caffe_gpu_scal_half(net_params[param_id]->count(), accum_normalization,
-        net_params[param_id]->mutable_gpu_diff());
+        net_params[param_id]->mutable_gpu_diff_half());
 #else
     NO_GPU;
 #endif

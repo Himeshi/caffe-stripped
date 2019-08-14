@@ -387,7 +387,8 @@ void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
   }
 }
 
-void caffe_gpu_scal_half(const int N, const float alpha, fp16 *X) {
+template <>
+void caffe_gpu_scal_half<float>(const int N, const float alpha, fp16 *X) {
   float* tempX;
   cudaMallocManaged(&tempX, N*sizeof(float));
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
@@ -396,7 +397,8 @@ void caffe_gpu_scal_half(const int N, const float alpha, fp16 *X) {
   cudaFree(tempX);
 }
 
-void caffe_gpu_scal_half(const int N, const double alpha, fp16 *X) {
+template <>
+void caffe_gpu_scal_half<double>(const int N, const double alpha, fp16 *X) {
   double* tempX;
   cudaMallocManaged(&tempX, N*sizeof(double));
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);

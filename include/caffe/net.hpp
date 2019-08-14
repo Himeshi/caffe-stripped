@@ -91,6 +91,7 @@ class Net {
 
   /// @brief Updates the network weights based on the diff values computed.
   void Update();
+  void Update_half();
   /**
    * @brief Shares weight data of owner blobs with shared blobs.
    *

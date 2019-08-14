@@ -220,11 +220,11 @@ void caffe_gpu_add_scalar_half(const int N, const double alpha, fp16* Y);
 template <typename Dtype>
 void caffe_gpu_add_scalar(const int N, const Dtype alpha, Dtype *X);
 
-void caffe_gpu_scal_half(const int N, const float alpha, fp16 *X);
-void caffe_gpu_scal_half(const int N, const double alpha, fp16 *X);
-
 template <typename Dtype>
 void caffe_gpu_scal(const int N, const Dtype alpha, Dtype *X);
+
+template <typename Dtype>
+void caffe_gpu_scal_half(const int N, const Dtype alpha, fp16 *X);
 
 #ifndef CPU_ONLY
 template <typename Dtype>
