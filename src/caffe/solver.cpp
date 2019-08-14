@@ -248,7 +248,7 @@ void Solver<Dtype>::Step(int iters) {
         const string& output_name =
             net_->blob_names()[net_->output_blob_indices()[j]];
         const Dtype loss_weight =
-            fp16tofp32(net_->blob_loss_weights()[net_->output_blob_indices()[j]]);
+            net_->blob_loss_weights()[net_->output_blob_indices()[j]];
         for (int k = 0; k < result[j]->count(); ++k) {
           ostringstream loss_msg_stream;
           if (loss_weight) {
@@ -405,7 +405,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
     const int output_blob_index =
         test_net->output_blob_indices()[test_score_output_id[i]];
     const string& output_name = test_net->blob_names()[output_blob_index];
-    const Dtype loss_weight = fp16tofp32(test_net->blob_loss_weights()[output_blob_index]);
+    const Dtype loss_weight = test_net->blob_loss_weights()[output_blob_index];
     ostringstream loss_msg_stream;
     const Dtype mean_score = fp16tofp32(test_score[i]) / param_.test_iter(test_net_id);
     if (loss_weight) {
