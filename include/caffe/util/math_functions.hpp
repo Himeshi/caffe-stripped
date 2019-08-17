@@ -192,10 +192,8 @@ template <typename Dtype>
 void caffe_gpu_axpby(const int N, const Dtype alpha, const Dtype* X,
     const Dtype beta, Dtype* Y);
 
-void caffe_gpu_axpy_half(const int N, const float alpha, const fp16* X,
-    fp16* Y);
-
-void caffe_gpu_axpy_half(const int N, const double alpha, const fp16* X,
+template <typename Dtype>
+void caffe_gpu_axpy_half(const int N, const Dtype alpha, const fp16* X,
     fp16* Y);
 
 void caffe_gpu_memcpy(const size_t N, const void *X, void *Y);
