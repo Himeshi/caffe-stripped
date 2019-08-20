@@ -150,8 +150,9 @@ fp16 fp32tofp16(float f) {
 		return p;
 	}
 
-	if (f == NAN)
+	if (std::isnan(f)) {
 		return _G_INFP;
+        }
 
 	// get sign, exponent and fraction from float
 	unsigned int temp;

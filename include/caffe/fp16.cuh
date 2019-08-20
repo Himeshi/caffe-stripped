@@ -159,7 +159,7 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
     return p;
   }
 
-  if (f == NAN)
+  if (f != f)
     return _G_INFP;
 
   // get sign, exponent and fraction from float
