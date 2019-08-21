@@ -434,7 +434,7 @@ int main(int argc, char** argv) {
   // Run tool or show usage.
   caffe::GlobalInit(&argc, &argv);
   // computing with fp16
-  LOG(INFO) << "Using compression with posit16 environment with nbits = " << _G_NBITS << " and esize = " << _G_ESIZE;
+  LOG(INFO) << "Using compression with float16";
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER
     try {
