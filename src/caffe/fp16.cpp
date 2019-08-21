@@ -16,7 +16,7 @@ float fp16tofp32(fp16 f16value) {
 }
 
 fp16 fp32tofp16(float f) {
-	union Bits v, s;
+	union Bits v;
 	v.f = f;
 	fp16 result = v.ui >> 16;
 	return result;

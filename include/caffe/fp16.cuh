@@ -24,7 +24,7 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
-  union Bits v, s;
+  union Bits v;
   v.f = f;
   fp16 result = v.ui >> 16;
   return result;
