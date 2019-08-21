@@ -9,7 +9,7 @@ template <typename Dtype>
 __global__ void ReLUForward(const int n, const fp16* in, fp16* out,
     Dtype negative_slope) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = in[index] > 0 ? in[index] : fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * negative_slope);
+    out[index] = fp16tofp32_gpu(in[index]) > 0 ? in[index] : fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * negative_slope);
   }
 }
 
