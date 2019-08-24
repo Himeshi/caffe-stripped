@@ -293,7 +293,7 @@ int test() {
     for (int j = 0; j < result.size(); ++j) {
       const caffe::fp16* result_vec = result[j]->cpu_data();
       for (int k = 0; k < result[j]->count(); ++k, ++idx) {
-        const float score = result_vec[k];
+        const float score = caffe::fp16tofp32(result_vec[k]);
         if (i == 0) {
           test_score.push_back(score);
           test_score_output_id.push_back(j);
