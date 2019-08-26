@@ -49,7 +49,17 @@
   })
 
 #if _G_NBITS == 16
-#if _G_ESIZE == 2
+#if _G_ESIZE == 1
+#define _G_USEED 4
+#define _G_USEED_ZEROS 2
+#define _G_POSIT_SHIFT_AMOUNT 0
+#define _G_MAXREALP 32767
+#define _G_MINREALP 1
+#define _G_INFP 32768
+#define _G_MAXREAL 2.684354560e+8
+#define _G_MINREAL 3.725290298e-9
+
+#elif _G_ESIZE == 2
 #define _G_USEED 16
 #define _G_USEED_ZEROS 4
 #define _G_POSIT_SHIFT_AMOUNT 0
@@ -58,7 +68,16 @@
 #define _G_INFP 32768
 #define _G_MAXREAL 7.205759e+16
 #define _G_MINREAL 1.387779e-17
-#endif
+
+#elif _G_ESIZE == 3
+#define _G_USEED 16
+#define _G_USEED_ZEROS 256
+#define _G_POSIT_SHIFT_AMOUNT 0
+#define _G_MAXREALP 32767
+#define _G_MINREALP 1
+#define _G_INFP 32768
+#define _G_MAXREAL 5.192296859e+33
+#define _G_MINREAL 1.925929944e-34
 
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
@@ -69,6 +88,7 @@
 #define _G_INFP 1 << (FP16_LIMB_SIZE - 1)
 #define _G_MAXREAL pow(_G_USEED, (_G_NBITS - 2))
 #define _G_MINREAL (1 / pow(_G_USEED, (_G_NBITS - 2)))
+#endif
 #endif
 
 namespace caffe {
