@@ -13,24 +13,22 @@ __global__ void MaxForward(const int nthreads, const fp16* bottom_data_a,
   CUDA_KERNEL_LOOP(index, nthreads) {
     float temp_bottom_data_a = fp16tofp32_gpu(bottom_data_a[index]);
     float temp_bottom_data_b = fp16tofp32_gpu(bottom_data_b[index]);
-    float temp_top_data;
     Dtype maxval = -FLT_MAX;
     int maxidx = -1;
     if (temp_bottom_data_a > temp_bottom_data_b) {
       // only update for very first bottom_data blob (blob_idx == 0)
       if (blob_idx == 0) {
         maxval = temp_bottom_data_a;
-        temp_top_data = maxval;
+        top_data[index] = fp32tofp16_gpu(maxval);
         maxidx = blob_idx;
         mask[index] = maxidx;
       }
     } else {
       maxval = temp_bottom_data_b;
-      temp_top_data = maxval;
+      top_data[index] = fp32tofp16_gpu(maxval);
       maxidx = blob_idx + 1;
       mask[index] = maxidx;
     }
-    top_data[index] = fp32tofp16_gpu(temp_top_data);
   }
 }
 
@@ -75,14 +73,11 @@ template <typename Dtype>
 __global__ void MaxBackward(const int nthreads, const fp16* top_diff,
     const int blob_idx, const int* mask, fp16* bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
-    float temp_top_diff, temp_bottom_diff;
-    temp_top_diff = fp16tofp32_gpu(top_diff[index]);
     Dtype gradient = 0;
     if (mask[index] == blob_idx) {
-      gradient += temp_top_diff;
+      gradient += fp16tofp32_gpu(top_diff[index]);
     }
-     temp_bottom_diff = gradient;
-     bottom_diff[index] = fp32tofp16_gpu(temp_bottom_diff);
+    bottom_diff[index] = fp32tofp16_gpu(gradient);
   }
 }
 
