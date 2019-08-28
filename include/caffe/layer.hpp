@@ -434,7 +434,7 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
       /*const int count = top[top_id]->count();
       const fp16* data = top[top_id]->cpu_data();
       const fp16* loss_weights = top[top_id]->cpu_diff();*/
-      LOG(ERROR) << "caffe_cpu_dot for half precision not availabel";
+      LOG(ERROR) << "caffe_cpu_dot for half precision not available!";
       //loss += caffe_cpu_dot(count, data, loss_weights);
     }
     break;

@@ -26,15 +26,15 @@ __global__ void LRNFillScale(const int nthreads, const fp16* const in,
     // fill the scale at [n, :, h, w]
     // accumulate values
     while (head < post_pad && head < channels) {
-      accum_scale += fp16tofp32_gpu(in_off[head * step]) * fp16tofp32_gpu(in_off[head * step]);
+      accum_scale += (fp16tofp32_gpu(in_off[head * step]) * fp16tofp32_gpu(in_off[head * step]));
       ++head;
     }
     // both add and subtract
     while (head < channels) {
-      accum_scale += fp16tofp32_gpu(in_off[head * step]) * fp16tofp32_gpu(in_off[head * step]);
+      accum_scale += (fp16tofp32_gpu(in_off[head * step]) * fp16tofp32_gpu(in_off[head * step]));
       if (head - size >= 0) {
-        accum_scale -= fp16tofp32_gpu(in_off[(head - size) * step])
-                       * fp16tofp32_gpu(in_off[(head - size) * step]);
+        accum_scale -= (fp16tofp32_gpu(in_off[(head - size) * step])
+                       * fp16tofp32_gpu(in_off[(head - size) * step]));
       }
       scale_off[(head - post_pad) * step] = k + accum_scale * alpha_over_size;
       ++head;
@@ -42,8 +42,8 @@ __global__ void LRNFillScale(const int nthreads, const fp16* const in,
     // subtract only
     while (head < channels + post_pad) {
       if (head - size >= 0) {
-        accum_scale -= fp16tofp32_gpu(in_off[(head - size) * step])
-                       * fp16tofp32_gpu(in_off[(head - size) * step]);
+        accum_scale -= (fp16tofp32_gpu(in_off[(head - size) * step])
+                       * fp16tofp32_gpu(in_off[(head - size) * step]));
       }
       scale_off[(head - post_pad) * step] = k + accum_scale * alpha_over_size;
       ++head;
@@ -143,17 +143,17 @@ __global__ void LRNComputeDiff(const int nthreads,
     Dtype accum_ratio = 0;
     // accumulate values
     while (head < post_pad && head < channels) {
-      accum_ratio += fp16tofp32_gpu(top_diff_off[head * step]) * fp16tofp32_gpu(top_off[head * step]) /
-          scale_off[head * step];
+      accum_ratio += (fp16tofp32_gpu(top_diff_off[head * step]) * fp16tofp32_gpu(top_off[head * step]) /
+          scale_off[head * step]);
       ++head;
     }
     // both add and subtract
     while (head < channels) {
-      accum_ratio += fp16tofp32_gpu(top_diff_off[head * step]) * fp16tofp32_gpu(top_off[head * step]) /
-          scale_off[head * step];
+      accum_ratio += (fp16tofp32_gpu(top_diff_off[head * step]) * fp16tofp32_gpu(top_off[head * step]) /
+          scale_off[head * step]);
       if (head - size >= 0) {
-        accum_ratio -= fp16tofp32_gpu(top_diff_off[(head - size) * step]) *
-            fp16tofp32_gpu(top_off[(head - size) * step]) / scale_off[(head - size) * step];
+        accum_ratio -= (fp16tofp32_gpu(top_diff_off[(head - size) * step]) *
+            fp16tofp32_gpu(top_off[(head - size) * step]) / scale_off[(head - size) * step]);
       }
       bottom_diff_off[(head - post_pad) * step] =
           fp32tofp16_gpu(fp16tofp32_gpu(top_diff_off[(head - post_pad) * step])
