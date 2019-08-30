@@ -67,7 +67,7 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top);
   virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype);
   /**
    * @brief Computes the softmax loss error gradient w.r.t. the predictions.
    *
@@ -115,6 +115,7 @@ class SoftmaxWithLossLayer : public LossLayer<Dtype> {
   vector<Blob<fp16>*> softmax_bottom_vec_;
   /// top vector holder used in call to the underlying SoftmaxLayer::Forward
   vector<Blob<fp16>*> softmax_top_vec_;
+  vector<Blob<Dtype>*> softmax_top_vec_dtype_;
   /// Whether to ignore instances with a certain label.
   bool has_ignore_label_;
   /// The label indicating that an instance should be ignored.

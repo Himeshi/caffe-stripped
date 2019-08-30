@@ -11,7 +11,7 @@ namespace caffe {
 
 template <typename Dtype>
 void RecurrentLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top) {
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
   // Hacky fix for test time... reshare all the shared blobs.
   // TODO: somehow make this work non-hackily.
   if (this->phase_ == TEST) {

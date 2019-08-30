@@ -8,7 +8,7 @@ namespace caffe {
 
 template <typename Dtype>
 void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top) {
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
   fp16* top_data = top[0]->mutable_gpu_data();
   const fp16* weight = this->blobs_[0]->gpu_data();
