@@ -19,9 +19,9 @@ namespace caffe {
 
 __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int fraction, unsigned int fraction_size) {
     //assume the fraction is normalized and it's MSB is hidden already
-	fp16 p = 0;
-	int regime, regime_length, exponentp, ob, hb, sb, rb;
-	TEMP_TYPE temp;
+    fp16 p = 0;
+    int regime, regime_length, exponentp;
+    TEMP_TYPE temp, ob, hb, sb;
 
 	//find regime and exponent
 	if (exponent >= 0) {
@@ -55,22 +55,19 @@ __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int f
 	temp |= fraction;
 	running_size += fraction_size;
 
-	int extra_bits = (running_size - _G_NBITS);
+    //left align temp
+    temp = temp << (UNSIGNED_LONG_LONG_SIZE - running_size);
 
-	if (extra_bits > 0) {
-		//round
-		p = temp >> extra_bits;
-		ob = p & 0x0001;
-		hb = (temp >> (extra_bits - 1)) & 1ULL;
-		sb = ((1ULL << (extra_bits - 1)) - 1) & temp;
-		rb = (ob && hb) || (hb && sb);
-		p = p + rb;
-	} else {
-		// no need to round
-		p = temp << -extra_bits;
-	}
+    //round
+    int extra_bits = (UNSIGNED_LONG_LONG_SIZE - _G_NBITS);
+    p = temp >> extra_bits;
+    ob = p & 1;
+    TEMP_TYPE hb_mask = (1ULL << (extra_bits - 1));
+    hb = temp & hb_mask;
+    sb = temp & (hb_mask - 1);
+    p += ((ob && hb) | (hb && sb));
 
-	return p;
+    return p;
 }
 	
 __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
