@@ -65,12 +65,15 @@ __global__ void AccuracyForwardWithPerClassGPU(const int nthreads,
 
 template <typename Dtype>
 void AccuracyLayer<Dtype>::Forward_gpu(
-    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
   const fp16* bottom_label = bottom[1]->gpu_data();
   const int dim = bottom[0]->count() / outer_num_;
   const int num_labels = bottom[0]->shape(label_axis_);
   const int nthreads = outer_num_ * inner_num_;
+  Blob<Dtype>* temp_top = top_dtype[0];
+  temp_top->Reshape(top[0]->shape());
+
   // Since this memory is not used for anything, we use it here to avoid having
   // to allocate new GPU memory to accumulate intermediate results.
   fp16* acc_data = bottom[0]->mutable_gpu_diff();
@@ -91,8 +94,10 @@ void AccuracyLayer<Dtype>::Forward_gpu(
     caffe_gpu_asum_half(nthreads, counts, &valid_count);
     if (valid_count > 0) {
       top[0]->mutable_cpu_data()[0] = fp32tofp16(acc / valid_count);
+      top_dtype[0]->mutable_cpu_data()[0] = acc / valid_count;
     } else {
       top[0]->mutable_cpu_data()[0] = fp32tofp16(0);
+      top_dtype[0]->mutable_cpu_data()[0] = 0;
     }
   } else {
     // need to report per-class accuracy as well

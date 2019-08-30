@@ -46,10 +46,12 @@ private:\
 #define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
   template void classname<float>::Forward_gpu( \
       const std::vector<Blob<fp16>*>& bottom, \
-      const std::vector<Blob<fp16>*>& top); \
+      const std::vector<Blob<fp16>*>& top, \
+	  const std::vector<Blob<float>*>& top_dtype); \
   template void classname<double>::Forward_gpu( \
       const std::vector<Blob<fp16>*>& bottom, \
-      const std::vector<Blob<fp16>*>& top);
+      const std::vector<Blob<fp16>*>& top, \
+	  const std::vector<Blob<double>*>& top_dtype);
 
 #define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
   template void classname<float>::Backward_gpu( \
