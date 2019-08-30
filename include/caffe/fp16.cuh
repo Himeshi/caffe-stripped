@@ -31,7 +31,7 @@ __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int f
 		regime = ((1 << (regime + 1)) - 1) << 1;
 	} else {
 		regime = abs(exponent / _G_USEED_ZEROS);
-		if (exponent % _G_USEED_ZEROS)
+		if (abs(exponent) % _G_USEED_ZEROS)
 			regime += 1;
 		regime_length = regime + 1;
 		exponentp = exponent + (_G_USEED_ZEROS * regime);
