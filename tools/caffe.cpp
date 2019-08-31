@@ -284,10 +284,13 @@ int test() {
   vector<int> test_score_output_id;
   vector<float> test_score;
   float loss = 0;
+  float mean_score_dtype = 0;
   for (int i = 0; i < FLAGS_iterations; ++i) {
     float iter_loss;
     const vector<Blob<caffe::fp16>*>& result =
         caffe_net.Forward(&iter_loss);
+    const vector<Blob<float>*>& output_dtype =
+        caffe_net.output_blobs_dtype();
     loss += iter_loss;
     int idx = 0;
     for (int j = 0; j < result.size(); ++j) {
@@ -305,6 +308,11 @@ int test() {
         LOG(INFO) << "Batch " << i << ", " << output_name << " = " << score;
       }
     }
+
+    const float* result_vec_dtype = output_dtype[0]->cpu_data();
+    for (int l = 0; l < output_dtype[0]->count(); l++) {
+        mean_score_dtype += result_vec_dtype[l];
+    }
   }
   loss /= FLAGS_iterations;
   LOG(INFO) << "Loss: " << loss;
@@ -321,6 +329,7 @@ int test() {
     }
     LOG(INFO) << output_name << " = " << mean_score << loss_msg_stream.str();
   }
+  LOG(INFO) << "Accuracy in float = " << (mean_score_dtype/ FLAGS_iterations);
 
   return 0;
 }
@@ -361,6 +370,7 @@ int time() {
   const vector<shared_ptr<Layer<float> > >& layers = caffe_net.layers();
   const vector<vector<Blob<caffe::fp16>*> >& bottom_vecs = caffe_net.bottom_vecs();
   const vector<vector<Blob<caffe::fp16>*> >& top_vecs = caffe_net.top_vecs();
+  const vector<vector<Blob<float>*> >& top_vecs_dtype = caffe_net.top_vecs_dtype();
   const vector<vector<bool> >& bottom_need_backward =
       caffe_net.bottom_need_backward();
   LOG(INFO) << "*** Benchmark begins ***";
@@ -380,7 +390,7 @@ int time() {
     forward_timer.Start();
     for (int i = 0; i < layers.size(); ++i) {
       timer.Start();
-      layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
+      layers[i]->Forward(bottom_vecs[i], top_vecs[i], top_vecs_dtype[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
     forward_time += forward_timer.MicroSeconds();

@@ -150,6 +150,9 @@ class Net {
   inline const vector<vector<Blob<fp16>*> >& top_vecs() const {
     return top_vecs_;
   }
+  inline const vector<vector<Blob<Dtype>*> >& top_vecs_dtype() const {
+    return top_vecs_dtype_;
+  }
   /// @brief returns the ids of the top blobs of layer i
   inline const vector<int> & top_ids(int i) const {
     CHECK_GE(i, 0) << "Invalid layer id";
@@ -203,6 +206,9 @@ class Net {
   }
   inline const vector<Blob<fp16>*>& output_blobs() const {
     return net_output_blobs_;
+  }
+  inline const vector<Blob<Dtype>*>& output_blobs_dtype() const {
+    return net_output_blobs_dtype_;
   }
   inline const vector<int>& input_blob_indices() const {
     return net_input_blob_indices_;
@@ -297,6 +303,7 @@ class Net {
   vector<vector<bool> > bottom_need_backward_;
   /// top_vecs stores the vectors containing the output for each layer
   vector<vector<Blob<fp16>*> > top_vecs_;
+  vector<vector<Blob<Dtype>*> > top_vecs_dtype_;
   vector<vector<int> > top_id_vecs_;
   /// Vector of weight in the loss (or objective) function of each net blob,
   /// indexed by blob_id.
@@ -311,6 +318,7 @@ class Net {
   vector<int> net_output_blob_indices_;
   vector<Blob<fp16>*> net_input_blobs_;
   vector<Blob<fp16>*> net_output_blobs_;
+  vector<Blob<Dtype>*> net_output_blobs_dtype_;
   /// The parameters in the network.
   vector<shared_ptr<Blob<fp16> > > params_;
   vector<Blob<fp16>*> learnable_params_;

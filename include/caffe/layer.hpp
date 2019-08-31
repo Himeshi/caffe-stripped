@@ -44,18 +44,11 @@ class Layer {
       phase_ = param.phase();
       if (layer_param_.blobs_size() > 0) {
         blobs_.resize(layer_param_.blobs_size());
-        blobs_dtype_.resize(layer_param_.blobs_size());
         for (int i = 0; i < layer_param_.blobs_size(); ++i) {
           blobs_[i].reset(new Blob<fp16>());
           blobs_[i]->FromProto(layer_param_.blobs(i));
-
-          //maintain dtype blobs to copy data before doing computations
-          blobs_dtype_[i].reset(new Blob<Dtype>());
-          blobs_dtype_[i]->FromProto(layer_param_.blobs(i));
         }
       }
-      temp_top_ = new Blob<Dtype>();
-      temp_bottom_ = new Blob<Dtype>();
     }
   virtual ~Layer() {}
 
@@ -132,7 +125,7 @@ class Layer {
    * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
    */
   inline Dtype Forward(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype);
 
   /**
    * @brief Given the top blob error gradients, compute the bottom blob error
@@ -326,7 +319,7 @@ class Layer {
    *        Fall back to Forward_cpu() if unavailable.
    */
   virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
     // LOG(WARNING) << "Using CPU code as backup.";
     return Forward_cpu(bottom, top);
   }
@@ -423,7 +416,7 @@ class Layer {
 // functions.
 template <typename Dtype>
 inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top) {
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
   Dtype loss = 0;
   Reshape(bottom, top);
   switch (Caffe::mode()) {
@@ -439,7 +432,7 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
     }
     break;
   case Caffe::GPU:
-    Forward_gpu(bottom, top);
+    Forward_gpu(bottom, top, top_dtype);
 #ifndef CPU_ONLY
     for (int top_id = 0; top_id < top.size(); ++top_id) {
       if (!this->loss(top_id)) { continue; }

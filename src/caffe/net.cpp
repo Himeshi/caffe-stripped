@@ -64,6 +64,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   // For each layer, set up its input and output
   bottom_vecs_.resize(param.layer_size());
   top_vecs_.resize(param.layer_size());
+  top_vecs_dtype_.resize(param.layer_size());
   bottom_id_vecs_.resize(param.layer_size());
   param_id_vecs_.resize(param.layer_size());
   top_id_vecs_.resize(param.layer_size());
@@ -382,15 +383,21 @@ void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
       LOG(INFO) << layer_param->name() << " -> " << blob_name;
     }
     shared_ptr<Blob<fp16> > blob_pointer(new Blob<fp16>());
-    shared_ptr<Blob<Dtype> > blob_pointer_dtype(new Blob<Dtype>());
     const int blob_id = blobs_.size();
     blobs_.push_back(blob_pointer);
-    blobs_dtype_.push_back(blob_pointer_dtype);
     blob_names_.push_back(blob_name);
     blob_need_backward_.push_back(false);
     if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
     top_id_vecs_[layer_id].push_back(blob_id);
     top_vecs_[layer_id].push_back(blob_pointer.get());
+    if(layer_param->type() == "Accuracy") {
+        //we want an accuracy layer output blob to be in Dtype to
+        //avoid errors due to conversion in the printed result
+        shared_ptr<Blob<Dtype> > blob_pointer_dtype(new Blob<Dtype>());
+        blobs_dtype_.push_back(blob_pointer_dtype);
+        top_vecs_dtype_[layer_id].push_back(blob_pointer_dtype.get());
+        net_output_blobs_dtype_.push_back(blob_pointer_dtype.get());
+    }
   }
   if (available_blobs) { available_blobs->insert(blob_name); }
 }
@@ -525,7 +532,7 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
     for (int c = 0; c < before_forward_.size(); ++c) {
       before_forward_[c]->run(i);
     }
-    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
+    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i], top_vecs_dtype_[i]);
     loss += layer_loss;
     if (debug_info_) { ForwardDebugInfo(i); }
     for (int c = 0; c < after_forward_.size(); ++c) {

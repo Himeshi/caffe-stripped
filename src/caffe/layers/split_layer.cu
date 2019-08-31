@@ -7,7 +7,7 @@ namespace caffe {
 
 template <typename Dtype>
 void SplitLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
   for (int i = 0; i < top.size(); ++i) {
     top[i]->ShareData(*bottom[0]);
   }
