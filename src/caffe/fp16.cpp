@@ -20,9 +20,7 @@ fp16 fp32tofp16(float f) {
 	v.f = f;
 	fp16 result = v.ui >> 16;
 	//round to nearest even
-	if((0x00008000 & v.ui) && ((0x00007FFF & v.ui) || (1 & result))) {
-		result++;
-	}
+	result += ((0x00008000 & v.ui) && ((0x00007FFF & v.ui) || (1 & result)));
 	return result;
 }
 }
