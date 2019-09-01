@@ -52,6 +52,7 @@
 #if _G_ESIZE == 1
 #define _G_USEED 4
 #define _G_USEED_ZEROS 2
+#define _G_USEED_ZEROS_SHIFT 1
 #define _G_POSIT_SHIFT_AMOUNT 0
 #define _G_MAXREALP 32767
 #define _G_MINREALP 1
@@ -62,6 +63,7 @@
 #elif _G_ESIZE == 2
 #define _G_USEED 16
 #define _G_USEED_ZEROS 4
+#define _G_USEED_ZEROS_SHIFT 2
 #define _G_POSIT_SHIFT_AMOUNT 0
 #define _G_MAXREALP 32767
 #define _G_MINREALP 1
@@ -70,8 +72,9 @@
 #define _G_MINREAL 1.387779e-17
 
 #elif _G_ESIZE == 3
-#define _G_USEED 16
-#define _G_USEED_ZEROS 256
+#define _G_USEED 256
+#define _G_USEED_ZEROS 8
+#define _G_USEED_ZEROS_SHIFT 3
 #define _G_POSIT_SHIFT_AMOUNT 0
 #define _G_MAXREALP 32767
 #define _G_MINREALP 1

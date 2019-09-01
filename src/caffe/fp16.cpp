@@ -18,12 +18,12 @@ fp16 get_posit_from_parts(int exponent, unsigned int fraction,
 
   // find regime and exponent
   if (exponent >= 0) {
-    regime = exponent / _G_USEED_ZEROS;
+    regime = exponent >> _G_USEED_ZEROS_SHIFT;
     exponentp = exponent - (_G_USEED_ZEROS * regime);
     regime_length = regime + 2;
     regime = ((1 << (regime + 1)) - 1) << 1;
   } else {
-    regime = abs(exponent / _G_USEED_ZEROS);
+    regime = abs(exponent) >> _G_USEED_ZEROS_SHIFT;
     if (abs(exponent) % _G_USEED_ZEROS)
       regime += 1;
     regime_length = regime + 1;
