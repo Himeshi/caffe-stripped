@@ -349,6 +349,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
   CHECK_NOTNULL(test_nets_[test_net_id].get())->
       ShareTrainedLayersWith(net_.get());
   vector<Dtype> test_score;
+  float mean_score_dtype = 0;
   vector<int> test_score_output_id;
   const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];
   Dtype loss = 0;
@@ -371,6 +372,8 @@ void Solver<Dtype>::Test(const int test_net_id) {
     Dtype iter_loss;
     const vector<Blob<fp16>*>& result =
         test_net->Forward(&iter_loss);
+    const vector<Blob<Dtype>*>& output_dtype =
+        test_net->output_blobs_dtype();
     if (param_.test_compute_loss()) {
       loss += iter_loss;
     }
@@ -382,6 +385,10 @@ void Solver<Dtype>::Test(const int test_net_id) {
           test_score_output_id.push_back(j);
         }
       }
+      const Dtype* result_vec_dtype = output_dtype[0]->cpu_data();
+      for (int l = 0; l < output_dtype[0]->count(); l++) {
+          mean_score_dtype += result_vec_dtype[l];
+      }
     } else {
       int idx = 0;
       for (int j = 0; j < result.size(); ++j) {
@@ -389,6 +396,10 @@ void Solver<Dtype>::Test(const int test_net_id) {
         for (int k = 0; k < result[j]->count(); ++k) {
           test_score[idx++] += fp16tofp32(result_vec[k]);
         }
+      }
+      const Dtype* result_vec_dtype = output_dtype[0]->cpu_data();
+      for (int l = 0; l < output_dtype[0]->count(); l++) {
+          mean_score_dtype += result_vec_dtype[l];
       }
     }
   }
@@ -415,6 +426,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
     LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "
               << mean_score << loss_msg_stream.str();
   }
+  LOG(INFO) << "Test net output #2: Accuracy in float = " << (mean_score_dtype/ param_.test_iter(test_net_id));
 }
 
 template <typename Dtype>
