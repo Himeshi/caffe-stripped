@@ -122,8 +122,10 @@ void AccuracyLayer<Dtype>::Forward_gpu(
     caffe_gpu_asum_half(nums_buffer_.count(), counts, &valid_count);
     if (valid_count > 0) {
       top[0]->mutable_cpu_data()[0] = fp32tofp16(acc / valid_count);
+      top_dtype[0]->mutable_cpu_data()[0] = acc / valid_count;
     } else {
       top[0]->mutable_cpu_data()[0] = 0;
+      top_dtype[0]->mutable_cpu_data()[0] = 0;
     }
 
     // get per-class accuracy
