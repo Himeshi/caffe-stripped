@@ -10,9 +10,7 @@ __global__ void DropoutForward(const int n, const fp16* in,
     const unsigned int* mask, const unsigned int threshold, const float scale,
     fp16* out) {
   CUDA_KERNEL_LOOP(index, n) {
-    float temp_in = fp16tofp32_gpu(in[index]);
-    float temp_out = temp_in * (mask[index] > threshold) * scale;
-    out[index] = fp32tofp16_gpu(temp_out);
+    out[index] = fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * (mask[index] > threshold) * scale);
   }
 }
 
@@ -41,9 +39,7 @@ __global__ void DropoutBackward(const int n, const fp16* in_diff,
     const unsigned int* mask, const unsigned int threshold, const float scale,
     fp16* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
-    float temp_in = fp16tofp32_gpu(in_diff[index]);
-    float temp_out = temp_in * scale * (mask[index] > threshold);
-    out_diff[index] = fp32tofp16_gpu(temp_out);
+    out_diff[index] = fp32tofp16_gpu(fp16tofp32_gpu(in_diff[index]) * scale * (mask[index] > threshold));
   }
 }
 
