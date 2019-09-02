@@ -349,7 +349,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
   CHECK_NOTNULL(test_nets_[test_net_id].get())->
       ShareTrainedLayersWith(net_.get());
   vector<Dtype> test_score;
-  float mean_score_dtype = 0;
+  vector<Dtype> mean_score_dtype;
   vector<int> test_score_output_id;
   const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];
   Dtype loss = 0;
@@ -385,9 +385,12 @@ void Solver<Dtype>::Test(const int test_net_id) {
           test_score_output_id.push_back(j);
         }
       }
-      const Dtype* result_vec_dtype = output_dtype[0]->cpu_data();
-      for (int l = 0; l < output_dtype[0]->count(); l++) {
-          mean_score_dtype += result_vec_dtype[l];
+
+      for (int j = 0; j < output_dtype.size(); ++j) {
+        const Dtype* result_vec_dtype = output_dtype[j]->cpu_data();
+        for (int l = 0; l < output_dtype[j]->count(); l++) {
+          mean_score_dtype.push_back(result_vec_dtype[l]);
+        }
       }
     } else {
       int idx = 0;
@@ -397,9 +400,13 @@ void Solver<Dtype>::Test(const int test_net_id) {
           test_score[idx++] += fp16tofp32(result_vec[k]);
         }
       }
-      const Dtype* result_vec_dtype = output_dtype[0]->cpu_data();
-      for (int l = 0; l < output_dtype[0]->count(); l++) {
-          mean_score_dtype += result_vec_dtype[l];
+
+      idx = 0;
+      for (int j = 0; j < output_dtype.size(); ++j) {
+        const Dtype* result_vec_dtype = output_dtype[j]->cpu_data();
+        for (int l = 0; l < output_dtype[j]->count(); l++) {
+          mean_score_dtype[idx++] += result_vec_dtype[l];
+        }
       }
     }
   }
@@ -426,7 +433,9 @@ void Solver<Dtype>::Test(const int test_net_id) {
     LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "
               << mean_score << loss_msg_stream.str();
   }
-  LOG(INFO) << "Test net output #2: Accuracy in float = " << (mean_score_dtype/ param_.test_iter(test_net_id));
+  for (int i = 0; i < mean_score_dtype.size(); ++i) {
+      LOG(INFO) << "Test net output #" << i << ": Accuracy in float = " << (mean_score_dtype[i]/ param_.test_iter(test_net_id));
+  }
 }
 
 template <typename Dtype>
