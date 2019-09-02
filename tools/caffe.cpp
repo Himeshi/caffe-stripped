@@ -283,14 +283,14 @@ int test() {
 
   vector<int> test_score_output_id;
   vector<float> test_score;
-  float mean_score_dtype = 0;
   float loss = 0;
+  vector<float> mean_score_dtype;
   for (int i = 0; i < FLAGS_iterations; ++i) {
     float iter_loss;
     const vector<Blob<caffe::fp16>*>& result =
         caffe_net.Forward(&iter_loss);
-	const vector<Blob<float>*>& output_dtype =
-		caffe_net.output_blobs_dtype();
+    const vector<Blob<float>*>& output_dtype =
+        caffe_net.output_blobs_dtype();
     loss += iter_loss;
     int idx = 0;
     for (int j = 0; j < result.size(); ++j) {
@@ -309,10 +309,18 @@ int test() {
       }
     }
 
-    const float* result_vec_dtype = output_dtype[0]->cpu_data();
-    for (int l = 0; l < output_dtype[0]->count(); l++) {
-        mean_score_dtype += result_vec_dtype[l];
-	}
+    idx = 0;
+    for (int j = 0; j < output_dtype.size(); ++j) {
+        const float* result_vec_dtype = output_dtype[j]->cpu_data();
+        for (int l = 0; l < output_dtype[j]->count(); ++l, ++idx) {
+            if (i == 0) {
+                mean_score_dtype.push_back(result_vec_dtype[l]);
+            } else {
+                mean_score_dtype[idx] += result_vec_dtype[l];
+            }
+        }
+    }
+
   }
   loss /= FLAGS_iterations;
   LOG(INFO) << "Loss: " << loss;
@@ -329,7 +337,10 @@ int test() {
     }
     LOG(INFO) << output_name << " = " << mean_score << loss_msg_stream.str();
   }
-  LOG(INFO) << "Accuracy in float = " << (mean_score_dtype/ FLAGS_iterations);
+
+  for (int i = 0; i < test_score.size(); ++i) {
+    LOG(INFO) << "Accuracy in float #" << i << ":= " << (mean_score_dtype[i]/ FLAGS_iterations);
+  }
 
   return 0;
 }
