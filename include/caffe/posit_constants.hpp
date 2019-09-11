@@ -103,6 +103,13 @@
 #define _G_MAXREAL 2.814749767e+14
 #define _G_MINREAL 3.552713679e-15
 
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 7.922816251e+28
+#define _G_MINREAL 1.262177448e-29
+
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
 #define _G_USEED_ZEROS (1 << _G_ESIZE)
@@ -135,6 +142,13 @@
 #define _G_USEED_ZEROS_SHIFT 3
 #define _G_MAXREAL 7.205759404e+16
 #define _G_MINREAL 1.387778781e-17
+
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 5.192296859e+33
+#define _G_MINREAL 1.925929944e-34
 
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
@@ -169,6 +183,13 @@
 #define _G_MAXREAL 1.844674407e+19
 #define _G_MINREAL 5.421010862e-20
 
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 3.402823669e+38
+#define _G_MINREAL 2.938735877e-39
+
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
 #define _G_USEED_ZEROS (1 << _G_ESIZE)
@@ -201,6 +222,13 @@
 #define _G_USEED_ZEROS_SHIFT 3
 #define _G_MAXREAL 4.722366483e+21
 #define _G_MINREAL 2.117582368e-22
+
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 2.230074520e+43
+#define _G_MINREAL 4.484155086e-44
 
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
@@ -235,6 +263,13 @@
 #define _G_MAXREAL 1.208925820e+24
 #define _G_MINREAL 8.271806126e-25
 
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 1.461501637e+48
+#define _G_MINREAL 6.842277658e-49
+
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
 #define _G_USEED_ZEROS (1 << _G_ESIZE)
@@ -267,6 +302,13 @@
 #define _G_USEED_ZEROS_SHIFT 3
 #define _G_MAXREAL 3.094850098e+26
 #define _G_MINREAL 3.231174268e-27
+
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 9.578097130e+52
+#define _G_MINREAL 1.044048715e-53
 
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
@@ -301,6 +343,13 @@
 #define _G_MAXREAL 7.922816251e+28
 #define _G_MINREAL 1.262177448e-29
 
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 6.277101735e+57
+#define _G_MINREAL 1.593091911e-58
+
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
 #define _G_USEED_ZEROS (1 << _G_ESIZE)
@@ -333,6 +382,13 @@
 #define _G_USEED_ZEROS_SHIFT 3
 #define _G_MAXREAL 2.028240960e+31
 #define _G_MINREAL 4.930380658e-32
+
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 4.113761393e+62
+#define _G_MINREAL 2.430865343e-63
 
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
