@@ -11,56 +11,48 @@ namespace caffe {
 
 fp16 get_posit_from_parts(int exponent, unsigned int fraction,
                            unsigned int fraction_size) {
-  // assume the fraction is normalized and it's MSB is hidden already
-  fp16 p = 0;
-  int regime, regime_length, exponentp;
-  TEMP_TYPE temp, ob, hb, sb;
+	// assume the fraction is normalized and it's MSB is hidden already
+	fp16 p = 0;
+	int regime, regime_length, exponentp;
+	TEMP_TYPE temp, ob, hb, sb;
 
-  // find regime and exponent
-  if (exponent >= 0) {
-    regime = exponent >> _G_USEED_ZEROS_SHIFT;
-    exponentp = exponent - (_G_USEED_ZEROS * regime);
-    regime_length = regime + 2;
-    regime = ((1 << (regime + 1)) - 1) << 1;
-  } else {
-    regime = abs(exponent) >> _G_USEED_ZEROS_SHIFT;
-    if (abs(exponent) % _G_USEED_ZEROS)
-      regime += 1;
-    regime_length = regime + 1;
-    exponentp = exponent + (_G_USEED_ZEROS * regime);
-    regime = 1;
-  }
+	// compute regime and exponent
+	int abs_exp = abs(exponent);
+	regime = abs_exp >> _G_USEED_ZEROS_SHIFT;
+	exponentp = abs_exp - (_G_USEED_ZEROS * regime);
+	regime_length = regime + 2;
+	bool sign = exponent & 0x80000000;
+	regime = ((((1 << (regime + 1)) - 1) << 1) * !sign) + (1 * sign);
+	regime_length += (sign * -1);		//if the regime is negative subtract one
+	regime_length += (((bool) (abs_exp & ((1 << _G_USEED_ZEROS_SHIFT) - 1)))
+			& sign);//if the regime is negative and is divisible by _G_USEED_ZEROS_SHIFT add one
 
-  // assemble the regime
-  temp = regime;
-  int running_size = regime_length + 1;
+	//assemble regime and exponent
+	int temp_assemble = regime;
+	exponentp = (exponentp ^ -sign) + sign;
+	temp_assemble <<= _G_ESIZE;
+	temp_assemble |= (exponentp & ((1 << _G_ESIZE) - 1));
+	int running_size = 1 + regime_length + _G_ESIZE;	//add one for sign
 
-  // assemble the exponent
-  temp <<= _G_ESIZE;
-  int exponent_length = FLOAT_SIZE - __builtin_clz(abs(exponentp));
-  exponentp >>= (((exponent_length - _G_ESIZE)
-			+ abs((exponent_length - _G_ESIZE))) >> 1);
-  temp |= exponentp;
-  running_size += _G_ESIZE;
+	// assemble the fraction
+	temp = temp_assemble;
+	temp <<= fraction_size;
+	temp |= fraction;
+	running_size += fraction_size;
 
-  // assemble the fraction
-  temp <<= fraction_size;
-  temp |= fraction;
-  running_size += fraction_size;
+	//left align temp
+	temp = temp << (UNSIGNED_LONG_LONG_SIZE - running_size);
 
-  //left align temp
-  temp = temp << (UNSIGNED_LONG_LONG_SIZE - running_size);
+	//round
+	int extra_bits = (UNSIGNED_LONG_LONG_SIZE - _G_NBITS);
+	p = temp >> extra_bits;
+	ob = p & 1;
+	TEMP_TYPE hb_mask = (1ULL << (extra_bits - 1));
+	hb = temp & hb_mask;
+	sb = temp & (hb_mask - 1);
+	p += ((ob && hb) | (hb && sb));
 
-  //round
-  int extra_bits = (UNSIGNED_LONG_LONG_SIZE - _G_NBITS);
-  p = temp >> extra_bits;
-  ob = p & 1;
-  TEMP_TYPE hb_mask = (1ULL << (extra_bits - 1));
-  hb = temp & hb_mask;
-  sb = temp & (hb_mask - 1);
-  p += ((ob && hb) | (hb && sb));
-
-  return p;
+	return p;
 }
 
 float fp16tofp32(fp16 p) {
