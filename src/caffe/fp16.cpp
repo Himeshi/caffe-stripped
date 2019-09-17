@@ -28,9 +28,8 @@ fp16 get_posit_from_parts(int exponent, unsigned int fraction,
 			& sign);//if the regime is negative and is divisible by _G_USEED_ZEROS_SHIFT add one
 
 	//assemble regime and exponent
-	int temp_assemble = regime;
 	exponentp = (exponentp ^ -sign) + sign;
-	temp_assemble <<= _G_ESIZE;
+	int temp_assemble = regime << _G_ESIZE;
 	temp_assemble |= (exponentp & ((1 << _G_ESIZE) - 1));
 	int running_size = 1 + regime_length + _G_ESIZE;	//add one for sign
 
@@ -121,7 +120,7 @@ fp16 fp32tofp16(float f) {
 		return p;
 	}
 
-	if (f == INFINITY || f == -INFINITY) {
+	if (f == INFINITY || f == -INFINITY || std::isnan(f)) {
 		return _G_INFP;
 	}
 
@@ -138,10 +137,6 @@ fp16 fp32tofp16(float f) {
 			p = ~p + 1;
 		return p;
 	}
-
-	if (std::isnan(f)) {
-		return _G_INFP;
-        }
 
 	// get sign, exponent and fraction from float
 	unsigned int temp;

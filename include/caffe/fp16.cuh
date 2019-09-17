@@ -35,9 +35,8 @@ __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int f
       & sign);//if the regime is negative and is divisible by _G_USEED_ZEROS_SHIFT add one
 
   //assemble regime and exponent
-  int temp_assemble = regime;
   exponentp = (exponentp ^ -sign) + sign;
-  temp_assemble <<= _G_ESIZE;
+  int temp_assemble = regime << _G_ESIZE;
   temp_assemble |= (exponentp & ((1 << _G_ESIZE) - 1));
   int running_size = 1 + regime_length + _G_ESIZE;	//add one for sign
 
