@@ -1,6 +1,8 @@
 /*
  * posit.cpp
  *
+ * Code taken and modified from https://stackoverflow.com/questions/1659440/32-bit-to-16-bit-floating-point-conversion
+ *
  *  Created on: Jan 11, 2019
  *      Author: himeshi
  */
@@ -35,12 +37,15 @@ fp16 fp32tofp16(float f) {
 	sign >>= shiftSign; // logical shift
 	s.si = mulN;
 	s.si = s.f * v.f; // correct subnormals
+	s.si += (0x00002000 & -((s.si & 0x00001000) && ((s.si & 0x00002000) | (v.si & 0x000003FF) | (s.si & 0x000003FF))));
 	v.si ^= (s.si ^ v.si) & -(minN > v.si);
+	v.si ^= (nanN ^ v.si) & -(v.si > infN);
 	v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxfp16N));
-	v.si ^= (nanN ^ v.si) & -((nanN > v.si) & (v.si > infN));
+	s.si = (v.si & 0x00001000) && ((v.si & 0x00002000) | (v.si & 0x00000FFF));
 	v.ui >>= fp16shift; // logical shift
 	v.si ^= ((v.si - maxD) ^ v.si) & -(v.si > maxC);
 	v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
+	v.si += s.si;
 	return v.ui | sign;
 }
 }

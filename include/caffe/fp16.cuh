@@ -18,7 +18,6 @@
 namespace caffe {
 	
 __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
-
   union Bits v;
   v.ui = f16value;
   int32_t sign = v.si & signC;
@@ -34,11 +33,9 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
   v.si ^= (s.si ^ v.si) & mask;
   v.si |= sign;
   return v.f;
-
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
-
   union Bits v, s;
   v.f = f;
   uint32_t sign = v.si & signN;
@@ -46,14 +43,16 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   sign >>= shiftSign; // logical shift
   s.si = mulN;
   s.si = s.f * v.f; // correct subnormals
+  s.si += (0x00002000 & -((s.si & 0x00001000) && ((s.si & 0x00002000) | (v.si & 0x000003FF) | (s.si & 0x000003FF))));
   v.si ^= (s.si ^ v.si) & -(minN > v.si);
+  v.si ^= (nanN ^ v.si) & -(v.si > infN);
   v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxfp16N));
-  v.si ^= (nanN ^ v.si) & -((nanN > v.si) & (v.si > infN));
+  s.si = (v.si & 0x00001000) && ((v.si & 0x00002000) | (v.si & 0x00000FFF));
   v.ui >>= fp16shift; // logical shift
   v.si ^= ((v.si - maxD) ^ v.si) & -(v.si > maxC);
   v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
+  v.si += s.si;
   return v.ui | sign;
 }
-
 }
 #endif /* INCLUDE_CAFFE_FP16_HPP_ */

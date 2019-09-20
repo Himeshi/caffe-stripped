@@ -36,7 +36,7 @@ union Bits {
 #define signN 0x80000000 // flt32 sign bit
 
 #define infC 0x3FC00
-#define nanN 0x7F802000 // minimum flt16 nan as a flt32
+#define nanN 0x7Fc00000 // a flt16 nan as a flt32
 #define maxC 0x23BFF
 #define minC 0x1C400
 #define signC 0xFFFF8000 // flt16 sign bit
