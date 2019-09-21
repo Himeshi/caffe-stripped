@@ -43,11 +43,12 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   sign >>= shiftSign; // logical shift
   s.si = mulN;
   s.si = s.f * v.f; // correct subnormals
-  s.si += (0x00002000 & -((s.si & 0x00001000) && ((s.si & 0x00002000) | (v.si & 0x000003FF) | (s.si & 0x000003FF))));
+  // get the bits that could potentially be cut off for rounding
+  int32_t bits = (v.si & 0x000003FF) & -(minN > v.si);
   v.si ^= (s.si ^ v.si) & -(minN > v.si);
   v.si ^= (nanN ^ v.si) & -(v.si > infN);
   v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxfp16N));
-  s.si = (v.si & 0x00001000) && ((v.si & 0x00002000) | (v.si & 0x00000FFF));
+  s.si = (v.si & 0x00001000) && ((v.si & 0x00002000) | (v.si & 0x00000FFF) | bits);
   v.ui >>= fp16shift; // logical shift
   v.si ^= ((v.si - maxD) ^ v.si) & -(v.si > maxC);
   v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
