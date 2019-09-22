@@ -66,6 +66,13 @@
 #define _G_MAXREAL 5.192296859e+33
 #define _G_MINREAL 1.925929944e-34
 
+#elif _G_ESIZE == 4
+#define _G_USEED 512
+#define _G_USEED_ZEROS 16
+#define _G_USEED_ZEROS_SHIFT 4
+#define _G_MAXREAL 2.695994667e+67
+#define _G_MINREAL 3.709206151e-68
+
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
 #define _G_USEED_ZEROS (1 << _G_ESIZE)
