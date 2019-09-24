@@ -27,28 +27,28 @@ union Bits {
 #define FP16_LIMB_SIZE 16
 #define FP16_TYPE uint16_t
 
-#define fp16shift 13
+#define fp16shift 14
 #define shiftSign 16
 
 #define infN 0x7F800000 // flt32 infinity
-#define maxfp16N 0x477FE000 // max flt16 normal as a flt32
-#define minN 0x38800000 // min flt16 normal as a flt32
+#define maxfp16N 0x4F7FC000 // max flt16 normal as a flt32
+#define minN 0x30800000 // min flt16 normal as a flt32
 #define signN 0x80000000 // flt32 sign bit
 
 #define infC 0x3FC00
-#define nanN 0x7Fc00000 // a flt16 nan as a flt32
-#define maxC 0x23BFF
-#define minC 0x1C400
+#define nanN 0x7FC00000 // a flt16 nan as a flt32
+#define maxC 0x13DFF
+#define minC 0x0C200
 #define signC 0xFFFF8000 // flt16 sign bit
 
-#define mulN 0x52000000 // (1 << 23) / minN
-#define mulC 0x33800000 // minN / (1 << (23 - shift))
+#define mulN 0x5A000000 // (1 << 23) / minN
+#define mulC 0x2B800000 // minN / (1 << (23 - shift))
 
 #define subC 0x003FF // max flt32 subnormal down shifted
 #define norC 0x00400 // min flt32 normal down shifted
 
-#define maxD 0x1C000
-#define minD 0x1C000
+#define maxD 0x2BE00
+#define minD 0xBE00
 
 namespace caffe {
 
