@@ -48,7 +48,7 @@ union Bits {
 #define norC 0x00100 // min flt32 normal down shifted
 
 #define maxD 0x04000
-#define minD 0x7F80
+#define minD 0x04000
 
 namespace caffe {
 
