@@ -32,7 +32,7 @@ union Bits {
 
 #define infN 0x7F800000 // flt32 infinity
 #define maxfp16N 0x5F7F8000 // max flt16 normal as a flt32
-#define minN 0x40400000 // min flt16 normal as a flt32
+#define minN 0x20800000 // min flt16 normal as a flt32
 #define signN 0x80000000 // flt32 sign bit
 
 #define infC 0x0FF00
