@@ -38,7 +38,7 @@ fp16 fp32tofp16(float f) {
 	s.si = mulN;
 	s.si = s.f * v.f; // correct subnormals
 	// get the bits that could potentially be cut off for rounding
-	int32_t bits = (v.si & 0x000001FF) & -(minN > v.si);
+	int32_t bits = (v.si & 0x000000FF) & -(minN > v.si);
 	v.si ^= (s.si ^ v.si) & -(minN > v.si);
 	v.si ^= (nanN ^ v.si) & -(v.si > infN);
 	v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxfp16N));
