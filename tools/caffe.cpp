@@ -455,7 +455,7 @@ int main(int argc, char** argv) {
   // Run tool or show usage.
   caffe::GlobalInit(&argc, &argv);
   // computing with fp16
-  LOG(INFO) << "Using compression with float16";
+  LOG(INFO) << "Using compression with float16,7";
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER
     try {
