@@ -20,6 +20,12 @@
 
 namespace caffe {
 
+union Bits {
+	float f;
+	int32_t si;
+	uint32_t ui;
+};
+
 typedef FP16_TYPE fp16;
 
 fp16 get_posit_from_parts(int exponent, unsigned int fraction,

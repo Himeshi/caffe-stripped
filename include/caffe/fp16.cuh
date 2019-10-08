@@ -26,7 +26,7 @@ __device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int f
   // compute regime and exponent
   int abs_exp = abs(exponent);
   regime = abs_exp >> _G_USEED_ZEROS_SHIFT;
-  exponentp = abs_exp - (_G_USEED_ZEROS * regime);
+  exponentp = abs_exp & ((1 << _G_ESIZE) - 1);
   regime_length = regime + 2;
   bool sign = exponent & 0x80000000;
   regime = ((((1 << (regime + 1)) - 1) << 1) * !sign) + (1 * sign);
@@ -123,53 +123,45 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
-
   fp16 p = 0;
-  if (f == 0.0) {
+  union Bits v;
+  v.f = f;
+  uint32_t sign = v.si & FLOAT_SIGN_MASK;
+  v.si ^= sign;
+  sign >>= FLOAT_SIGN_SHIFT;
+
+  if (v.f == 0.0) {
     return p;
   }
 
-  if (f == INFINITY || f == -INFINITY) {
+  if (v.f == INFINITY || v.f != v.f) {
     return _G_INFP;
   }
 
-  if (fabs(f) >= _G_MAXREAL) {
+  if (v.f >= _G_MAXREAL) {
     p = _G_MAXREALP;
-    if (f < 0)
-      p = ~p + 1;
+    p = (p ^ -sign) + sign;
     return p;
   }
 
-  if (fabs(f) <= _G_MINREAL) {
+  if (v.f <= _G_MINREAL) {
     p = _G_MINREALP;
-    if (f < 0)
-      p = ~p + 1;
+    p = (p ^ -sign) + sign;
     return p;
   }
-
-  if (f != f)
-    return _G_INFP;
 
   // get sign, exponent and fraction from float
-  unsigned int temp;
-  memcpy(&temp, &f, sizeof(temp));
-  int exponent = (temp & FLOAT_EXPONENT_MASK) >> FLOAT_EXPONENT_SHIFT;
-  unsigned int fraction = (temp & FLOAT_FRACTION_MASK);
-  if (exponent) {
-    exponent -= SINGLE_PRECISION_BIAS;
-  } else {
-    exponent = FLOAT_DENORMAL_EXPONENT;
-    int normalization =
-        __clz(fraction) - FLOAT_SIGN_PLUS_EXP_LENGTH_MINUS_ONE;
-    exponent -= normalization;
-    // hide the most significant bit
-    fraction &= ~(1 << normalization);
-  }
+
+  // min posit exponent in 16, 3 is 112
+  // therefore all the float subnormals will be handled
+  // in the previous if statement
+  int exponent = (v.ui & FLOAT_EXPONENT_MASK) >> FLOAT_EXPONENT_SHIFT;
+  unsigned int fraction = (v.ui & FLOAT_FRACTION_MASK);
+  exponent -= SINGLE_PRECISION_BIAS;
 
   p = get_posit_from_parts_gpu(exponent, fraction, FLOAT_EXPONENT_SHIFT);
 
-  if (f < 0)
-    p = ~p + 1;
+  p = (p ^ -sign) + sign;
 
   return p << _G_POSIT_SHIFT_AMOUNT;
 }

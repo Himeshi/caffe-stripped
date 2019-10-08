@@ -15,6 +15,7 @@
 #define _G_ESIZE 2
 
 #define SIGN_MASK 0x8000
+#define FLOAT_SIGN_MASK 0x80000000
 #define SECOND_BIT_MASK 0x4000
 #define POSIT_INF 0x0000
 #define POSIT_LIMB_ALL_BITS_SET 0xffff
