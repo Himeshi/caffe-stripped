@@ -9,51 +9,6 @@
 
 namespace caffe {
 
-fp16 get_posit_from_parts(int exponent, unsigned int fraction,
-                           unsigned int fraction_size) {
-	// assume the fraction is normalized and it's MSB is hidden already
-	fp16 p = 0;
-	int regime, regime_length, exponentp;
-	TEMP_TYPE temp, ob, hb, sb;
-
-	// compute regime and exponent
-	int abs_exp = abs(exponent);
-	regime = abs_exp >> _G_USEED_ZEROS_SHIFT;
-	exponentp = abs_exp & ((1 << _G_ESIZE) - 1);
-	regime_length = regime + 2;
-	bool sign = exponent & 0x80000000;
-	regime = ((((1 << (regime + 1)) - 1) << 1) * !sign) + (1 * sign);
-	regime_length += (sign * -1);		//if the regime is negative subtract one
-	regime_length += (((bool) (abs_exp & ((1 << _G_USEED_ZEROS_SHIFT) - 1)))
-			& sign);//if the regime is negative and is divisible by _G_USEED_ZEROS_SHIFT add one
-
-	//assemble regime and exponent
-	exponentp = (exponentp ^ -sign) + sign;
-	int temp_assemble = regime << _G_ESIZE;
-	temp_assemble |= (exponentp & ((1 << _G_ESIZE) - 1));
-	int running_size = 1 + regime_length + _G_ESIZE;	//add one for sign
-
-	// assemble the fraction
-	temp = temp_assemble;
-	temp <<= fraction_size;
-	temp |= fraction;
-	running_size += fraction_size;
-
-	//left align temp
-	temp = temp << (UNSIGNED_LONG_LONG_SIZE - running_size);
-
-	//round
-	int extra_bits = (UNSIGNED_LONG_LONG_SIZE - _G_NBITS);
-	p = temp >> extra_bits;
-	ob = p & 1;
-	TEMP_TYPE hb_mask = (1ULL << (extra_bits - 1));
-	hb = temp & hb_mask;
-	sb = temp & (hb_mask - 1);
-	p += ((ob && hb) | (hb && sb));
-
-	return p;
-}
-
 float fp16tofp32(fp16 p) {
 	// handle zero
 	if (p == 0)
@@ -118,7 +73,7 @@ fp16 fp32tofp16(float f) {
 	fp16 p = 0;
 	union Bits v;
 	v.f = f;
-	uint32_t sign = v.si & FLOAT_SIGN_MASK;
+	uint32_t sign = v.ui & FLOAT_SIGN_MASK;
 	v.si ^= sign;
 	sign >>= FLOAT_SIGN_SHIFT;
 
@@ -142,19 +97,31 @@ fp16 fp32tofp16(float f) {
 		return p;
 	}
 
-	// get sign, exponent and fraction from float
-
 	// min posit exponent in 16, 3 is 112
 	// therefore all the float subnormals will be handled
 	// in the previous if statement
-	int exponent = (v.ui & FLOAT_EXPONENT_MASK) >> FLOAT_EXPONENT_SHIFT;
-	unsigned int fraction = (v.ui & FLOAT_FRACTION_MASK);
-	exponent -= SINGLE_PRECISION_BIAS;
 
-	p = get_posit_from_parts(exponent, fraction, FLOAT_EXPONENT_SHIFT);
+	// get absolute exponent
+	bool exp_sign = !(v.ui >> 30);
+
+	//get regime and exponent
+	uint32_t exp = abs((v.si >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS);
+	TEMP_TYPE regime_and_exp = (((1 << ((exp >> _G_ESIZE) + 1)) - 1) << (_G_ESIZE + 1)) | (exp & POSIT_EXPONENT_MASK);;
+	//if exponent is negative
+	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
+	int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
+
+	//assemble
+	regime_and_exp <<= (UNSIGNED_LONG_LONG_SIZE - regime_and_exp_length);
+	regime_and_exp |= ((TEMP_TYPE) (v.ui & FLOAT_FRACTION_MASK) << (POSIT_EXP_SHIFT - regime_and_exp_length));
+	p = (regime_and_exp >> POSIT_EXTRA_BITS_SHIFT);
+
+	//round
+	p += (bool) (regime_and_exp & POSIT_HALFWAY_BIT_MASK) && ((p & 1) | (regime_and_exp & POSIT_EXTRA_BITS_MASK));
+	p <<= _G_POSIT_SHIFT_AMOUNT;
 
 	p = (p ^ -sign) + sign;
 
-	return p << _G_POSIT_SHIFT_AMOUNT;
+	return p;
 }
 }
