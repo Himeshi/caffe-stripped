@@ -77,32 +77,16 @@ fp16 fp32tofp16(float f) {
 	v.si ^= sign;
 	sign >>= FLOAT_SIGN_SHIFT;
 
-	if (v.f == 0.0) {
-		return p;
-	}
-
-	if (v.f == INFINITY || std::isnan(v.f)) {
-		return _G_INFP;
-	}
-
-	if (v.f >= _G_MAXREAL) {
-		p = _G_MAXREALP;
-		p = (p ^ -sign) + sign;
-		return p;
-	}
-
-	if (v.f <= _G_MINREAL) {
-		p = _G_MINREALP;
-		p = (p ^ -sign) + sign;
-		return p;
-	}
+	p = _G_MAXREALP & -(v.si >= _G_MAXREAL_INT);
+	p = _G_INFP & -(v.si >= FLOAT_INF);
+	p = _G_MINREALP & -(v.si <= _G_MINREAL_INT);
 
 	// min posit exponent in 16, 3 is 112
 	// therefore all the float subnormals will be handled
 	// in the previous if statement
 
-	// get absolute exponent
-	bool exp_sign = !(v.ui >> 30);
+	// get exponent sign
+	bool exp_sign = !(v.ui >> FLOAT_EXP_SIGN_SHIFT);
 
 	//get regime and exponent
 	uint32_t exp = abs((v.si >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS);
@@ -114,11 +98,12 @@ fp16 fp32tofp16(float f) {
 	//assemble
 	regime_and_exp <<= (UNSIGNED_LONG_LONG_SIZE - regime_and_exp_length);
 	regime_and_exp |= ((TEMP_TYPE) (v.ui & FLOAT_FRACTION_MASK) << (POSIT_EXP_SHIFT - regime_and_exp_length));
-	p = (regime_and_exp >> POSIT_EXTRA_BITS_SHIFT);
+	fp16 temp_p = (regime_and_exp >> POSIT_EXTRA_BITS_SHIFT);
 
 	//round
-	p += (bool) (regime_and_exp & POSIT_HALFWAY_BIT_MASK) && ((p & 1) | (regime_and_exp & POSIT_EXTRA_BITS_MASK));
-	p <<= _G_POSIT_SHIFT_AMOUNT;
+	temp_p += (bool) (regime_and_exp & POSIT_HALFWAY_BIT_MASK) && ((temp_p & 1) | (regime_and_exp & POSIT_EXTRA_BITS_MASK));
+	temp_p <<= _G_POSIT_SHIFT_AMOUNT;
+	p = temp_p & -((v.si < _G_MAXREAL_INT) & (v.si > _G_MINREAL_INT));
 
 	p = (p ^ -sign) + sign;
 
