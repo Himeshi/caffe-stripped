@@ -34,6 +34,8 @@
 #define POSIT_EXP_SHIFT 41 //64-23
 #define FLOAT_EXP_SIGN_SHIFT 30
 #define FLOAT_INF 0x7F800000
+#define FLOAT_SIGN_PLUS_EXP_LENGTH 9
+#define POSIT_LENGTH_PLUS_ONE 17
 
 #define GET_MAX(a, b)                                                          \
   ({                                                                           \

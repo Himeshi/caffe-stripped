@@ -18,63 +18,31 @@
 namespace caffe {
 	
 __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
-	
-  // handle zero
-  if (p == 0)
-    return 0.0;
+  union Bits v;
 
-  // handle infinity
-  if (p == _G_INFP)
-    return INFINITY;
+  // get sign
+  bool sign = p & SIGN_MASK;
+  p = (p ^ -sign) + sign;
 
-  if (p == _G_MAXREALP)
-    return _G_MAXREAL;
+  // get the regime sign
+  bool regime_sign = p & SECOND_BIT_MASK;
 
-  if (p == _G_MINREALP)
-    return _G_MINREAL;
+  // get regime
+  v.ui = p << POSIT_LENGTH_PLUS_ONE;
+  int regime_length = (__clz(v.ui) * !regime_sign) + (__clz(~v.ui) * regime_sign);
+  int regime = (regime_length - regime_sign) << _G_ESIZE;
+  regime = (regime ^ -regime_sign) + regime_sign;
 
-  double f = 1.0;
+  // assemble
+  v.ui <<= (regime_length + 1);
+  v.ui >>= (FLOAT_SIGN_PLUS_EXP_LENGTH - _G_ESIZE);
+  v.ui += ((SINGLE_PRECISION_BIAS - regime) << FLOAT_EXPONENT_SHIFT);
 
-  // check sign bit
-  FP16_TYPE sign = p & SIGN_MASK;
-  // if negative, get the two's complement
-  if (sign) {
-    p = ~p + 1;
-    f = -f;
-  }
+  v.si ^= (FLOAT_INF ^ v.si) & -(p == _G_INFP);
+  v.si ^= (0 ^ v.si) & -(p == 0);
 
-  // get the regime
-  FP16_TYPE second_bit = p & SECOND_BIT_MASK;
-  // remove the sign
-  p <<= 1;
-  int regime = 0;
-  int regime_length = 0;
-  if (second_bit) {
-    // sign of regime is +ve, find first 0
-	// Here we have to subtract the posit limb size, because clz takes an
-	// int which aligns the short to the right
-    FP16_TYPE flipped = ~p;
-    regime = __clz(flipped) - FP16_LIMB_SIZE - 1;
-    regime_length = regime + 2;
-  } else {
-    // sign of regime is -ve, find first 1
-	regime = FP16_LIMB_SIZE - __clz(p);
-    regime_length = 1 - regime;
-  }
-
-  // remove regime and get exponent
-  p <<= regime_length;
-  int exponent = p >> (FP16_LIMB_SIZE - _G_ESIZE);
-
-  // remove exponent and get fraction
-  p <<= _G_ESIZE;
-  int running_length = (regime_length + 1 + _G_ESIZE);
-  int fraction_size = ((_G_NBITS - running_length) + abs((_G_NBITS - running_length))) >> 1;
-  int fraction = p >> (FP16_LIMB_SIZE - fraction_size);
-  fraction = fraction | (1 << fraction_size);
-
-  return f * ((float)fraction / (float)(1 << fraction_size)) *
-         powf(_G_USEED, regime) * (1 << exponent);
+  v.ui |= (sign << FLOAT_SIGN_SHIFT);
+  return v.f;
 
 }
 
