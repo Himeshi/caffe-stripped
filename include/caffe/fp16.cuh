@@ -79,7 +79,9 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
 
   //round
   temp_p += (bool) (regime_and_exp & POSIT_HALFWAY_BIT_MASK) && ((temp_p & 1) | (regime_and_exp & POSIT_EXTRA_BITS_MASK));
+#if _G_NBITS != 16
   temp_p <<= _G_POSIT_SHIFT_AMOUNT;
+#endif
   p = temp_p & -((v.si < _G_MAXREAL_INT) & (v.si > _G_MINREAL_INT));
 
   p = (p ^ -sign) + sign;
