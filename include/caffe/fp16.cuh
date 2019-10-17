@@ -50,9 +50,8 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   fp16 p = 0;
   union Bits v;
   v.f = f;
-  uint32_t sign = v.ui & FLOAT_SIGN_MASK;
-  v.si ^= sign;
-  sign >>= FLOAT_SIGN_SHIFT;
+  bool sign = v.ui & FLOAT_SIGN_MASK;
+  v.ui &= 0x7FFFFFFF;
 
   p = _G_MAXREALP & -(v.si >= _G_MAXREAL_INT);
   p = _G_INFP & -(v.si >= FLOAT_INF);
