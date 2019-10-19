@@ -399,7 +399,7 @@ void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
 template <>
 void caffe_gpu_scal_half<float>(const int N, const float alpha, fp16 *X) {
   float* tempX;
-  cudaMallocManaged(&tempX, N*sizeof(float));
+  cudaMalloc(&tempX, N*sizeof(float));
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
   CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), N, &alpha, tempX, 1));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
@@ -409,7 +409,7 @@ void caffe_gpu_scal_half<float>(const int N, const float alpha, fp16 *X) {
 template <>
 void caffe_gpu_scal_half<double>(const int N, const double alpha, fp16 *X) {
   double* tempX;
-  cudaMallocManaged(&tempX, N*sizeof(double));
+  cudaMalloc(&tempX, N*sizeof(double));
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
   CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), N, &alpha, tempX, 1));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
@@ -423,7 +423,7 @@ void caffe_gpu_scal<float>(const int N, const float alpha, float *X) {
 template <>
 void caffe_gpu_scal<fp16>(const int N, const fp16 alpha, fp16 *X) {
   float* tempX;
-  cudaMallocManaged(&tempX, N*sizeof(float));
+  cudaMalloc(&tempX, N*sizeof(float));
   const float alpha_float = fp16tofp32(alpha);
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
   CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), N, &alpha_float, tempX, 1));
@@ -527,11 +527,11 @@ template <>
 void caffe_gpu_dot<fp16>(const int n, const fp16* x, const fp16* y,
     fp16 * out) {
   float* tempX;
-  cudaMallocManaged(&tempX, n*sizeof(float));
+  cudaMalloc(&tempX, n*sizeof(float));
   float* tempY;
-  cudaMallocManaged(&tempY, n*sizeof(float));
+  cudaMalloc(&tempY, n*sizeof(float));
   float* tempOut;
-  cudaMallocManaged(&tempOut, n*sizeof(float));
+  cudaMalloc(&tempOut, n*sizeof(float));
   
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY);
@@ -575,7 +575,7 @@ template <>
 void caffe_gpu_asum<fp16>(const int n, const fp16* x, fp16* y) {
   float tempY;
   float* tempX;
-  cudaMallocManaged(&tempX, n*sizeof(float)); 
+  cudaMalloc(&tempX, n*sizeof(float));
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
   CUBLAS_CHECK(cublasSasum(Caffe::cublas_handle(), n, tempX, 1, &tempY));
   *y = fp32tofp16(tempY);
@@ -584,34 +584,26 @@ void caffe_gpu_asum<fp16>(const int n, const fp16* x, fp16* y) {
 
 void caffe_gpu_scale_half(const int n, const float alpha, const fp16 *x,
                             fp16* y) {
-  float* tempX;
-  cudaMallocManaged(&tempX, n*sizeof(float));
   float* tempY;
-  cudaMallocManaged(&tempY, n*sizeof(float));
+  cudaMalloc(&tempY, n*sizeof(float));
    
-  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
-  CUBLAS_CHECK(cublasScopy(Caffe::cublas_handle(), n, tempX, 1, tempY, 1));
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempY);
   CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), n, &alpha, tempY, 1));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
 
-  cudaFree(tempX);
   cudaFree(tempY);
 }
 
 void caffe_gpu_scale_half(const int n, const double alpha, const fp16 *x,
                             fp16* y) {
 
-  double* tempX;
-  cudaMallocManaged(&tempX, n*sizeof(double));
   double* tempY;
-  cudaMallocManaged(&tempY, n*sizeof(double));
+  cudaMalloc(&tempY, n*sizeof(double));
     
-  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
-  CUBLAS_CHECK(cublasDcopy(Caffe::cublas_handle(), n, tempX, 1, tempY, 1));
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempY);
   CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), n, &alpha, tempY, 1));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
   
-  cudaFree(tempX);
   cudaFree(tempY);
 }
 
