@@ -144,60 +144,6 @@ void caffe_gpu_gemm_half<double>(const CBLAS_TRANSPOSE TransA,
 }
 
 template <>
-void caffe_gpu_gemm_half2<float>(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const float alpha, const float* A, const fp16* B, const float beta,
-    fp16* C) {
-  float* tempB;
-  float* tempC;
-  cudaMalloc(&tempB, M * K * sizeof(float));
-  cudaMalloc(&tempC, M * N * sizeof(float));
-
-  convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(M * K, B, tempB);
-  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
-
-  // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  cublasOperation_t cuTransB =
-      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  CUBLAS_CHECK(cublasSgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
-      N, M, K, &alpha, tempB, ldb, A, lda, &beta, tempC, N));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, tempC, C);
-  cudaFree(tempB);
-  cudaFree(tempC);
-}
-
-template <>
-void caffe_gpu_gemm_half2<double>(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const double alpha, const double* A, const fp16* B, const double beta,
-    fp16* C) {
-  double* tempB;
-  double* tempC;
-  cudaMalloc(&tempB, M * K * sizeof(double));
-  cudaMalloc(&tempC, M * N * sizeof(double));
-
-  convert_to_float<<<CAFFE_GET_BLOCKS(M * K), CAFFE_CUDA_NUM_THREADS>>>(M * K, B, tempB);
-  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
-
-  // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  cublasOperation_t cuTransB =
-      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  CUBLAS_CHECK(cublasDgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
-      N, M, K, &alpha, tempB, ldb, A, lda, &beta, tempC, N));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, tempC, C);
-  cudaFree(tempB);
-  cudaFree(tempC);
-}
-
-template <>
 void caffe_gpu_gemv<float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float* A, const float* x,
     const float beta, float* y) {
