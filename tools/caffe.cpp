@@ -454,6 +454,7 @@ int main(int argc, char** argv) {
       "  time            benchmark model execution time");
   // Run tool or show usage.
   caffe::GlobalInit(&argc, &argv);
+  fLI::FLAGS_minloglevel = 3;
   // computing with fp16
   LOG(INFO) << "Using compression with posit16 environment with nbits = " << _G_NBITS << " and esize = " << _G_ESIZE;
   if (argc == 2) {
