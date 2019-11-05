@@ -72,25 +72,25 @@ int main(int argc, char** argv) {
 	scoped_ptr<db::Transaction> txn(db_write->NewTransaction());
 	scoped_ptr<db::Cursor> cursor_write(db_write->NewCursor());
 
-	DatumNew datum;
+	Datum datum;
+	DatumNew datumNew;
 	int count = 0;
 	while(cursor_read->valid()) {
-		Datum* datumNew = new Datum();
 		datum.ParseFromString(cursor_read->value());
 
 		const int datum_channels = datum.channels();
 		const int datum_height = datum.height();
 		const int datum_width = datum.width();
 
-		datumNew->set_channels(datum_channels);
-		datumNew->set_height(datum_height);
-		datumNew->set_width(datum_width);
-		datumNew->set_label(fp32tofp16(datum.label()));
+		datumNew.set_channels(datum_channels);
+		datumNew.set_height(datum_height);
+		datumNew.set_width(datum_width);
+		datumNew.set_label(fp32tofp16(datum.label()));
 		//datumNew.set_float_data(datum.float_data());
-		datumNew->set_encoded(datum.encoded());
+		datumNew.set_encoded(datum.encoded());
 
 		int size = datum_channels * datum_width * datum_height;
-		uint32_t* dataNew = (uint32_t*) malloc(size * sizeof(uint32_t));
+		uint16_t* dataNew = (uint16_t*) malloc(size * sizeof(uint16_t));
 		const string& data = datum.data();
 
 		int data_index;
@@ -100,10 +100,7 @@ int main(int argc, char** argv) {
 				for (int w = 0; w < datum_width; ++w) {
 					data_index = (c * datum_height + h) * datum_width + w;
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) * 0.00390625;
-					dataNew[data_index] = (uint32_t) fp32tofp16(datum_element);
-					//printf("%d ", data_index);
-					datumNew->add_data(dataNew[data_index]);
-					//datumNew->set_data(dataNew[data_index]);
+					dataNew[data_index] = (uint16_t) fp32tofp16(datum_element);
 					/*if(data_index < 784 && datum_element != 0.0)
 						printf("%d %f %hu, ", data_index, datum_element, dataNew[data_index]);*/
 				}
@@ -111,20 +108,20 @@ int main(int argc, char** argv) {
 		}
 		//printf("\n");
 
-/*		char* dataNewBytes = (char*) malloc(size * sizeof(uint16_t));
+		char* dataNewBytes = (char*) malloc(size * sizeof(uint16_t));
 		for (int j = 0; j < size * 2; j += 2) {
 			dataNewBytes[j] = dataNew[j / 2] >> 8;
 			dataNewBytes[j + 1] = dataNew[j / 2] & 0x00FF;
 		}
-		datumNew.set_data(dataNewBytes, size * 2);*/
+		datumNew.set_data(dataNewBytes, size * 2);
 
 		string output;
-		datumNew->SerializeToString(&output);
+		datumNew.SerializeToString(&output);
 
 		txn->Put(cursor_read->key(), output);
 
 		free(dataNew);
-		//free(dataNewBytes);
+		free(dataNewBytes);
 		count++;
 		cursor_read->Next();
 	}
@@ -132,27 +129,25 @@ int main(int argc, char** argv) {
 	printf("\n%d\n\n", count);
 
 
-/*	//Validation
-	scoped_ptr<db::DB> db_read_test(db::GetDB (FLAGS_backend));
-	db_read_test->Open(s.str(), db::READ);
+	//Validation
+/*	scoped_ptr<db::DB> db_read_test(db::GetDB (FLAGS_backend));
+	db_read_test->Open("/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_test_posit_lmdb", db::READ);
 	scoped_ptr<db::Cursor> cursor_read_test(db_read_test->NewCursor());
 	int newcount = 0;
-	DatumNew datumNew;
 	while(cursor_read_test->valid() && newcount < 2) {
 		datumNew.ParseFromString(cursor_read_test->value());
 		const int datum_channels_new = datumNew.channels();
 		const int datum_height_new = datumNew.height();
 		const int datum_width_new = datumNew.width();
-		//const string& dataNewdata = datumNew.data();
+		const string& dataNewdata = datumNew.data();
 		fp16 datum_posit_element;
 		for (int i = 0; i < datum_channels_new * datum_height_new * datum_width_new; i++) {
-			datum_posit_element = static_cast<uint16_t>(datumNew.data(i));
+			datum_posit_element = static_cast<uint16_t>(static_cast<uint8_t>(dataNewdata[i * 2])) << 8 | static_cast<uint8_t>(dataNewdata[i * 2 + 1]);
 			if(i < 784 && datum_posit_element != 0)
 				printf("%d %hu ", i, (datum_posit_element));
 		}
 		cursor_read_test->Next();
 		newcount++;
-		printf("\n");
 	}*/
 }
 

@@ -41,7 +41,7 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const Datum& datum,
                                        fp16* transformed_data) {
-  //const string& data = datum.data();
+  const string& data = datum.data();
   const int datum_channels = datum.channels();
   const int datum_height = datum.height();
   const int datum_width = datum.width();
@@ -50,7 +50,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   const Dtype scale = param_.scale();
   const bool do_mirror = param_.mirror() && Rand(2);
   const bool has_mean_file = param_.has_mean_file();
-  const bool has_uint8 = datum.data_size() > 0;
+  const bool has_uint8 = data.size() > 0;
   const bool has_mean_values = mean_values_.size() > 0;
 
   CHECK_GT(datum_channels, 0);
@@ -105,7 +105,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
           top_index = (c * height + h) * width + w;
         }
         if (has_uint8) {
-          datum_element = datum.data(data_index);
+          datum_element = (static_cast<uint8_t>(data[data_index * 2])) << 8 | static_cast<uint8_t>(data[data_index * 2 + 1]);
         } else {
           datum_element = fp32tofp16(datum.float_data(data_index));
         }

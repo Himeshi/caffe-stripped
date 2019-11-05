@@ -22,7 +22,7 @@ DEFINE_string(backend, "lmdb",
         "The backend {leveldb, lmdb} containing the images");
 
 int main(int argc, char** argv) {
-/*#ifdef USE_OPENCV
+#ifdef USE_OPENCV
   ::google::InitGoogleLogging(argv[0]);
   // Print output to stderr (while still logging)
   FLAGS_alsologtostderr = 1;
@@ -121,5 +121,5 @@ int main(int argc, char** argv) {
 #else
   LOG(FATAL) << "This tool requires OpenCV; compile with USE_OPENCV.";
 #endif  // USE_OPENCV
-  return 0;*/
+  return 0;
 }
