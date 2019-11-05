@@ -127,8 +127,8 @@ bool ReadImageToDatum(const string& filename, const int label,
         return ReadFileToDatum(filename, label, datum);
       std::vector<uchar> buf;
       cv::imencode("."+encoding, cv_img, buf);
-      datum->set_data(std::string(reinterpret_cast<char*>(&buf[0]),
-                      buf.size()));
+      /*datum->set_data(std::string(reinterpret_cast<char*>(&buf[0]),
+                      buf.size()));*/
       datum->set_label(label);
       datum->set_encoded(true);
       return true;
@@ -153,7 +153,7 @@ bool ReadFileToDatum(const string& filename, const int label,
     file.seekg(0, ios::beg);
     file.read(&buffer[0], size);
     file.close();
-    datum->set_data(buffer);
+//    datum->set_data(buffer);
     datum->set_label(label);
     datum->set_encoded(true);
     return true;
@@ -166,9 +166,9 @@ bool ReadFileToDatum(const string& filename, const int label,
 cv::Mat DecodeDatumToCVMatNative(const Datum& datum) {
   cv::Mat cv_img;
   CHECK(datum.encoded()) << "Datum not encoded";
-  const string& data = datum.data();
+/*  const string& data = datum.data();
   std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
-  cv_img = cv::imdecode(vec_data, -1);
+  cv_img = cv::imdecode(vec_data, -1);*/
   if (!cv_img.data) {
     LOG(ERROR) << "Could not decode datum ";
   }
@@ -177,11 +177,11 @@ cv::Mat DecodeDatumToCVMatNative(const Datum& datum) {
 cv::Mat DecodeDatumToCVMat(const Datum& datum, bool is_color) {
   cv::Mat cv_img;
   CHECK(datum.encoded()) << "Datum not encoded";
-  const string& data = datum.data();
+/*  const string& data = datum.data();
   std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
   int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
     CV_LOAD_IMAGE_GRAYSCALE);
-  cv_img = cv::imdecode(vec_data, cv_read_flag);
+  cv_img = cv::imdecode(vec_data, cv_read_flag);*/
   if (!cv_img.data) {
     LOG(ERROR) << "Could not decode datum ";
   }
@@ -232,7 +232,7 @@ void CVMatToDatum(const cv::Mat& cv_img, Datum* datum) {
       }
     }
   }
-  datum->set_data(buffer);
+//  datum->set_data(buffer);
 }
 #endif  // USE_OPENCV
 }  // namespace caffe
