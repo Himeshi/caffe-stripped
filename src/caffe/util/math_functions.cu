@@ -342,24 +342,21 @@ void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
   }
 }
 
+__global__ void scal_kernel(const int n, const float alpha, fp16* X) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if(index < n)
+    X[index] = fp32tofp16_gpu(fp16tofp32_gpu(X[index]) * alpha);
+}
+
 template <>
 void caffe_gpu_scal_half<float>(const int N, const float alpha, fp16 *X) {
-  float* tempX;
-  cudaMalloc(&tempX, N*sizeof(float));
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
-  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), N, &alpha, tempX, 1));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
-  cudaFree(tempX);
+  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
 }
 
 template <>
 void caffe_gpu_scal_half<double>(const int N, const double alpha, fp16 *X) {
-  double* tempX;
-  cudaMalloc(&tempX, N*sizeof(double));
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
-  CUBLAS_CHECK(cublasDscal(Caffe::cublas_handle(), N, &alpha, tempX, 1));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
-  cudaFree(tempX);
+  float alpha_float = alpha;
+  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha_float, X);
 }
 
 template <>
@@ -368,13 +365,8 @@ void caffe_gpu_scal<float>(const int N, const float alpha, float *X) {
 }
 template <>
 void caffe_gpu_scal<fp16>(const int N, const fp16 alpha, fp16 *X) {
-  float* tempX;
-  cudaMalloc(&tempX, N*sizeof(float));
   const float alpha_float = fp16tofp32(alpha);
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX);
-  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), N, &alpha_float, tempX, 1));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempX, X);
-  cudaFree(tempX);
+  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha_float, X);
 }
 
 template <>
