@@ -8,7 +8,69 @@
 #include "caffe/common.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/fp16.cuh"
+
+// Thread block size
+#define BLOCK_SIZE 16
+
 namespace caffe {
+__global__ void MatMulSharedMemKernel(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float alpha, const fp16* A, const int lda, const fp16* B, const float beta,
+    const int ldb, fp16* C) {
+
+  // Block row and column
+  int blockRow = blockIdx.x;
+  int blockCol = blockIdx.y;
+
+  // Thread row and column
+  int row = threadIdx.x;
+  int col = threadIdx.y;
+
+  int cRow = blockRow * BLOCK_SIZE + row;
+  int cCol = blockCol * BLOCK_SIZE + col;
+  int cIndex = cRow * M + cCol;
+
+  float cValue = 0;
+
+  int iter = ((K + BLOCK_SIZE - 1) / BLOCK_SIZE);
+  int count = BLOCK_SIZE;
+
+  if(cRow < N && cCol < M) {
+    for (int m = 0; m < iter; ++m) {
+      int aRow = m * BLOCK_SIZE + row;
+      int aCol = cCol;
+      int bRow = cRow;
+      int bCol = m * BLOCK_SIZE + col;
+
+      int aIndex = aRow * M + aCol;
+      int bIndex = bRow * K + bCol;
+
+      if(m == iter - 1)
+        count = K - (m * BLOCK_SIZE);
+
+      // Shared memory used to store submatrices
+      __shared__ fp16 As[BLOCK_SIZE][BLOCK_SIZE];
+      __shared__ fp16 Bs[BLOCK_SIZE][BLOCK_SIZE];
+
+      //load submatrices
+      if(aRow < K && aCol < M)
+        As[row][col] = A[aIndex];
+
+      if(bRow < N && bCol < K)
+        Bs[row][col] = B[bIndex];
+
+      __syncthreads();
+
+      for (int e = 0; e < count; ++e) {
+        cValue += fp16tofp32_gpu(As[e][col]) * alpha * fp16tofp32_gpu(Bs[row][e]);
+      }
+
+      __syncthreads();
+    }
+
+    C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
+  }
+}
 
 template <>
 void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
