@@ -9,12 +9,13 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/fp16.cuh"
 
+#define CUSTOM_MAT_MUL
 // Thread block size
 #define BLOCK_SIZE 16
 
 namespace caffe {
-__global__ void MatMulSharedMemKernel(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+__global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
+    const cublasOperation_t TransB, const int M, const int N, const int K,
     const float alpha, const fp16* A, const int lda, const fp16* B, const float beta,
     const int ldb, fp16* C) {
 
@@ -35,41 +36,55 @@ __global__ void MatMulSharedMemKernel(const CBLAS_TRANSPOSE TransA,
   int iter = ((K + BLOCK_SIZE - 1) / BLOCK_SIZE);
   int count = BLOCK_SIZE;
 
-  if(cRow < N && cCol < M) {
-    for (int m = 0; m < iter; ++m) {
-      int aRow = m * BLOCK_SIZE + row;
-      int aCol = cCol;
-      int bRow = cRow;
-      int bCol = m * BLOCK_SIZE + col;
+  int aRow, aCol, bRow, bCol, aIndex, bIndex;
+  for (int m = 0; m < iter; ++m) {
 
-      int aIndex = aRow * M + aCol;
-      int bIndex = bRow * K + bCol;
+    if(m == iter - 1)
+      count = K - (m * BLOCK_SIZE);
 
-      if(m == iter - 1)
-        count = K - (m * BLOCK_SIZE);
+    // Shared memory used to store submatrices
+    __shared__ fp16 As[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ fp16 Bs[BLOCK_SIZE][BLOCK_SIZE];
 
-      // Shared memory used to store submatrices
-      __shared__ fp16 As[BLOCK_SIZE][BLOCK_SIZE];
-      __shared__ fp16 Bs[BLOCK_SIZE][BLOCK_SIZE];
-
-      //load submatrices
+    if(TransA == 0) {
+      aRow = m * BLOCK_SIZE + row;
+      aCol = cCol;
+      aIndex = aRow * M + aCol;
       if(aRow < K && aCol < M)
         As[row][col] = A[aIndex];
-
-      if(bRow < N && bCol < K)
-        Bs[row][col] = B[bIndex];
-
-      __syncthreads();
-
-      for (int e = 0; e < count; ++e) {
-        cValue += fp16tofp32_gpu(As[e][col]) * alpha * fp16tofp32_gpu(Bs[row][e]);
-      }
-
-      __syncthreads();
+    } else {
+      aRow = cCol;
+      aCol = m * BLOCK_SIZE + row;
+      aIndex = aRow * K + aCol;
+      if(aRow < M && aCol < K)
+        As[row][col] = A[aIndex];
     }
 
-    C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
+    if(TransB == 0) {
+      bRow = cRow;
+      bCol = m * BLOCK_SIZE + col;
+      bIndex = bRow * K + bCol;
+      if(bRow < N && bCol < K)
+        Bs[row][col] = B[bIndex];
+    } else {
+      bRow = m * BLOCK_SIZE + col;
+      bCol = cRow;
+      bIndex = bRow * N + bCol;
+      if(bRow < K && bCol < N)
+        Bs[row][col] = B[bIndex];
+    }
+
+    __syncthreads();
+
+    for (int e = 0; e < count; ++e) {
+      cValue += fp16tofp32_gpu(As[e][col]) * alpha * fp16tofp32_gpu(Bs[row][e]);
+    }
+
+    __syncthreads();
   }
+
+  if(cRow < N && cCol < M)
+    C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
 }
 
 template <>
@@ -77,12 +92,26 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
     const fp16 alpha, const fp16* A, const fp16* B, const fp16 beta,
     fp16* C) {
-  float* tempA;
-  float* tempB;
-  float* tempC;
 
   float tempAlpha = fp16tofp32(alpha);
   float tempBeta = fp16tofp32(beta);
+
+      // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+
+#ifdef CUSTOM_MAT_MUL
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
+  MatMulSharedMemKernel<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, tempAlpha, B, ldb, A, tempBeta, lda, C);
+#else
+  float* tempA;
+  float* tempB;
+  float* tempC;
 
   cudaMalloc(&tempA, K * M * sizeof(float));
   cudaMalloc(&tempB, N * K * sizeof(float));
@@ -92,13 +121,6 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
   convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
   convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
 
-  // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  cublasOperation_t cuTransB =
-      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasSgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
       N, M, K, &tempAlpha, tempB, ldb, tempA, lda, &tempBeta, tempC, N));
 
@@ -106,6 +128,7 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
   cudaFree(tempA);
   cudaFree(tempB);
   cudaFree(tempC);
+#endif
 }
 
 template <>
