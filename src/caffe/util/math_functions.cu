@@ -11,7 +11,7 @@
 
 #define CUSTOM_MAT_MUL
 // Thread block size
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 11
 
 namespace caffe {
 __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
@@ -51,13 +51,13 @@ __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
       aCol = cCol;
       aIndex = aRow * M + aCol;
       if(aRow < K && aCol < M)
-        As[row][col] = A[aIndex];
+        As[col][row] = A[aIndex];
     } else {
       aRow = cCol;
       aCol = m * BLOCK_SIZE + row;
       aIndex = aRow * K + aCol;
       if(aRow < M && aCol < K)
-        As[row][col] = A[aIndex];
+        As[col][row] = A[aIndex];
     }
 
     if(TransB == 0) {
@@ -77,7 +77,7 @@ __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
     __syncthreads();
 
     for (int e = 0; e < count; ++e) {
-      cValue += fp16tofp32_gpu(As[e][col]) * alpha * fp16tofp32_gpu(Bs[row][e]);
+      cValue += fp16tofp32_gpu(As[col][e]) * alpha * fp16tofp32_gpu(Bs[row][e]);
     }
 
     __syncthreads();
