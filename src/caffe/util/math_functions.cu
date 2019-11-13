@@ -87,6 +87,225 @@ __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
     C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
 }
 
+__global__ void MatMulSharedMemKernelWithFloat(const cublasOperation_t TransA,
+    const cublasOperation_t TransB, const int M, const int N, const int K,
+    const float alpha, const fp16* A, const int lda, const float* B, const float beta,
+    const int ldb, fp16* C) {
+
+  // Block row and column
+  int blockRow = blockIdx.x;
+  int blockCol = blockIdx.y;
+
+  // Thread row and column
+  int row = threadIdx.x;
+  int col = threadIdx.y;
+
+  int cRow = blockRow * BLOCK_SIZE + row;
+  int cCol = blockCol * BLOCK_SIZE + col;
+  int cIndex = cRow * M + cCol;
+
+  float cValue = 0;
+
+  int iter = ((K + BLOCK_SIZE - 1) / BLOCK_SIZE);
+  int count = BLOCK_SIZE;
+
+  int aRow, aCol, bRow, bCol, aIndex, bIndex;
+  for (int m = 0; m < iter; ++m) {
+
+    if(m == iter - 1)
+      count = K - (m * BLOCK_SIZE);
+
+    // Shared memory used to store submatrices
+    __shared__ fp16 As[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
+
+    if(TransA == 0) {
+      aRow = m * BLOCK_SIZE + row;
+      aCol = cCol;
+      aIndex = aRow * M + aCol;
+      if(aRow < K && aCol < M)
+        As[col][row] = A[aIndex];
+    } else {
+      aRow = cCol;
+      aCol = m * BLOCK_SIZE + row;
+      aIndex = aRow * K + aCol;
+      if(aRow < M && aCol < K)
+        As[col][row] = A[aIndex];
+    }
+
+    if(TransB == 0) {
+      bRow = cRow;
+      bCol = m * BLOCK_SIZE + col;
+      bIndex = bRow * K + bCol;
+      if(bRow < N && bCol < K)
+        Bs[row][col] = B[bIndex];
+    } else {
+      bRow = m * BLOCK_SIZE + col;
+      bCol = cRow;
+      bIndex = bRow * N + bCol;
+      if(bRow < K && bCol < N)
+        Bs[row][col] = B[bIndex];
+    }
+
+    __syncthreads();
+
+    for (int e = 0; e < count; ++e) {
+      cValue += fp16tofp32_gpu(As[col][e]) * alpha * Bs[row][e];
+    }
+
+    __syncthreads();
+  }
+
+  if(cRow < N && cCol < M)
+    C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
+}
+
+__global__ void MatMulSharedMemKernelWithFloatB(const cublasOperation_t TransA,
+    const cublasOperation_t TransB, const int M, const int N, const int K,
+    const float alpha, const float* A, const int lda, const fp16* B, const float beta,
+    const int ldb, fp16* C) {
+
+  // Block row and column
+  int blockRow = blockIdx.x;
+  int blockCol = blockIdx.y;
+
+  // Thread row and column
+  int row = threadIdx.x;
+  int col = threadIdx.y;
+
+  int cRow = blockRow * BLOCK_SIZE + row;
+  int cCol = blockCol * BLOCK_SIZE + col;
+  int cIndex = cRow * M + cCol;
+
+  float cValue = 0;
+
+  int iter = ((K + BLOCK_SIZE - 1) / BLOCK_SIZE);
+  int count = BLOCK_SIZE;
+
+  int aRow, aCol, bRow, bCol, aIndex, bIndex;
+  for (int m = 0; m < iter; ++m) {
+
+    if(m == iter - 1)
+      count = K - (m * BLOCK_SIZE);
+
+    // Shared memory used to store submatrices
+    __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ fp16 Bs[BLOCK_SIZE][BLOCK_SIZE];
+
+    if(TransA == 0) {
+      aRow = m * BLOCK_SIZE + row;
+      aCol = cCol;
+      aIndex = aRow * M + aCol;
+      if(aRow < K && aCol < M)
+        As[col][row] = A[aIndex];
+    } else {
+      aRow = cCol;
+      aCol = m * BLOCK_SIZE + row;
+      aIndex = aRow * K + aCol;
+      if(aRow < M && aCol < K)
+        As[col][row] = A[aIndex];
+    }
+
+    if(TransB == 0) {
+      bRow = cRow;
+      bCol = m * BLOCK_SIZE + col;
+      bIndex = bRow * K + bCol;
+      if(bRow < N && bCol < K)
+        Bs[row][col] = B[bIndex];
+    } else {
+      bRow = m * BLOCK_SIZE + col;
+      bCol = cRow;
+      bIndex = bRow * N + bCol;
+      if(bRow < K && bCol < N)
+        Bs[row][col] = B[bIndex];
+    }
+
+    __syncthreads();
+
+    for (int e = 0; e < count; ++e) {
+      cValue += As[col][e] * alpha * fp16tofp32_gpu(Bs[row][e]);
+    }
+
+    __syncthreads();
+  }
+
+  if(cRow < N && cCol < M)
+    C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
+}
+
+__global__ void MatMulSharedMemKernelWithFloatInputs(const cublasOperation_t TransA,
+    const cublasOperation_t TransB, const int M, const int N, const int K,
+    const float alpha, const float* A, const int lda, const float* B, const float beta,
+    const int ldb, fp16* C) {
+
+  // Block row and column
+  int blockRow = blockIdx.x;
+  int blockCol = blockIdx.y;
+
+  // Thread row and column
+  int row = threadIdx.x;
+  int col = threadIdx.y;
+
+  int cRow = blockRow * BLOCK_SIZE + row;
+  int cCol = blockCol * BLOCK_SIZE + col;
+  int cIndex = cRow * M + cCol;
+
+  float cValue = 0;
+
+  int iter = ((K + BLOCK_SIZE - 1) / BLOCK_SIZE);
+  int count = BLOCK_SIZE;
+
+  int aRow, aCol, bRow, bCol, aIndex, bIndex;
+  for (int m = 0; m < iter; ++m) {
+
+    if(m == iter - 1)
+      count = K - (m * BLOCK_SIZE);
+
+    // Shared memory used to store submatrices
+    __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
+
+    if(TransA == 0) {
+      aRow = m * BLOCK_SIZE + row;
+      aCol = cCol;
+      aIndex = aRow * M + aCol;
+      if(aRow < K && aCol < M)
+        As[col][row] = A[aIndex];
+    } else {
+      aRow = cCol;
+      aCol = m * BLOCK_SIZE + row;
+      aIndex = aRow * K + aCol;
+      if(aRow < M && aCol < K)
+        As[col][row] = A[aIndex];
+    }
+
+    if(TransB == 0) {
+      bRow = cRow;
+      bCol = m * BLOCK_SIZE + col;
+      bIndex = bRow * K + bCol;
+      if(bRow < N && bCol < K)
+        Bs[row][col] = B[bIndex];
+    } else {
+      bRow = m * BLOCK_SIZE + col;
+      bCol = cRow;
+      bIndex = bRow * N + bCol;
+      if(bRow < K && bCol < N)
+        Bs[row][col] = B[bIndex];
+    }
+
+    __syncthreads();
+
+    for (int e = 0; e < count; ++e) {
+      cValue += As[col][e] * alpha * Bs[row][e];
+    }
+
+    __syncthreads();
+  }
+
+  if(cRow < N && cCol < M)
+    C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
+}
+
 template <>
 void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
@@ -96,7 +315,7 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
   float tempAlpha = fp16tofp32(alpha);
   float tempBeta = fp16tofp32(beta);
 
-      // Note that cublas follows fortran order.
+  // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
   int ldb = (TransB == CblasNoTrans) ? N : K;
   cublasOperation_t cuTransA =
@@ -161,6 +380,114 @@ void caffe_gpu_gemm<double>(const CBLAS_TRANSPOSE TransA,
       (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasDgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
       N, M, K, &alpha, B, ldb, A, lda, &beta, C, N));
+}
+
+template <>
+void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float alpha, const float* A, const fp16* B, const float beta,
+	fp16* C) {
+
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
+  MatMulSharedMemKernelWithFloat<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, alpha, B, ldb, A, beta, lda, C);
+}
+
+template <>
+void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const double alpha, const double* A, const fp16* B, const double beta,
+	fp16* C) {
+
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
+  MatMulSharedMemKernelWithFloat<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, (float) alpha, B, ldb, (float *) A, (float) beta, lda, C);
+}
+
+template <>
+void caffe_gpu_gemm_half_with_floatB(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float alpha, const fp16* A, const float* B, const float beta,
+	fp16* C) {
+
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
+  MatMulSharedMemKernelWithFloatB<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, alpha, B, ldb, A, beta, lda, C);
+}
+
+template <>
+void caffe_gpu_gemm_half_with_floatB(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const double alpha, const fp16* A, const double* B, const double beta,
+	fp16* C) {
+
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
+  MatMulSharedMemKernelWithFloatB<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, (float) alpha, (float *) B, ldb, A, (float) beta, lda, C);
+}
+
+template <>
+void caffe_gpu_gemm_half_with_float_inputs(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float alpha, const float* A, const float* B, const float beta,
+	fp16* C) {
+
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
+  MatMulSharedMemKernelWithFloatInputs<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, alpha, B, ldb, A, beta, lda, C);
+}
+
+template <>
+void caffe_gpu_gemm_half_with_float_inputs(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const double alpha, const double* A, const double* B, const double beta,
+	fp16* C) {
+
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cublasOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  cublasOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
+  MatMulSharedMemKernelWithFloatInputs<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, (float) alpha, (float *) B, ldb, (float *) A, (float) beta, lda, C);
 }
 
 template <>

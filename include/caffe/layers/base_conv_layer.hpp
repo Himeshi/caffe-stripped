@@ -46,12 +46,17 @@ class BaseConvolutionLayer : public Layer<Dtype> {
       Dtype* output, bool skip_im2col = false);
   void forward_gpu_gemm_half(const fp16* col_input, const fp16* weights,
 		  fp16* output, bool skip_im2col = false);
+  void forward_gpu_gemm_half_with_float_weights(const fp16* col_input, const Dtype* weights,
+		  fp16* output, bool skip_im2col = false);
   void forward_gpu_bias(Dtype* output, const Dtype* bias);
   void forward_gpu_bias_half(fp16* output, const fp16* bias);
+  void forward_gpu_bias_half_with_float(fp16* output, const Dtype* bias);
   void backward_gpu_gemm(const Dtype* input, const Dtype* weights,
-      Dtype* col_output);
+    Dtype* col_output);
   void backward_gpu_gemm_half(const fp16* input, const fp16* weights,
 		  fp16* col_output);
+  void backward_gpu_gemm_half_with_float(const fp16* input, const Dtype* weights,
+          fp16* col_output);
   void weight_gpu_gemm(const Dtype* col_input, const Dtype* output, Dtype*
       weights);
   void weight_gpu_gemm_half(const fp16* col_input, const fp16* output, fp16*
