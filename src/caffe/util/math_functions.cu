@@ -13,6 +13,10 @@
 // Thread block size
 #define BLOCK_SIZE 11
 
+#define CUSTOM_GEMV
+//gemv block size must always be an even number!
+#define GEMV_BLOCK_SIZE 16
+
 namespace caffe {
 __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
     const cublasOperation_t TransB, const int M, const int N, const int K,
@@ -575,20 +579,119 @@ void caffe_gpu_gemv<double>(const CBLAS_TRANSPOSE TransA, const int M,
       A, N, x, 1, &beta, y, 1));
 }
 
+__global__ void GemvStepOneKernel(cublasOperation_t cuTransA, int M, int N, const float alpha,
+    const fp16* A, const fp16* x, float* output) {
+  __shared__ fp16 xdata[GEMV_BLOCK_SIZE];
+  __shared__ float sum[GEMV_BLOCK_SIZE][GEMV_BLOCK_SIZE];
+
+  int aRow = blockIdx.x * GEMV_BLOCK_SIZE + threadIdx.x;
+  int aCol = blockIdx.y * GEMV_BLOCK_SIZE + threadIdx.y;
+  int row = threadIdx.x;
+  int col = threadIdx.y;
+
+  if(cuTransA == 0) {
+    if(aRow < M) {
+      xdata[row] = x[aRow];
+      __syncthreads();
+    }
+
+    if(aRow < M && aCol < N) {
+      sum[row][col] = alpha * fp16tofp32_gpu(A[aRow * N + aCol]) * fp16tofp32_gpu(xdata[row]);
+      __syncthreads();
+
+      for(int i = GEMV_BLOCK_SIZE / 2; i > 0; i>>=1) {
+        if(row < i) {
+          sum[row][col] += sum[row + i][col];
+        }
+        __syncthreads();
+      }
+
+      if(row == 0) {
+        output[aCol * gridDim.x + blockIdx.x] = sum[row][col];
+      }
+    } else {
+      sum[row][col] = 0;
+    }
+  } else {
+    if(aCol < N) {
+      xdata[col] = x[aCol];
+      __syncthreads();
+    }
+
+    if(aRow < M && aCol < N) {
+      sum[row][col] = alpha * fp16tofp32_gpu(A[aRow * N + aCol]) * fp16tofp32_gpu(xdata[col]);
+      __syncthreads();
+
+      for(int i = GEMV_BLOCK_SIZE / 2; i > 0; i>>=1) {
+        if(col < i) {
+          sum[row][col] += sum[row][col + i];
+        }
+        __syncthreads();
+      }
+
+      if(col == 0) {
+        output[aRow * gridDim.y + blockIdx.y] = sum[row][col];
+      }
+    } else {
+      sum[row][col] = 0;
+    }
+  }
+}
+
+__global__ void GemvStepTwoKernel(cublasOperation_t cuTransA, float* output, const float beta, fp16* y, int M, int N, int prevStepBlocks) {
+  int rowIndex = threadIdx.x + (blockIdx.x * GEMV_BLOCK_SIZE);
+  int startIndex = rowIndex * prevStepBlocks;
+  float sum = 0.0;
+  if(cuTransA == 0) {
+    if(rowIndex < N) {
+      for(int i = 0; i < prevStepBlocks; i++) {
+        sum += output[startIndex + i];
+      }
+      y[rowIndex] = fp32tofp16_gpu((beta * fp16tofp32_gpu(y[rowIndex])) + sum);
+    }
+  } else {
+    if(rowIndex < M) {
+      for(int i = 0; i < prevStepBlocks; i++) {
+        sum += output[startIndex + i];
+      }
+      y[rowIndex] = fp32tofp16_gpu((beta * fp16tofp32_gpu(y[rowIndex])) + sum);
+    }
+  }
+}
+
 template <>
 void caffe_gpu_gemv<fp16>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const fp16 alpha, const fp16* A, const fp16* x,
     const fp16 beta, fp16* y) {
-  float* tempA;
-  float* tempX;
-  float* tempY;
-  int asize = M * N;
-  cudaMalloc(&tempA, asize * sizeof(float));
   float tempAlpha = fp16tofp32(alpha);
   float tempBeta = fp16tofp32(beta);
 
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
+
+#ifdef CUSTOM_GEMV
+
+  dim3 dimBlock(GEMV_BLOCK_SIZE, GEMV_BLOCK_SIZE);
+  float* output;
+  dim3 dimGrid((M + GEMV_BLOCK_SIZE - 1) / dimBlock.x, (N + GEMV_BLOCK_SIZE - 1) / dimBlock.y);
+  if(cuTransA == 0)
+    cudaMalloc(&output, N * ((M + GEMV_BLOCK_SIZE - 1) / GEMV_BLOCK_SIZE) * sizeof(float));
+  else
+    cudaMalloc(&output, M * ((N + GEMV_BLOCK_SIZE - 1) / GEMV_BLOCK_SIZE) * sizeof(float));
+
+  GemvStepOneKernel<<<dimGrid, dimBlock>>>(cuTransA, M, N, tempAlpha, A, x, output);
+
+  if(cuTransA == 0)
+    GemvStepTwoKernel<<<(GEMV_BLOCK_SIZE + N - 1) / GEMV_BLOCK_SIZE, GEMV_BLOCK_SIZE>>>(cuTransA, output, tempBeta, y, M, N, dimGrid.x);
+  else
+    GemvStepTwoKernel<<<(GEMV_BLOCK_SIZE + M - 1) / GEMV_BLOCK_SIZE, GEMV_BLOCK_SIZE>>>(cuTransA, output, tempBeta, y, M, N, dimGrid.y);
+  cudaFree(output);
+#else
+  float* tempA;
+  float* tempX;
+  float* tempY;
+  int asize = M * N;
+  cudaMalloc(&tempA, asize * sizeof(float));
 
   if(cuTransA) {
     cudaMalloc(&tempY, M * sizeof(float));
@@ -616,6 +719,8 @@ void caffe_gpu_gemv<fp16>(const CBLAS_TRANSPOSE TransA, const int M,
   cudaFree(tempA);
   cudaFree(tempX);
   cudaFree(tempY);
+
+#endif
 }
 
 template <>
