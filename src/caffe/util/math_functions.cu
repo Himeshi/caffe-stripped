@@ -17,6 +17,9 @@
 //gemv block size must always be an even number!
 #define GEMV_BLOCK_SIZE 16
 
+#define CUSTOM_ASUM
+#define ASUM_BLOCK_SIZE 16
+
 namespace caffe {
 __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
     const cublasOperation_t TransB, const int M, const int N, const int K,
@@ -998,13 +1001,77 @@ void caffe_gpu_dot<fp16>(const int n, const fp16* x, const fp16* y,
   cudaFree(tempOut);
 }
 
+__global__ void AsumKernelStepOne(const int n, const fp16* x, float* tempX) {
+  __shared__ float xdata[GEMV_BLOCK_SIZE];
+  int globalIndex = blockIdx.x * ASUM_BLOCK_SIZE + threadIdx.x;
+  int localIndex = threadIdx.x;
+
+  if(globalIndex < n) {
+    xdata[localIndex] = fp16tofp32_gpu(x[globalIndex]);
+    __syncthreads();
+
+    for(int i = ASUM_BLOCK_SIZE / 2; i > 0; i>>=1) {
+      if(localIndex < i) {
+        xdata[localIndex] += xdata[localIndex + i];
+      }
+      __syncthreads();
+    }
+
+    if(localIndex == 0) {
+      tempX[blockIdx.x] = xdata[localIndex];
+    }
+
+  } else {
+    xdata[localIndex] = 0;
+  }
+}
+
+__global__ void AsumKernelStepTwo(const int n, float* x) {
+  __shared__ float xdata[GEMV_BLOCK_SIZE];
+  int globalIndex = blockIdx.x * ASUM_BLOCK_SIZE + threadIdx.x;
+  int localIndex = threadIdx.x;
+
+  if(globalIndex < n) {
+    xdata[localIndex] = x[globalIndex];
+    __syncthreads();
+
+    for(int i = ASUM_BLOCK_SIZE / 2; i > 0; i>>=1) {
+      if(localIndex < i) {
+        xdata[localIndex] += xdata[localIndex + i];
+      }
+      __syncthreads();
+    }
+
+    if(localIndex == 0) {
+      x[blockIdx.x] = xdata[localIndex];
+    }
+
+  } else {
+    xdata[localIndex] = 0;
+  }
+}
+
 template <>
 void caffe_gpu_asum_half<float>(const int n, const fp16* x, float* y) {
+#ifdef CUSTOM_ASUM
+  int ntemp = n;
+  float* tempX;
+  cudaMalloc(&tempX, ((ASUM_BLOCK_SIZE + n - 1) / ASUM_BLOCK_SIZE) * sizeof(float));
+  AsumKernelStepOne<<<(ASUM_BLOCK_SIZE + n - 1) / ASUM_BLOCK_SIZE, ASUM_BLOCK_SIZE>>>(n, x, tempX);
+  ntemp = (ASUM_BLOCK_SIZE + n - 1) / ASUM_BLOCK_SIZE;
+  while(ntemp > 1) {
+    AsumKernelStepTwo<<<(ASUM_BLOCK_SIZE + ntemp - 1) / ASUM_BLOCK_SIZE, ASUM_BLOCK_SIZE>>>(ntemp, tempX);
+    ntemp = (ASUM_BLOCK_SIZE + ntemp - 1) / ASUM_BLOCK_SIZE;
+  }
+  cudaMemcpy(y, tempX, sizeof(float), cudaMemcpyDeviceToHost);
+  cudaFree(tempX);
+#else
   float* tempX;
   cudaMalloc(&tempX, n * sizeof(float));
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
   CUBLAS_CHECK(cublasSasum(Caffe::cublas_handle(), n, tempX, 1, y));
   cudaFree(tempX);
+#endif
 }
 
 template <>
