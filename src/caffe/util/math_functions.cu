@@ -21,7 +21,12 @@
 #define ASUM_BLOCK_SIZE 16
 
 #define CUSTOM_AXPY
-#define AXPY_BLOCK_SIZE 8
+#define AXPY_BLOCK_SIZE 16
+
+#define CUSTOM_DOT
+#define DOT_BLOCK_SIZE 16
+
+#define SCAL_BLOCK_SIZE 16
 
 namespace caffe {
 __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
@@ -959,9 +964,71 @@ void caffe_gpu_axpby<double>(const int N, const double alpha, const double* X,
   caffe_gpu_axpy<double>(N, alpha, X, Y);
 }
 
+__global__ void DotKernel(const int n, const fp16* x, const fp16* y,
+    float* temp) {
+  int globalIndex = threadIdx.x + (blockIdx.x * DOT_BLOCK_SIZE);
+  int localIndex = threadIdx.x;
+  __shared__ float product[DOT_BLOCK_SIZE];
+
+  if(localIndex < n) {
+    product[localIndex] = fp16tofp32_gpu(x[globalIndex]) * fp16tofp32_gpu(y[globalIndex]);
+    __syncthreads();
+
+    for(int i = DOT_BLOCK_SIZE / 2; i > 0; i>>=1) {
+      if(localIndex < i) {
+        product[localIndex] += product[localIndex + i];
+      }
+      __syncthreads();
+    }
+
+    if(localIndex == 0) {
+      temp[blockIdx.x] = product[localIndex];
+    }
+  } else {
+    product[localIndex] = 0;
+  }
+}
+
+__global__ void DotKernelStepTwo(const int n, float* x) {
+  __shared__ float xdata[DOT_BLOCK_SIZE];
+  int globalIndex = blockIdx.x * DOT_BLOCK_SIZE + threadIdx.x;
+  int localIndex = threadIdx.x;
+
+  if(globalIndex < n) {
+    xdata[localIndex] = x[globalIndex];
+    __syncthreads();
+
+    for(int i = DOT_BLOCK_SIZE / 2; i > 0; i>>=1) {
+      if(localIndex < i) {
+        xdata[localIndex] += xdata[localIndex + i];
+      }
+      __syncthreads();
+    }
+
+    if(localIndex == 0) {
+      x[blockIdx.x] = xdata[localIndex];
+    }
+
+  } else {
+    xdata[localIndex] = 0;
+  }
+}
+
 template <>
 void caffe_gpu_dot_half<float>(const int n, const fp16* x, const fp16* y,
     float* out) {
+#ifdef CUSTOM_DOT
+  float* temp;
+  cudaMalloc(&temp, ((n + DOT_BLOCK_SIZE - 1) / DOT_BLOCK_SIZE)  * sizeof(float));
+  DotKernel<<<(n + DOT_BLOCK_SIZE - 1) / DOT_BLOCK_SIZE, DOT_BLOCK_SIZE>>>(n, x, y, temp);
+  int ntemp = (DOT_BLOCK_SIZE + n - 1) / DOT_BLOCK_SIZE;
+  while(ntemp > 1) {
+    DotKernelStepTwo<<<(DOT_BLOCK_SIZE + ntemp - 1) / DOT_BLOCK_SIZE, DOT_BLOCK_SIZE>>>(ntemp, temp);
+    ntemp = (DOT_BLOCK_SIZE + ntemp - 1) / DOT_BLOCK_SIZE;
+  }
+  cudaMemcpy(out, temp, sizeof(float), cudaMemcpyDeviceToHost);
+  cudaFree(temp);
+#else
   float* tempX;
   float* tempY;
   cudaMalloc(&tempX, n * sizeof(float));
@@ -971,6 +1038,7 @@ void caffe_gpu_dot_half<float>(const int n, const fp16* x, const fp16* y,
   CUBLAS_CHECK(cublasSdot(Caffe::cublas_handle(), n, tempX, 1, tempY, 1, out));
   cudaFree(tempX);
   cudaFree(tempY);
+#endif
 }
 
 template <>
@@ -1021,7 +1089,7 @@ void caffe_gpu_dot<fp16>(const int n, const fp16* x, const fp16* y,
 }
 
 __global__ void AsumKernelStepOne(const int n, const fp16* x, float* tempX) {
-  __shared__ float xdata[GEMV_BLOCK_SIZE];
+  __shared__ float xdata[ASUM_BLOCK_SIZE];
   int globalIndex = blockIdx.x * ASUM_BLOCK_SIZE + threadIdx.x;
   int localIndex = threadIdx.x;
 
@@ -1046,7 +1114,7 @@ __global__ void AsumKernelStepOne(const int n, const fp16* x, float* tempX) {
 }
 
 __global__ void AsumKernelStepTwo(const int n, float* x) {
-  __shared__ float xdata[GEMV_BLOCK_SIZE];
+  __shared__ float xdata[ASUM_BLOCK_SIZE];
   int globalIndex = blockIdx.x * ASUM_BLOCK_SIZE + threadIdx.x;
   int localIndex = threadIdx.x;
 
@@ -1073,11 +1141,10 @@ __global__ void AsumKernelStepTwo(const int n, float* x) {
 template <>
 void caffe_gpu_asum_half<float>(const int n, const fp16* x, float* y) {
 #ifdef CUSTOM_ASUM
-  int ntemp = n;
   float* tempX;
   cudaMalloc(&tempX, ((ASUM_BLOCK_SIZE + n - 1) / ASUM_BLOCK_SIZE) * sizeof(float));
   AsumKernelStepOne<<<(ASUM_BLOCK_SIZE + n - 1) / ASUM_BLOCK_SIZE, ASUM_BLOCK_SIZE>>>(n, x, tempX);
-  ntemp = (ASUM_BLOCK_SIZE + n - 1) / ASUM_BLOCK_SIZE;
+  int ntemp = (ASUM_BLOCK_SIZE + n - 1) / ASUM_BLOCK_SIZE;
   while(ntemp > 1) {
     AsumKernelStepTwo<<<(ASUM_BLOCK_SIZE + ntemp - 1) / ASUM_BLOCK_SIZE, ASUM_BLOCK_SIZE>>>(ntemp, tempX);
     ntemp = (ASUM_BLOCK_SIZE + ntemp - 1) / ASUM_BLOCK_SIZE;
@@ -1123,16 +1190,17 @@ void caffe_gpu_asum<fp16>(const int n, const fp16* x, fp16* y) {
   cudaFree(tempX);
 }
 
+__global__ void ScalKernel(const int n, const float alpha, const fp16 *x,
+                            fp16* y) {
+  int index = blockIdx.x * SCAL_BLOCK_SIZE + threadIdx.x;
+  if(index < n) {
+    y[index] = fp32tofp16_gpu(fp16tofp32_gpu(x[index]) * alpha);
+  }
+}
+
 void caffe_gpu_scale_half(const int n, const float alpha, const fp16 *x,
                             fp16* y) {
-  float* tempY;
-  cudaMalloc(&tempY, n*sizeof(float));
-   
-  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempY);
-  CUBLAS_CHECK(cublasSscal(Caffe::cublas_handle(), n, &alpha, tempY, 1));
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, tempY, y);
-
-  cudaFree(tempY);
+  ScalKernel<<<(n + SCAL_BLOCK_SIZE - 1) / SCAL_BLOCK_SIZE, SCAL_BLOCK_SIZE>>>(n, alpha, x, y);
 }
 
 void caffe_gpu_scale_half(const int n, const double alpha, const fp16 *x,
