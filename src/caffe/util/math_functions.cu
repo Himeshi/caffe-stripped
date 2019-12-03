@@ -20,6 +20,9 @@
 #define CUSTOM_ASUM
 #define ASUM_BLOCK_SIZE 16
 
+#define CUSTOM_AXPY
+#define AXPY_BLOCK_SIZE 8
+
 namespace caffe {
 __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
     const cublasOperation_t TransB, const int M, const int N, const int K,
@@ -791,9 +794,20 @@ void caffe_gpu_gemv_half<double>(const CBLAS_TRANSPOSE TransA, const int M,
   cudaFree(tempY);
 }
 
+__global__ void AxpyKernel(const int N, const float alpha, const fp16* X,
+    fp16* Y) {
+  int index = threadIdx.x + (blockIdx.x * AXPY_BLOCK_SIZE);
+  if(index < N) {
+    Y[index] = fp32tofp16_gpu((fp16tofp32_gpu(X[index]) * alpha) + fp16tofp32_gpu(Y[index]));
+  }
+}
+
 template <>
 void caffe_gpu_axpy_half(const int N, const float alpha, const fp16* X,
     fp16* Y) {
+#ifdef CUSTOM_AXPY
+  AxpyKernel<<<(N + AXPY_BLOCK_SIZE - 1) / AXPY_BLOCK_SIZE, AXPY_BLOCK_SIZE>>>(N, alpha, X, Y);
+#else
   float* tempX;
   float* tempY;
   cudaMalloc(&tempX, N * sizeof(float));
@@ -806,6 +820,7 @@ void caffe_gpu_axpy_half(const int N, const float alpha, const fp16* X,
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
   cudaFree(tempX);
   cudaFree(tempY);
+#endif
 }
 
 template <>
@@ -841,6 +856,9 @@ void caffe_gpu_axpy<double>(const int N, const double alpha, const double* X,
 template <>
 void caffe_gpu_axpy<fp16>(const int N, const fp16 alpha, const fp16* X,
     fp16* Y) {
+#ifdef CUSTOM_AXPY
+  AxpyKernel<<<(N + AXPY_BLOCK_SIZE - 1) / AXPY_BLOCK_SIZE, AXPY_BLOCK_SIZE>>>(N, fp16tofp32(alpha), X, Y);
+#else
   float* tempX;
   float* tempY;
   cudaMalloc(&tempX, N * sizeof(float));
@@ -854,6 +872,7 @@ void caffe_gpu_axpy<fp16>(const int N, const fp16 alpha, const fp16* X,
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y);
   cudaFree(tempX);
   cudaFree(tempY);
+#endif
 }
 
 void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
