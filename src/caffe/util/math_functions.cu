@@ -410,9 +410,27 @@ void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
       (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   cublasOperation_t cuTransB =
       (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+#ifdef CUSTOM_MAT_MUL
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
   dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
   MatMulSharedMemKernelWithFloat<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, alpha, B, ldb, A, beta, lda, C);
+#else
+  float* tempB;
+  float* tempC;
+
+  cudaMalloc(&tempB, N * K * sizeof(float));
+  cudaMalloc(&tempC, M * N * sizeof(float));
+
+  convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
+
+  CUBLAS_CHECK(cublasSgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
+      N, M, K, &alpha, tempB, ldb, A, lda, &beta, tempC, N));
+
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, tempC, C);
+  cudaFree(tempB);
+  cudaFree(tempC);
+#endif
 }
 
 template <>
@@ -428,81 +446,27 @@ void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
       (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   cublasOperation_t cuTransB =
       (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+#ifdef CUSTOM_MAT_MUL
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
   dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
   MatMulSharedMemKernelWithFloat<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, (float) alpha, B, ldb, (float *) A, (float) beta, lda, C);
-}
+#else
+  double* tempB;
+  double* tempC;
 
-template <>
-void caffe_gpu_gemm_half_with_floatB(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const float alpha, const fp16* A, const float* B, const float beta,
-	fp16* C) {
+  cudaMalloc(&tempB, N * K * sizeof(double));
+  cudaMalloc(&tempC, M * N * sizeof(double));
 
-  // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  cublasOperation_t cuTransB =
-      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
-  MatMulSharedMemKernelWithFloatB<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, alpha, B, ldb, A, beta, lda, C);
-}
+  convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
+  convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
 
-template <>
-void caffe_gpu_gemm_half_with_floatB(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const double alpha, const fp16* A, const double* B, const double beta,
-	fp16* C) {
+  CUBLAS_CHECK(cublasDgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
+      N, M, K, &alpha, tempB, ldb, A, lda, &beta, tempC, N));
 
-  // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  cublasOperation_t cuTransB =
-      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
-  MatMulSharedMemKernelWithFloatB<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, (float) alpha, (float *) B, ldb, A, (float) beta, lda, C);
-}
-
-template <>
-void caffe_gpu_gemm_half_with_float_inputs(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const float alpha, const float* A, const float* B, const float beta,
-	fp16* C) {
-
-  // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  cublasOperation_t cuTransB =
-      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
-  MatMulSharedMemKernelWithFloatInputs<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, alpha, B, ldb, A, beta, lda, C);
-}
-
-template <>
-void caffe_gpu_gemm_half_with_float_inputs(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const double alpha, const double* A, const double* B, const double beta,
-	fp16* C) {
-
-  // Note that cublas follows fortran order.
-  int lda = (TransA == CblasNoTrans) ? K : M;
-  int ldb = (TransB == CblasNoTrans) ? N : K;
-  cublasOperation_t cuTransA =
-      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  cublasOperation_t cuTransB =
-      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
-  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-  dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
-  MatMulSharedMemKernelWithFloatInputs<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, (float) alpha, (float *) B, ldb, (float *) A, (float) beta, lda, C);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, tempC, C);
+  cudaFree(tempB);
+  cudaFree(tempC);
+#endif
 }
 
 template <>
