@@ -166,12 +166,14 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     // Initialize and fill the weights:
     // output channels x input channels per-group x kernel height x kernel width
     this->blobs_[0].reset(new Blob<fp16>(weight_shape));
+    this->blobs_dtype_[0].reset(new Blob<Dtype>(weight_shape));
     shared_ptr<Filler<Dtype> > weight_filler(GetFiller<Dtype>(
         this->layer_param_.convolution_param().weight_filler()));
     weight_filler->Fill(this->blobs_[0].get());
     // If necessary, initialize and fill the biases.
     if (bias_term_) {
       this->blobs_[1].reset(new Blob<fp16>(bias_shape));
+      this->blobs_dtype_[1].reset(new Blob<Dtype>(bias_shape));
       shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
           this->layer_param_.convolution_param().bias_filler()));
       bias_filler->Fill(this->blobs_[1].get());
@@ -362,11 +364,29 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half(const fp16* input,
 }
 
 template <typename Dtype>
+void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half_with_float_weights(const fp16* input,
+    const Dtype* weights, fp16* output, bool skip_im2col) {
+  const fp16* col_buff = input;
+  if (!is_1x1_) {
+    if (!skip_im2col) {
+        conv_im2col_gpu_half(input, col_buffer_.mutable_gpu_data());
+    }
+    col_buff = col_buffer_.gpu_data();
+  }
+  for (int g = 0; g < group_; ++g) {
+    caffe_gpu_gemm_half_with_float(CblasNoTrans, CblasNoTrans, conv_out_channels_ /
+        group_, conv_out_spatial_dim_, kernel_dim_,
+        Dtype(1.), weights + weight_offset_ * g, col_buff + col_offset_ * g,
+		Dtype(0), output + output_offset_ * g);
+  }
+}
+
+template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::forward_gpu_bias(Dtype* output,
     const Dtype* bias) {
   /*caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_output_,
-      out_spatial_dim_, 1, (Dtype)1., bias, bias_multiplier_.gpu_data(),
-	  (Dtype)1., output);*/
+      out_spatial_dim_, 1, fp32tofp16(1.), bias, bias_multiplier_.gpu_data(),
+	  fp32tofp16(1.), output);*/
 }
 
 template <typename Dtype>
@@ -375,6 +395,14 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_bias_half(fp16* output,
   caffe_gpu_gemm(CblasNoTrans, CblasNoTrans, num_output_,
       out_spatial_dim_, 1, fp32tofp16(1.0), bias, bias_multiplier_.gpu_data(),
 	  fp32tofp16(1.0), output);
+}
+
+template <typename Dtype>
+void BaseConvolutionLayer<Dtype>::forward_gpu_bias_half_with_float(fp16* output,
+    const Dtype* bias) {
+	/*caffe_gpu_gemm_half_with_float_inputs(CblasNoTrans, CblasNoTrans, num_output_,
+      out_spatial_dim_, 1, Dtype(1.0), bias, bias_multiplier_.gpu_data(),
+	  Dtype(1.0), output);*/
 }
 
 
@@ -408,6 +436,24 @@ void BaseConvolutionLayer<Dtype>::backward_gpu_gemm_half(const fp16* output,
         conv_out_spatial_dim_, conv_out_channels_ / group_,
         fp32tofp16(1.0), weights + weight_offset_ * g, output + output_offset_ * g,
 		fp32tofp16(0.), col_buff + col_offset_ * g);
+  }
+  if (!is_1x1_) {
+	  conv_col2im_gpu_half(col_buff, input);
+  }
+}
+
+template <typename Dtype>
+void BaseConvolutionLayer<Dtype>::backward_gpu_gemm_half_with_float(const fp16* output,
+    const Dtype* weights, fp16* input) {
+  fp16* col_buff = col_buffer_.mutable_gpu_data();
+  if (is_1x1_) {
+    col_buff = input;
+  }
+  for (int g = 0; g < group_; ++g) {
+	  caffe_gpu_gemm_half_with_float(CblasTrans, CblasNoTrans, kernel_dim_,
+        conv_out_spatial_dim_, conv_out_channels_ / group_,
+        Dtype(1.0), weights + weight_offset_ * g, output + output_offset_ * g,
+		Dtype(0.), col_buff + col_offset_ * g);
   }
   if (!is_1x1_) {
 	  conv_col2im_gpu_half(col_buff, input);
@@ -457,7 +503,7 @@ template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::backward_gpu_bias_half(fp16* bias,
     const fp16* input) {
   caffe_gpu_gemv(CblasNoTrans, num_output_, out_spatial_dim_, fp32tofp16(1.0),
-      input, bias_multiplier_.gpu_data(), fp32tofp16(1.0), bias);
+    input, bias_multiplier_.gpu_data(), fp32tofp16(1.0), bias);
 }
 
 #endif  // !CPU_ONLY

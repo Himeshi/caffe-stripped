@@ -8,11 +8,25 @@ template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* weight = this->blobs_[0]->gpu_data();
+  Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
+  int weight_count = this->blobs_[0]->count();
+  convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
+  const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
+
+  /*const Dtype* bias_temp_data;
+  if (this->bias_term_) {
+    const fp16* bias = this->blobs_[1]->gpu_data();
+    Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
+    int bias_count = this->blobs_[1]->count();
+    convert_to_float<<<CAFFE_GET_BLOCKS(bias_count), CAFFE_CUDA_NUM_THREADS>>>(bias_count, bias, bias_temp);
+    bias_temp_data = this->blobs_dtype_[1]->gpu_data();
+  }*/
+
   for (int i = 0; i < bottom.size(); ++i) {
     const fp16* bottom_data = bottom[i]->gpu_data();
     fp16* top_data = top[i]->mutable_gpu_data();
     for (int n = 0; n < this->num_; ++n) {
-      this->forward_gpu_gemm_half(bottom_data + n * this->bottom_dim_, weight,
+      this->forward_gpu_gemm_half_with_float_weights(bottom_data + n * this->bottom_dim_, weight_temp_data,
           top_data + n * this->top_dim_);
       if (this->bias_term_) {
         const fp16* bias = this->blobs_[1]->gpu_data();
@@ -26,6 +40,11 @@ template <typename Dtype>
 void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
   const fp16* weight = this->blobs_[0]->gpu_data();
+  Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
+  int weight_count = this->blobs_[0]->count();
+  convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
+  const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
+
   fp16* weight_diff = this->blobs_[0]->mutable_gpu_diff();
   for (int i = 0; i < top.size(); ++i) {
     const fp16* top_diff = top[i]->gpu_diff();
@@ -47,7 +66,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         }
         // gradient w.r.t. bottom data, if necessary.
         if (propagate_down[i]) {
-          this->backward_gpu_gemm_half(top_diff + n * this->top_dim_, weight,
+          this->backward_gpu_gemm_half_with_float(top_diff + n * this->top_dim_, weight_temp_data,
               bottom_diff + n * this->bottom_dim_);
         }
       }

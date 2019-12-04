@@ -29,7 +29,12 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
 
   // get regime
   v.ui = p << POSIT_LENGTH_PLUS_ONE;
-  int regime_length = (__clz(v.ui) & -!regime_sign) + (__clz(~v.ui) & -regime_sign);
+  //int regime_length = (__clz(v.ui) & -!regime_sign) + (__clz(~v.ui) & -regime_sign);
+  int regime_length;
+  if(regime_sign)
+    regime_length = (__clz(~v.ui));
+  else
+    regime_length = (__clz(v.ui));
   int regime = (regime_length - regime_sign) << _G_ESIZE;
   regime = (regime ^ -regime_sign) + regime_sign;
 
