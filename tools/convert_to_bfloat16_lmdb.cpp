@@ -64,7 +64,7 @@ void convert_train_db() {
 
 	scoped_ptr<db::DB> db_write(db::GetDB (FLAGS_backend));
 	std::ostringstream s;
-	s << "/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_train_bfloat6_lmdb";
+	s << "/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_train_bfloat16_lmdb";
 	db_write->Open(s.str(), db::NEW);
 	scoped_ptr<db::Transaction> txn(db_write->NewTransaction());
 	scoped_ptr<db::Cursor> cursor_write(db_write->NewCursor());
@@ -133,7 +133,7 @@ void convert_test_db() {
 
 	scoped_ptr<db::DB> db_write(db::GetDB (FLAGS_backend));
 	std::ostringstream s;
-	s << "/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_test_bfloat6_lmdb";
+	s << "/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_test_bfloat16_lmdb";
 	db_write->Open(s.str(), db::NEW);
 	scoped_ptr<db::Transaction> txn(db_write->NewTransaction());
 	scoped_ptr<db::Cursor> cursor_write(db_write->NewCursor());
