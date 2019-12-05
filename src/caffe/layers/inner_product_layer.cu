@@ -9,6 +9,36 @@ namespace caffe {
 template <typename Dtype>
 void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+#ifdef CONVERT_SHARED
+  const fp16* bottom_data = bottom[0]->gpu_data();
+  Blob<Dtype>* temp_bottom = (this->temp_bottom_);
+  temp_bottom->Reshape(bottom[0]->shape());
+  Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
+  int bottom_count = bottom[0]->count();
+  convert_to_float<<<CAFFE_GET_BLOCKS(bottom_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_count, bottom_data, temp_bottom_converted);
+  const Dtype* temp_bottom_data = temp_bottom->gpu_data();
+
+  fp16* top_data = top[0]->mutable_gpu_data();
+
+  const fp16* weight = this->blobs_[0]->gpu_data();
+
+  if (M_ == 1) {
+    caffe_gpu_gemv(CblasNoTrans, N_, K_, fp32tofp16(1.),
+                         weight, bottom_data, fp32tofp16(0.), top_data);
+    if (bias_term_)
+      caffe_gpu_axpy(N_, bias_multiplier_.cpu_data()[0],
+                            this->blobs_[1]->gpu_data(), top_data);
+  } else {
+    caffe_gpu_gemm_half_with_float(CblasNoTrans,
+                          transpose_ ? CblasNoTrans : CblasTrans,
+                          M_, N_, K_, Dtype(1.),
+                          temp_bottom_data, weight, Dtype(0.), top_data);
+    if (bias_term_)
+      caffe_gpu_gemm(CblasNoTrans, CblasNoTrans, M_, N_, 1, fp32tofp16(1.),
+                            bias_multiplier_.gpu_data(),
+                            this->blobs_[1]->gpu_data(), fp32tofp16(1.), top_data);
+  }
+#else
   const fp16* bottom_data = bottom[0]->gpu_data();
   fp16* top_data = top[0]->mutable_gpu_data();
   const fp16* weight = this->blobs_[0]->gpu_data();
@@ -28,6 +58,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
                             bias_multiplier_.gpu_data(),
                             this->blobs_[1]->gpu_data(), fp32tofp16(1.), top_data);
   }
+#endif
 }
 
 template <typename Dtype>

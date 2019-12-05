@@ -163,10 +163,10 @@ void caffe_gpu_gemm_half(const CBLAS_TRANSPOSE TransA,
 	fp16* C);
 
 template <typename Dtype>
-void caffe_gpu_gemm_half2(const CBLAS_TRANSPOSE TransA,
+void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
     const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
     const Dtype alpha, const Dtype* A, const fp16* B, const Dtype beta,
-    fp16* C);
+	fp16* C);
 
 template <typename Dtype>
 void caffe_gpu_gemv(const CBLAS_TRANSPOSE TransA, const int M, const int N,
