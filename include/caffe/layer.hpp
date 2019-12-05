@@ -12,6 +12,7 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/fp16.hpp"
 
+#define CONVERT_SHARED
 /**
  Forward declare boost::thread instead of including boost/thread.hpp
  to avoid a boost/NVCC issues (#1009, #1010) on OSX.
@@ -44,11 +45,18 @@ class Layer {
       phase_ = param.phase();
       if (layer_param_.blobs_size() > 0) {
         blobs_.resize(layer_param_.blobs_size());
+        blobs_dtype_.resize(layer_param_.blobs_size());
         for (int i = 0; i < layer_param_.blobs_size(); ++i) {
           blobs_[i].reset(new Blob<fp16>());
           blobs_[i]->FromProto(layer_param_.blobs(i));
+
+          //maintain dtype blobs to copy data before doing computations
+          blobs_dtype_[i].reset(new Blob<Dtype>());
+          blobs_dtype_[i]->FromProto(layer_param_.blobs(i));
         }
       }
+      temp_top_ = new Blob<Dtype>();
+      temp_bottom_ = new Blob<Dtype>();
     }
   virtual ~Layer() {}
 

@@ -118,7 +118,7 @@ void DataLayer<Dtype>::load_batch(Batch<fp16>* batch) {
     // Copy label.
     if (this->output_labels_) {
       fp16* top_label = batch->label_.mutable_cpu_data();
-      top_label[item_id] = fp32tofp16(datum.label());
+      top_label[item_id] = (datum.label());
     }
     trans_time += timer.MicroSeconds();
     Next();

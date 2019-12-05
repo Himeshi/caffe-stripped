@@ -93,7 +93,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
     }
   }
 
-  Dtype datum_element;
+  fp16 datum_element;
   int top_index, data_index;
   for (int c = 0; c < datum_channels; ++c) {
     for (int h = 0; h < height; ++h) {
@@ -105,20 +105,19 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
           top_index = (c * height + h) * width + w;
         }
         if (has_uint8) {
-          datum_element =
-            static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
+          datum_element = (static_cast<uint8_t>(data[data_index * 2])) << 8 | static_cast<uint8_t>(data[data_index * 2 + 1]);
         } else {
-          datum_element = datum.float_data(data_index);
+          datum_element = fp32tofp16(datum.float_data(data_index));
         }
         if (has_mean_file) {
           transformed_data[top_index] =
-          fp32tofp16((datum_element - mean[data_index]) * scale);
+            fp32tofp16((fp16tofp32(datum_element) - mean[data_index]) * scale);
         } else {
           if (has_mean_values) {
             transformed_data[top_index] =
-            fp32tofp16((datum_element - mean_values_[c]) * scale);
+              fp32tofp16((fp16tofp32(datum_element) - mean_values_[c]) * scale);
           } else {
-            transformed_data[top_index] = fp32tofp16(datum_element * scale);
+            transformed_data[top_index] = (datum_element);
           }
         }
       }
