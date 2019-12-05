@@ -12,6 +12,7 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/fp16.hpp"
 
+#define CONVERT_SHARED
 /**
  Forward declare boost::thread instead of including boost/thread.hpp
  to avoid a boost/NVCC issues (#1009, #1010) on OSX.
