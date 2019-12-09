@@ -25,6 +25,8 @@ using namespace caffe;  // NOLINT(build/namespaces)
 using std::pair;
 using boost::scoped_ptr;
 
+//#define MNIST
+
 DEFINE_bool(gray, false,
     "When this option is on, treat images as grayscale ones");
 DEFINE_bool(shuffle, false,
@@ -97,7 +99,12 @@ void convert_train_db() {
 			for (int h = 0; h < datum_height; ++h) {
 				for (int w = 0; w < datum_width; ++w) {
 					data_index = (c * datum_height + h) * datum_width + w;
+#ifdef MNIST
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) * 0.00390625;
+#else
+					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index]));
+#endif
+
 					dataNew[data_index] = (uint16_t) fp32tofp16(datum_element);
 					/*if(data_index < 784 && datum_element != 0.0)
 						printf("%d %f %hu, ", data_index, datum_element, dataNew[data_index]);*/
