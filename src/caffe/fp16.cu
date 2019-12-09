@@ -32,22 +32,22 @@ __global__ void convert_to_float(const int n, const fp16* in, float* out) {
 }
 
 __global__ void convert_to_float_3in1out(const int n1, const int n2, const int n3, const fp16* in1, const fp16* in2, const fp16* in3, float* out){
-  CUDA_KERNEL_LOOP(index, n1+n2+n3) {
-    if (index < n1){
+  CUDA_KERNEL_LOOP(index, n1 + n2 + n3) {
+    if (index < n1) {
       out[index] = fp16tofp32_gpu(in1[index]);
-    }else if (index < n1+n2){
+    } else if (index < n1+n2) {
       out[index] = fp16tofp32_gpu(in2[index-n1]);
-    }else {
+    } else {
       out[index] = fp16tofp32_gpu(in3[index-n1-n2]);
     }
   }
 }
 
 __global__ void convert_to_float_2in1out(const int n1, const int n2, const fp16* in1, const fp16* in2, float* out){
-  CUDA_KERNEL_LOOP(index, n1+n2) {
-    if (index < n1){
+  CUDA_KERNEL_LOOP(index, n1 + n2) {
+    if (index < n1) {
       out[index] = fp16tofp32_gpu(in1[index]);
-    }else {
+    } else {
       out[index] = fp16tofp32_gpu(in2[index-n1]);
     }
   }

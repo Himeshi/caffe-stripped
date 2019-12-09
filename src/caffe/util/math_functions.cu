@@ -10,12 +10,12 @@
 #include "caffe/fp16.hpp"
 #include "caffe/fp16.cuh"
 
-//#define CUSTOM_MAT_MUL
-#define GEMM_NO_MALLOC
+#define CUSTOM_MAT_MUL
+//#define GEMM_NO_MALLOC
 // Thread block size
 #define BLOCK_SIZE 11
 
-//#define CUSTOM_GEMV
+#define CUSTOM_GEMV
 //gemv block size must always be an even number!
 #define GEMV_BLOCK_SIZE 16
 
@@ -255,8 +255,10 @@ __global__ void MatMulSharedMemKernelWithFloatB(const cublasOperation_t TransA,
 #define CUDA_BUFFER_SIZE 1000000
 float* cuda_buffer; //device buffer
 //device buffer size
-void init_cuda_buffer(){
+void init_cuda_buffer() {
+#ifdef GEMM_NO_MALLOC
   cudaMalloc(&cuda_buffer, CUDA_BUFFER_SIZE * sizeof(float));
+#endif
 }
 __global__ void MatMulSharedMemKernelWithFloatInputs(const cublasOperation_t TransA,
     const cublasOperation_t TransB, const int M, const int N, const int K,
@@ -358,8 +360,7 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
   float* tempA = cuda_buffer ;
   float* tempB = cuda_buffer + K * M ;
   float* tempC = cuda_buffer + K * M  + N * K;
-  //printf(" K * M  %d N * K  %d  M * N %d \n", K * M, N * K , M * N );
-  if (K * M +  N * K + M * N > CUDA_BUFFER_SIZE ){
+  if (K * M +  N * K + M * N > CUDA_BUFFER_SIZE ) {
     printf(" buffer overflow, need to increase CUDA_BUFFER_SIZE to greater than %d \n",K * M +  N * K + M * N  );
     exit(0);
   }
@@ -454,7 +455,7 @@ void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
   float* tempC = cuda_buffer + N * K ;
 
   //printf("  N * K  %d  M * N %d \n", N * K , M * N );
-  if (N * K + M * N> CUDA_BUFFER_SIZE ){
+  if (N * K + M * N > CUDA_BUFFER_SIZE) {
     printf(" buffer overflow, need to increase CUDA_BUFFER_SIZE to greater than %d \n",N * K + M * N );
     exit(0);
   }
@@ -475,7 +476,6 @@ void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
 
   cudaMalloc(&tempB, N * K * sizeof(float));
   cudaMalloc(&tempC, M * N * sizeof(float));
-  //printf("  N * K  %d  M * N %d \n", N * K , M * N );
 
   convert_to_float<<<CAFFE_GET_BLOCKS(N * K), CAFFE_CUDA_NUM_THREADS>>>(N * K, B, tempB);
   convert_to_float<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, C, tempC);
@@ -511,7 +511,6 @@ void caffe_gpu_gemm_half_with_float(const CBLAS_TRANSPOSE TransA,
 #else
   double* tempB;
   double* tempC;
-  printf("call double dgemm ? \n");
   cudaMalloc(&tempB, N * K * sizeof(double));
   cudaMalloc(&tempC, M * N * sizeof(double));
 
