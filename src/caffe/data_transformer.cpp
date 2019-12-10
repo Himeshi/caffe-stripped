@@ -93,7 +93,11 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
     }
   }
 
+#ifdef CUSTOM_DB
   fp16 datum_element;
+#else
+  fp16 datum_element;
+#endif
   int top_index, data_index;
   for (int c = 0; c < datum_channels; ++c) {
     for (int h = 0; h < height; ++h) {
@@ -105,19 +109,39 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
           top_index = (c * height + h) * width + w;
         }
         if (has_uint8) {
+#ifdef CUSTOM_DB
           datum_element = (static_cast<uint8_t>(data[data_index * 2])) << 8 | static_cast<uint8_t>(data[data_index * 2 + 1]);
+#else
+          datum_element = static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
+#endif
         } else {
+#ifdef CUSTOM_DB
           datum_element = fp32tofp16(datum.float_data(data_index));
+#else
+          datum_element = datum.float_data(data_index);
+#endif
         }
         if (has_mean_file) {
           transformed_data[top_index] =
+#ifdef CUSTOM_DB
             fp32tofp16((fp16tofp32(datum_element) - mean[data_index]) * scale);
+#else
+            fp32tofp16((datum_element - mean[data_index]) * scale);
+#endif
         } else {
           if (has_mean_values) {
             transformed_data[top_index] =
+#ifdef CUSTOM_DB
               fp32tofp16((fp16tofp32(datum_element) - mean_values_[c]) * scale);
+#else
+              fp32tofp16((datum_element - mean_values_[c]) * scale);
+#endif
           } else {
+#ifdef CUSTOM_DB
             transformed_data[top_index] = (datum_element);
+#else
+            transformed_data[top_index] = fp32tofp16(datum_element * scale);
+#endif
           }
         }
       }

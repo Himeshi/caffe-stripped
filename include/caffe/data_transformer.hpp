@@ -7,6 +7,8 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 
+#define CUSTOM_DB
+
 namespace caffe {
 
 /**
