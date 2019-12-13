@@ -96,7 +96,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
 #ifdef CUSTOM_DB
   fp16 datum_element;
 #else
-  fp16 datum_element;
+  Dtype datum_element;
 #endif
   int top_index, data_index;
   for (int c = 0; c < datum_channels; ++c) {

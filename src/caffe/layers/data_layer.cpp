@@ -119,9 +119,9 @@ void DataLayer<Dtype>::load_batch(Batch<fp16>* batch) {
     if (this->output_labels_) {
       fp16* top_label = batch->label_.mutable_cpu_data();
 #ifdef CUSTOM_DB
-      top_label[item_id] = (datum.label());
+      top_label[item_id] = datum.label();
 #else
-      top_label[item_id] = (datum.label());
+      top_label[item_id] = fp32tofp16(datum.label());
 #endif
     }
     trans_time += timer.MicroSeconds();
