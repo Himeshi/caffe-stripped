@@ -124,9 +124,9 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
         if (has_mean_file) {
           transformed_data[top_index] =
 #ifdef CUSTOM_DB
-            fp32tofp16((fp16tofp32(datum_element) - mean[data_index]) * scale);
+            fp32tofp16((fp16tofp32(datum_element) - fp16tofp32(mean[data_index])) * scale);
 #else
-            fp32tofp16((datum_element - mean[data_index]) * scale);
+            fp32tofp16((datum_element - fp16tofp32(mean[data_index])) * scale);
 #endif
         } else {
           if (has_mean_values) {
@@ -138,7 +138,11 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
 #endif
           } else {
 #ifdef CUSTOM_DB
+#ifdef MNIST
             transformed_data[top_index] = (datum_element);
+#else
+            transformed_data[top_index] = fp32tofp16(fp16tofp32(datum_element) * scale);
+#endif
 #else
             transformed_data[top_index] = fp32tofp16(datum_element * scale);
 #endif
