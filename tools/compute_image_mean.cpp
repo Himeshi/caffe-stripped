@@ -61,10 +61,18 @@ int main(int argc, char** argv) {
   sum_blob.set_channels(datum.channels());
   sum_blob.set_height(datum.height());
   sum_blob.set_width(datum.width());
+#ifdef CUSTOM_DB
+  const int data_size = datum.channels() * datum.height() * datum.width() * 2;
+#else
   const int data_size = datum.channels() * datum.height() * datum.width();
+#endif
   int size_in_datum = std::max<int>(datum.data().size(),
                                     datum.float_data_size());
+#ifdef CUSTOM_DB
+  for (int i = 0; i < size_in_datum / 2; ++i) {
+#else
   for (int i = 0; i < size_in_datum; ++i) {
+#endif
     sum_blob.add_data(0.);
   }
   LOG(INFO) << "Starting iteration";
@@ -80,8 +88,13 @@ int main(int argc, char** argv) {
         size_in_datum;
     if (data.size() != 0) {
       CHECK_EQ(data.size(), size_in_datum);
+#ifdef CUSTOM_DB
+      for (int i = 0; i < size_in_datum / 2; ++i) {
+        sum_blob.set_data(i, sum_blob.data(i) + fp16tofp32((uint8_t)data[i * 2] << 8 | (uint8_t)data[(i * 2) + 1]));
+#else
       for (int i = 0; i < size_in_datum; ++i) {
         sum_blob.set_data(i, sum_blob.data(i) + (uint8_t)data[i]);
+#endif
       }
     } else {
       CHECK_EQ(datum.float_data_size(), size_in_datum);
