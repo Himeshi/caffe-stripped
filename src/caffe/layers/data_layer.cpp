@@ -28,6 +28,12 @@ DataLayer<Dtype>::~DataLayer() {
 template <typename Dtype>
 void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top) {
+#ifdef CUSTOM_DB
+  LOG(INFO) << "Custom db defined.\n";
+#ifdef CIFAR10
+  LOG(INFO) << "Custom db with CIFAR10 defined.\n";
+#endif
+#endif
   const int batch_size = this->layer_param_.data_param().batch_size();
   // Read a data point, and use it to initialize the top blob.
   Datum datum;

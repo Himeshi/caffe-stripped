@@ -46,6 +46,10 @@ DEFINE_string(encode_type, "",
 uint64_t offset_;
 scoped_ptr<db::Cursor> cursor_read;
 
+#ifdef CIFAR10
+BlobProto data_mean;
+#endif
+
 bool Skip() {
   int size = Caffe::solver_count();
   int rank = Caffe::solver_rank();
@@ -118,7 +122,11 @@ void convert_train_db() {
 #ifdef MNIST
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) * 0.00390625;
 #else
+#ifdef CIFAR10
+					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) - data_mean.data(data_index);
+#else
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index]));
+#endif
 #endif
 
 					dataNew[data_index] = (uint16_t) fp32tofp16(datum_element);
@@ -205,7 +213,11 @@ void convert_test_db() {
 #ifdef MNIST
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) * 0.00390625;
 #else
+#ifdef CIFAR10
+					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) - data_mean.data(data_index);
+#else
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index]));
+#endif
 #endif
 					dataNew[data_index] = (uint16_t) fp32tofp16(datum_element);
 					/*if(data_index < 784 && datum_element != 0.0)
@@ -238,6 +250,10 @@ void convert_test_db() {
 
 int main(int argc, char** argv) {
 	printf("Converting to posit(%d, %d)\n", _G_NBITS, _G_ESIZE);
+
+	const string& mean_file = "/home/himeshi/dl/caffe-stripped/examples/cifar10/mean.binaryproto";
+
+	ReadProtoFromBinaryFile(mean_file.c_str(), &data_mean);
 
 	convert_train_db();
 

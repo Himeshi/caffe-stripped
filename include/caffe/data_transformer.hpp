@@ -8,6 +8,7 @@
 #include "caffe/proto/caffe.pb.h"
 
 #define CUSTOM_DB
+#define CIFAR10
 
 namespace caffe {
 
