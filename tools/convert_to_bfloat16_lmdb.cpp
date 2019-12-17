@@ -4,6 +4,7 @@
  *  Created on: Dec 5, 2019
  *      Author: himeshi
  */
+
 #include <algorithm>
 #include <fstream>  // NOLINT(readability/streams)
 #include <string>
@@ -39,9 +40,15 @@ DEFINE_bool(encoded, false,
 DEFINE_string(encode_type, "",
     "Optional: What type should we encode the image as ('png','jpg',...).");
 
+#define CIFAR10
+
 #define TEST 0
 uint64_t offset_;
 scoped_ptr<db::Cursor> cursor_read;
+
+#ifdef CIFAR10
+BlobProto data_mean;
+#endif
 
 bool Skip() {
   int size = Caffe::solver_count();
@@ -59,12 +66,28 @@ string int_array_to_string(fp16 int_array[], int size_of_array) {
 
 void convert_train_db() {
 	scoped_ptr<db::DB> db_read(db::GetDB (FLAGS_backend));
+#ifdef MNIST
 	db_read->Open("/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_train_lmdb", db::READ);
+#else
+#ifdef CIFAR10
+	db_read->Open("/home/himeshi/dl/caffe-stripped/examples/cifar10/cifar10_train_lmdb", db::READ);
+#else
+	printf("ERROR: Unkown database.\n");
+#endif
+#endif
 	scoped_ptr<db::Cursor> cursor_read(db_read->NewCursor());
 
 	scoped_ptr<db::DB> db_write(db::GetDB (FLAGS_backend));
 	std::ostringstream s;
+#ifdef MNIST
 	s << "/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_train_bfloat16_lmdb";
+#else
+#ifdef CIFAR10
+	s << "/home/himeshi/dl/caffe-stripped/examples/cifar10/cifar10_train_bfloat16_lmdb";
+#else
+	printf("ERROR: Unkown database.\n");
+#endif
+#endif
 	db_write->Open(s.str(), db::NEW);
 	scoped_ptr<db::Transaction> txn(db_write->NewTransaction());
 	scoped_ptr<db::Cursor> cursor_write(db_write->NewCursor());
@@ -96,14 +119,20 @@ void convert_train_db() {
 			for (int h = 0; h < datum_height; ++h) {
 				for (int w = 0; w < datum_width; ++w) {
 					data_index = (c * datum_height + h) * datum_width + w;
+#ifdef MNIST
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) * 0.00390625;
+#else
+#ifdef CIFAR10
+					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) - data_mean.data(data_index);
+#else
+					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index]));
+#endif
+#endif
+
 					dataNew[data_index] = (uint16_t) fp32tofp16(datum_element);
-					/*if(data_index < 784 && datum_element != 0.0)
-						printf("%d %f %hu, ", data_index, datum_element, dataNew[data_index]);*/
 				}
 			}
 		}
-		//printf("\n");
 
 		char* dataNewBytes = (char*) malloc(size * sizeof(uint16_t));
 		for (int j = 0; j < size * 2; j += 2) {
@@ -128,12 +157,28 @@ void convert_train_db() {
 
 void convert_test_db() {
 	scoped_ptr<db::DB> db_read(db::GetDB (FLAGS_backend));
+#ifdef MNIST
 	db_read->Open("/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_test_lmdb", db::READ);
+#else
+#ifdef CIFAR10
+	db_read->Open("/home/himeshi/dl/caffe-stripped/examples/cifar10/cifar10_test_lmdb", db::READ);
+#else
+	printf("ERROR: Unkown database.\n");
+#endif
+#endif
 	scoped_ptr<db::Cursor> cursor_read(db_read->NewCursor());
 
 	scoped_ptr<db::DB> db_write(db::GetDB (FLAGS_backend));
 	std::ostringstream s;
+#ifdef MNIST
 	s << "/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_test_bfloat16_lmdb";
+#else
+#ifdef CIFAR10
+	s << "/home/himeshi/dl/caffe-stripped/examples/cifar10/cifar10_test_bfloat16_lmdb";
+#else
+	printf("ERROR: Unkown database.\n");
+#endif
+#endif
 	db_write->Open(s.str(), db::NEW);
 	scoped_ptr<db::Transaction> txn(db_write->NewTransaction());
 	scoped_ptr<db::Cursor> cursor_write(db_write->NewCursor());
@@ -165,14 +210,19 @@ void convert_test_db() {
 			for (int h = 0; h < datum_height; ++h) {
 				for (int w = 0; w < datum_width; ++w) {
 					data_index = (c * datum_height + h) * datum_width + w;
+#ifdef MNIST
 					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) * 0.00390625;
+#else
+#ifdef CIFAR10
+					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index])) - data_mean.data(data_index);
+#else
+					datum_element = static_cast<float>(static_cast<uint8_t>(data[data_index]));
+#endif
+#endif
 					dataNew[data_index] = (uint16_t) fp32tofp16(datum_element);
-					/*if(data_index < 784 && datum_element != 0.0)
-						printf("%d %f %hu, ", data_index, datum_element, dataNew[data_index]);*/
 				}
 			}
 		}
-		//printf("\n");
 
 		char* dataNewBytes = (char*) malloc(size * sizeof(uint16_t));
 		for (int j = 0; j < size * 2; j += 2) {
@@ -196,32 +246,15 @@ void convert_test_db() {
 }
 
 int main(int argc, char** argv) {
+	printf("Converting to bfloat16\n");
+
+#ifdef CIFAR10
+	const string& mean_file = "/home/himeshi/dl/caffe-stripped/examples/cifar10/mean.binaryproto";
+
+	ReadProtoFromBinaryFile(mean_file.c_str(), &data_mean);
+#endif
+
 	convert_train_db();
 
 	convert_test_db();
-
-
-	//Validation
-/*	scoped_ptr<db::DB> db_read_test(db::GetDB (FLAGS_backend));
-	db_read_test->Open("/home/himeshi/dl/caffe-stripped/examples/mnist/mnist_test_posit_lmdb", db::READ);
-	scoped_ptr<db::Cursor> cursor_read_test(db_read_test->NewCursor());
-	int newcount = 0;
-	while(cursor_read_test->valid() && newcount < 2) {
-		datumNew.ParseFromString(cursor_read_test->value());
-		const int datum_channels_new = datumNew.channels();
-		const int datum_height_new = datumNew.height();
-		const int datum_width_new = datumNew.width();
-		const string& dataNewdata = datumNew.data();
-		fp16 datum_posit_element;
-		for (int i = 0; i < datum_channels_new * datum_height_new * datum_width_new; i++) {
-			datum_posit_element = static_cast<uint16_t>(static_cast<uint8_t>(dataNewdata[i * 2])) << 8 | static_cast<uint8_t>(dataNewdata[i * 2 + 1]);
-			if(i < 784 && datum_posit_element != 0)
-				printf("%d %hu ", i, (datum_posit_element));
-		}
-		cursor_read_test->Next();
-		newcount++;
-	}*/
 }
-
-
-

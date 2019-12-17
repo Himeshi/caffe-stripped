@@ -565,8 +565,8 @@ void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
   }
 }
 
-template <typename Dtype>
-void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
+template <>
+void Blob<float>::FromProto(const BlobProto& proto, bool reshape) {
   if (reshape) {
     vector<int> shape;
     if (proto.has_num() || proto.has_channels() ||
@@ -589,7 +589,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
     CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
   }
   // copy data
-  Dtype* data_vec = mutable_cpu_data();
+  float* data_vec = mutable_cpu_data();
   if (proto.double_data_size() > 0) {
     CHECK_EQ(count_, proto.double_data_size());
     for (int i = 0; i < count_; ++i) {
@@ -603,16 +603,167 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
   }
   if (proto.double_diff_size() > 0) {
     CHECK_EQ(count_, proto.double_diff_size());
-    Dtype* diff_vec = mutable_cpu_diff();
+    float* diff_vec = mutable_cpu_diff();
     for (int i = 0; i < count_; ++i) {
       diff_vec[i] = proto.double_diff(i);
     }
   } else if (proto.diff_size() > 0) {
     CHECK_EQ(count_, proto.diff_size());
-    Dtype* diff_vec = mutable_cpu_diff();
+    float* diff_vec = mutable_cpu_diff();
     for (int i = 0; i < count_; ++i) {
       diff_vec[i] = proto.diff(i);
     }
+  }
+}
+
+template <>
+void Blob<double>::FromProto(const BlobProto& proto, bool reshape) {
+  if (reshape) {
+    vector<int> shape;
+    if (proto.has_num() || proto.has_channels() ||
+        proto.has_height() || proto.has_width()) {
+      // Using deprecated 4D Blob dimensions --
+      // shape is (num, channels, height, width).
+      shape.resize(4);
+      shape[0] = proto.num();
+      shape[1] = proto.channels();
+      shape[2] = proto.height();
+      shape[3] = proto.width();
+    } else {
+      shape.resize(proto.shape().dim_size());
+      for (int i = 0; i < proto.shape().dim_size(); ++i) {
+        shape[i] = proto.shape().dim(i);
+      }
+    }
+    Reshape(shape);
+  } else {
+    CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
+  }
+  // copy data
+  double* data_vec = mutable_cpu_data();
+  if (proto.double_data_size() > 0) {
+    CHECK_EQ(count_, proto.double_data_size());
+    for (int i = 0; i < count_; ++i) {
+      data_vec[i] = proto.double_data(i);
+    }
+  } else {
+    CHECK_EQ(count_, proto.data_size());
+    for (int i = 0; i < count_; ++i) {
+      data_vec[i] = proto.data(i);
+    }
+  }
+  if (proto.double_diff_size() > 0) {
+    CHECK_EQ(count_, proto.double_diff_size());
+    double* diff_vec = mutable_cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      diff_vec[i] = proto.double_diff(i);
+    }
+  } else if (proto.diff_size() > 0) {
+    CHECK_EQ(count_, proto.diff_size());
+    double* diff_vec = mutable_cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      diff_vec[i] = proto.diff(i);
+    }
+  }
+}
+
+template <>
+void Blob<fp16>::FromProto(const BlobProto& proto, bool reshape) {
+  if (reshape) {
+    vector<int> shape;
+    if (proto.has_num() || proto.has_channels() ||
+        proto.has_height() || proto.has_width()) {
+      // Using deprecated 4D Blob dimensions --
+      // shape is (num, channels, height, width).
+      shape.resize(4);
+      shape[0] = proto.num();
+      shape[1] = proto.channels();
+      shape[2] = proto.height();
+      shape[3] = proto.width();
+    } else {
+      shape.resize(proto.shape().dim_size());
+      for (int i = 0; i < proto.shape().dim_size(); ++i) {
+        shape[i] = proto.shape().dim(i);
+      }
+    }
+    Reshape(shape);
+  } else {
+    CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
+  }
+}
+
+template <>
+void Blob<float>::FromProtoDataMean(const BlobProto& proto, bool reshape) {
+  if (reshape) {
+    vector<int> shape;
+    if (proto.has_num() || proto.has_channels() ||
+        proto.has_height() || proto.has_width()) {
+      // Using deprecated 4D Blob dimensions --
+      // shape is (num, channels, height, width).
+      shape.resize(4);
+      shape[0] = proto.num();
+      shape[1] = proto.channels();
+      shape[2] = proto.height();
+      shape[3] = proto.width();
+    } else {
+      shape.resize(proto.shape().dim_size());
+      for (int i = 0; i < proto.shape().dim_size(); ++i) {
+        shape[i] = proto.shape().dim(i);
+      }
+    }
+    Reshape(shape);
+  } else {
+    CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
+  }
+}
+
+template <>
+void Blob<double>::FromProtoDataMean(const BlobProto& proto, bool reshape) {
+  if (reshape) {
+    vector<int> shape;
+    if (proto.has_num() || proto.has_channels() ||
+        proto.has_height() || proto.has_width()) {
+      // Using deprecated 4D Blob dimensions --
+      // shape is (num, channels, height, width).
+      shape.resize(4);
+      shape[0] = proto.num();
+      shape[1] = proto.channels();
+      shape[2] = proto.height();
+      shape[3] = proto.width();
+    } else {
+      shape.resize(proto.shape().dim_size());
+      for (int i = 0; i < proto.shape().dim_size(); ++i) {
+        shape[i] = proto.shape().dim(i);
+      }
+    }
+    Reshape(shape);
+  } else {
+    CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
+  }
+}
+
+template <>
+void Blob<fp16>::FromProtoDataMean(const BlobProto& proto, bool reshape) {
+  if (reshape) {
+    vector<int> shape;
+    if (proto.has_num() || proto.has_channels() ||
+        proto.has_height() || proto.has_width()) {
+      // Using deprecated 4D Blob dimensions --
+      // shape is (num, channels, height, width).
+      shape.resize(4);
+      shape[0] = proto.num();
+      shape[1] = proto.channels();
+      shape[2] = proto.height();
+      shape[3] = proto.width();
+    } else {
+      shape.resize(proto.shape().dim_size());
+      for (int i = 0; i < proto.shape().dim_size(); ++i) {
+        shape[i] = proto.shape().dim(i);
+      }
+    }
+    Reshape(shape);
+  } else {
+    CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
   }
 }
 
@@ -666,12 +817,12 @@ void Blob<fp16>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_diff();
   const fp16* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
-    proto->add_data(data_vec[i]);
+    proto->add_data(fp16tofp32(data_vec[i]));
   }
   if (write_diff) {
     const fp16* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
-      proto->add_diff(diff_vec[i]);
+      proto->add_diff(fp16tofp32(diff_vec[i]));
     }
   }
 }
