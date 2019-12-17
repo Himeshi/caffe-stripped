@@ -5,13 +5,6 @@
  *      Author: himeshi
  */
 
-/*
- * convert_to_half_precision_lmdb.cpp
- *
- *  Created on: Dec 5, 2019
- *      Author: himeshi
- */
-
 #include <algorithm>
 #include <fstream>  // NOLINT(readability/streams)
 #include <string>
