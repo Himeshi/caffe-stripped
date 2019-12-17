@@ -26,7 +26,11 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
     }
     BlobProto blob_proto;
     ReadProtoFromBinaryFileOrDie(mean_file.c_str(), &blob_proto);
+#ifdef CUSTOM_DB
+    data_mean_.FromProtoDataMean(blob_proto);
+#else
     data_mean_.FromProto(blob_proto);
+#endif
   }
   // check if we want to use mean_value
   if (param_.mean_value_size() > 0) {
@@ -57,12 +61,16 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   CHECK_GE(datum_height, crop_size);
   CHECK_GE(datum_width, crop_size);
 
+#ifndef CUSTOM_DB
   fp16* mean = NULL;
+#endif
   if (has_mean_file) {
     CHECK_EQ(datum_channels, data_mean_.channels());
     CHECK_EQ(datum_height, data_mean_.height());
     CHECK_EQ(datum_width, data_mean_.width());
+#ifndef CUSTOM_DB
     mean = data_mean_.mutable_cpu_data();
+#endif
   }
   if (has_mean_values) {
     CHECK(mean_values_.size() == 1 || mean_values_.size() == datum_channels) <<
@@ -93,7 +101,11 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
     }
   }
 
+#ifdef CUSTOM_DB
   fp16 datum_element;
+#else
+  Dtype datum_element;
+#endif
   int top_index, data_index;
   for (int c = 0; c < datum_channels; ++c) {
     for (int h = 0; h < height; ++h) {
@@ -105,19 +117,48 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
           top_index = (c * height + h) * width + w;
         }
         if (has_uint8) {
+#ifdef CUSTOM_DB
           datum_element = (static_cast<uint8_t>(data[data_index * 2])) << 8 | static_cast<uint8_t>(data[data_index * 2 + 1]);
+#else
+          datum_element = static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
+#endif
         } else {
+#ifdef CUSTOM_DB
           datum_element = fp32tofp16(datum.float_data(data_index));
+#else
+          datum_element = datum.float_data(data_index);
+#endif
         }
         if (has_mean_file) {
           transformed_data[top_index] =
-            fp32tofp16((fp16tofp32(datum_element) - mean[data_index]) * scale);
+#ifdef CUSTOM_DB
+#ifdef CIFAR10
+            datum_element;
+#else
+            fp32tofp16((fp16tofp32(datum_element) - fp16tofp32(mean[data_index])) * scale);
+#endif
+#else
+            fp32tofp16((datum_element - fp16tofp32(mean[data_index])) * scale);
+#endif
         } else {
           if (has_mean_values) {
             transformed_data[top_index] =
+#ifdef CUSTOM_DB
               fp32tofp16((fp16tofp32(datum_element) - mean_values_[c]) * scale);
+#else
+              fp32tofp16((datum_element - mean_values_[c]) * scale);
+#endif
           } else {
+#ifdef CUSTOM_DB
+#ifdef MNIST
+            LOG(INFO) << "Custom db with MNIST defined.\n";
             transformed_data[top_index] = (datum_element);
+#else
+            transformed_data[top_index] = fp32tofp16(fp16tofp32(datum_element) * scale);
+#endif
+#else
+            transformed_data[top_index] = fp32tofp16(datum_element * scale);
+#endif
           }
         }
       }
@@ -327,6 +368,9 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(Blob<fp16>* input_blob,
                                        Blob<fp16>* transformed_blob) {
+#ifdef CUSTOM_DB
+  LOG(ERROR) << "Using data mean here!\n";
+#endif
   const int crop_size = param_.crop_size();
   const int input_num = input_blob->num();
   const int input_channels = input_blob->channels();
