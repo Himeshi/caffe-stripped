@@ -23,36 +23,27 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
   int32_t sign = v.si & signC;
   v.si ^= sign;
   sign <<= shiftSign;
-  v.si ^= ((v.si + minD) ^ v.si) & -(v.si > subC);
+  v.si ^= ((v.si + minD) ^ v.si) & -(v.si > 0);
   v.si ^= ((v.si + maxD) ^ v.si) & -(v.si > maxC);
-  union Bits s;
-  s.si = mulC;
-  s.f *= v.si;
-  int32_t mask = -(norC > v.si);
   v.si <<= fp16shift;
-  v.si ^= (s.si ^ v.si) & mask;
   v.si |= sign;
   return v.f;
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
-  union Bits v, s;
+  union Bits v;
+  uint32_t round_bit = 0;
   v.f = f;
   uint32_t sign = v.si & signN;
   v.si ^= sign;
   sign >>= shiftSign; // logical shift
-  s.si = mulN;
-  s.si = s.f * v.f; // correct subnormals
-  // get the bits that could potentially be cut off for rounding
-  int32_t bits = (v.si & 0x000001FF) & -(minN > v.si);
-  v.si ^= (s.si ^ v.si) & -(minN > v.si);
-  v.si ^= (nanN ^ v.si) & -(v.si > infN);
-  v.si ^= (infN ^ v.si) & -((infN > v.si) & (v.si > maxfp16N));
-  s.si = (v.si & 0x00002000) && ((v.si & 0x00004000) | (v.si & 0x00001FFF) | bits);
+  v.si ^= (tempN ^v.si) & -(minN > v.si);
+  v.si ^= (infN ^ v.si) & -(v.si > maxfp16N);
+  round_bit = (v.si & 0x00002000) >> roundShift;
   v.ui >>= fp16shift; // logical shift
   v.si ^= ((v.si - maxD) ^ v.si) & -(v.si > maxC);
   v.si ^= ((v.si - minD) ^ v.si) & -(v.si > subC);
-  v.si += s.si;
+  v.si += round_bit;
   return v.ui | sign;
 }
 }
