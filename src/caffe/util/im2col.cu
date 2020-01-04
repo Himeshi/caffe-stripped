@@ -32,7 +32,7 @@ __global__ void im2col_gpu_kernel(const int n, const Dtype* data_im,
         int w_im = w_offset + j * dilation_w;
         *data_col_ptr =
             (h_im >= 0 && w_im >= 0 && h_im < height && w_im < width) ?
-            data_im_ptr[i * dilation_h * width + j * dilation_w] : 0;
+            data_im_ptr[i * dilation_h * width + j * dilation_w] : Dtype(0);
         data_col_ptr += height_col * width_col;
       }
     }
@@ -143,7 +143,7 @@ __global__ void im2col_nd_gpu_kernel(const int n, const Dtype* data_im,
         }
         *data_col_ptr = data_im_ptr[data_im_offset];
       } else {
-        *data_col_ptr = 0;
+        *data_col_ptr = Dtype(0);
       }
       data_col_ptr += data_col_inc;
       incremented = false;

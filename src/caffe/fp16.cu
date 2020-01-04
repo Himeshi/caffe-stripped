@@ -83,7 +83,7 @@ void print_gpu_fp16_array(const fp16* d_data, int size) {
 	printf("size = %d\n", size);
 	int i;
 	for (i = 0; i < size; i++) {
-	    if(h_data[i] != 0)
+	    //if(h_data[i] != 0)
 		  printf("data[%d] = %f ", i, fp16tofp32(h_data[i]));
 	}
 	free(h_data);

@@ -124,8 +124,8 @@ void AccuracyLayer<Dtype>::Forward_gpu(
       top[0]->mutable_cpu_data()[0] = fp32tofp16(acc / valid_count);
       top_dtype[0]->mutable_cpu_data()[0] = acc / valid_count;
     } else {
-      top[0]->mutable_cpu_data()[0] = 0;
-      top_dtype[0]->mutable_cpu_data()[0] = 0;
+      top[0]->mutable_cpu_data()[0] = Dtype(0);
+      top_dtype[0]->mutable_cpu_data()[0] = Dtype(0);
     }
 
     // get per-class accuracy
@@ -136,7 +136,7 @@ void AccuracyLayer<Dtype>::Forward_gpu(
       if (valid_count > 0) {
         per_class_acc[l] = fp32tofp16(fp16tofp32(per_class_acc[l]) / valid_count);
       } else {
-        per_class_acc[l] = 0;
+        per_class_acc[l] = Dtype(0);
       }
     }
   }

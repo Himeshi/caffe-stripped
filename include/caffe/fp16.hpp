@@ -14,7 +14,6 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
-
 #include "caffe/util/device_alternate.hpp"
 //#include "caffe/util/mkl_alternate.hpp"
 
@@ -23,10 +22,10 @@ union Bits {
 	int32_t si;
 	uint32_t ui;
 };
-
+#include "cuda_fp16.h"
 #define FP16_LIMB_SIZE 16
 #define FP16_TYPE uint16_t
-
+//#define FP16_TYPE __half 
 namespace caffe {
 
 typedef FP16_TYPE fp16;

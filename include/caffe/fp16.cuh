@@ -16,7 +16,7 @@
 #include "caffe/fp16.hpp"
 
 namespace caffe {
-	
+/*	
 __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
   union Bits v;
   v.ui = f16value << 16;
@@ -31,6 +31,15 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   result += ((0x00008000 & v.ui) && ((0x00007FFF & v.ui) || (1 & result)));
   return result;
 }
-
+*/
+__device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
+    __half temp = *((half*)&f16value);
+    return __half2float(temp);
+}
+__device__ __inline__ fp16 fp32tofp16_gpu(float f) {
+    __half temp =__float2half_rn(f);
+    fp16 result =  *((fp16*)&temp);
+    return result;
+}
 }
 #endif /* INCLUDE_CAFFE_FP16_HPP_ */
