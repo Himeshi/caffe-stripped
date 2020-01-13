@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "caffe/util/device_alternate.hpp"
+#include "caffe/sampling.hpp"
 
 // Convert macro to string
 #define STRINGIFY(m) #m

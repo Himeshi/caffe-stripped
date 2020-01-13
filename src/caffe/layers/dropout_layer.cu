@@ -32,6 +32,11 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   } else {
     caffe_copy(count, bottom_data, top_data);
   }
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN) {
+      sample_blob(top[0]->gpu_data(), top[0]->count(), this->activation_exp, this->activation_frac, SAMPLING_FREQ);
+    }
+#endif
 }
 
 template <typename Dtype>
@@ -62,6 +67,11 @@ void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     } else {
       caffe_copy(top[0]->count(), top_diff, bottom_diff);
     }
+#ifdef SAMPLE_FLOATS
+     if (this->phase_ == TRAIN) {
+       sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, SAMPLING_FREQ);
+     }
+#endif
   }
 }
 

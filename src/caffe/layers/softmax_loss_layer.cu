@@ -46,6 +46,11 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
   SoftmaxLossForwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
       CAFFE_CUDA_NUM_THREADS>>>(nthreads, prob_data, label, loss_data,
       outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN) {
+      sample_blob(bottom[0]->gpu_data(), bottom[0]->count(), this->activation_exp, this->activation_frac, SAMPLING_FREQ);
+    }
+#endif
   Dtype loss;
   caffe_gpu_asum(nthreads, loss_data, &loss);
   Dtype valid_count = -1;
@@ -122,6 +127,11 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const Dtype loss_weight = top[0]->cpu_diff()[0] /
                               get_normalizer(normalization_, valid_count);
     caffe_gpu_scal(prob_.count(), loss_weight , bottom_diff);
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN) {
+      sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, SAMPLING_FREQ);
+    }
+#endif
   }
 }
 

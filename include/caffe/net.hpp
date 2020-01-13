@@ -119,6 +119,8 @@ class Net {
   /// @brief Writes the net to an HDF5 file.
   void ToHDF5(const string& filename, bool write_diff = false) const;
 
+  void DumpSamplesAndResetCounters(int iter);
+
   /// @brief returns the network name.
   inline const string& name() const { return name_; }
   /// @brief returns the layer names
