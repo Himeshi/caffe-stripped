@@ -19,12 +19,6 @@
 
 #define SAMPLE_FLOATS
 
-union Bits {
-	float f;
-	int32_t si;
-	uint32_t ui;
-};
-
 #define SAMPLING_FREQ 50000
 
 namespace caffe {
