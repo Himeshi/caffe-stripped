@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <iostream>
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
@@ -11,6 +13,7 @@
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/fp16.hpp"
+#include "caffe/sampling.hpp"
 
 #define CONVERT_SHARED
 /**
@@ -300,6 +303,7 @@ class Layer {
     param_propagate_down_[param_id] = value;
   }
 
+  std::ostream& DumpSampleAndReset(std::ostream&  outfile);
 
  protected:
   /** The protobuf that stores the layer parameters */
@@ -318,6 +322,20 @@ class Layer {
   /** The vector that indicates whether each top blob has a non-zero weight in
    *  the objective function. */
   vector<Dtype> loss_;
+
+  std::map<int, int> weight_exp;
+  std::map<int, int> bias_exp;
+  std::map<int, int> activation_exp;
+  std::map<int, int> weight_gradient_exp;
+  std::map<int, int> bias_gradient_exp;
+  std::map<int, int> activation_gradient_exp;
+
+  std::map<int, int> weight_frac;
+  std::map<int, int> bias_frac;
+  std::map<int, int> activation_frac;
+  std::map<int, int> weight_gradient_frac;
+  std::map<int, int> bias_gradient_frac;
+  std::map<int, int> activation_gradient_frac;
 
   /** @brief Using the CPU device, compute the layer output. */
   virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
@@ -484,6 +502,100 @@ void Layer<Dtype>::ToProto(LayerParameter* param, bool write_diff) {
   for (int i = 0; i < blobs_.size(); ++i) {
     blobs_[i]->ToProto(param->add_blobs(), write_diff);
   }
+}
+
+template <typename Dtype>
+std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
+  // print layer name
+  outfile << "================================================\n";
+  outfile << layer_param_.name() << "(" << layer_param_.type() << ")\n";
+  std::map<int,int>::const_iterator it;
+
+  outfile << "weight exponents: ";
+  for (it = weight_exp.begin(); it!= weight_exp.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  weight_exp.clear();
+  outfile << "\n";
+
+  outfile << "bias exponents: ";
+  for (it = bias_exp.begin(); it!= bias_exp.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  bias_exp.clear();
+  outfile << "\n";
+
+  outfile << "activation exponents: ";
+  for (it = activation_exp.begin(); it!= activation_exp.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  activation_exp.clear();
+  outfile << "\n";
+
+  outfile << "weight gradient exponents: ";
+  for (it = weight_gradient_exp.begin(); it!= weight_gradient_exp.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  weight_gradient_exp.clear();
+  outfile << "\n";
+
+  outfile << "bias gradient exponents: ";
+  for (it = bias_gradient_exp.begin(); it!= bias_gradient_exp.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  bias_gradient_exp.clear();
+  outfile << "\n";
+
+  outfile << "activation gradient exponents: ";
+  for (it = activation_gradient_exp.begin(); it!= activation_gradient_exp.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  activation_gradient_exp.clear();
+  outfile << "\n";
+
+  outfile << "weight fractions: ";
+  for (it = weight_frac.begin(); it!= weight_frac.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  weight_frac.clear();
+  outfile << "\n";
+
+  outfile << "bias fractions: ";
+  for (it = bias_frac.begin(); it!= bias_frac.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  bias_frac.clear();
+  outfile << "\n";
+
+  outfile << "activation fractions: ";
+  for (it = activation_frac.begin(); it!= activation_frac.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  activation_frac.clear();
+  outfile << "\n";
+
+  outfile << "weight gradient fractions: ";
+  for (it = weight_gradient_frac.begin(); it!= weight_gradient_frac.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  weight_gradient_frac.clear();
+  outfile << "\n";
+
+  outfile << "bias gradient fractions: ";
+  for (it = bias_gradient_frac.begin(); it!= bias_gradient_frac.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  bias_gradient_frac.clear();
+  outfile << "\n";
+
+  outfile << "activation gradient fractions: ";
+  for (it = activation_gradient_frac.begin(); it!= activation_gradient_frac.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  activation_gradient_frac.clear();
+  outfile << "\n\n";
+
+  return outfile;
 }
 
 }  // namespace caffe
