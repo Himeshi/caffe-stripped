@@ -5,7 +5,6 @@
  *      Author: himeshi
  */
 #include "caffe/sampling.hpp"
-#include "caffe/fp16.hpp"
 
 namespace caffe {
 
