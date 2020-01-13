@@ -5,13 +5,14 @@
  *      Author: himeshi
  */
 #include "caffe/sampling.hpp"
+#include "caffe/fp16.hpp"
 
 namespace caffe {
 
 void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, int sampling_frequency) {
 	fp16 temp;
 	for (int i = 0; i < blob_count; i+= sampling_frequency) {
-		cudaMemcpy(&temp, &blob[i], sizeof(float), cudaMemcpyDeviceToHost);
+		cudaMemcpy(&temp, &blob[i], sizeof(fp16), cudaMemcpyDeviceToHost);
 		if(temp == 0) {
 			exp_map[0]++;
 			frac_map[0]++;
