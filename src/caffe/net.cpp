@@ -4,6 +4,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 #ifdef USE_HDF5
 #include "hdf5.h"
@@ -523,6 +526,20 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
       }
     }
   }
+}
+
+template <typename Dtype>
+void Net<Dtype>::DumpSamplesAndResetCounters(int iter) {
+  //Create file
+  std::stringstream filename;
+  filename << "samples/samples_" << iter << ".txt";
+  std::ofstream outfile (filename.str());
+
+  //dump samples for each layer
+  for (int i = 0; i < layers_.size(); ++i) {
+	  layers_[i]->DumpSampleAndReset(outfile);
+  }
+  outfile.close();
 }
 
 template <typename Dtype>

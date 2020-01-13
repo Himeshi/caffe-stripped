@@ -9,6 +9,7 @@
 #include "caffe/util/hdf5.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/upgrade_proto.hpp"
+#include "caffe/sampling.hpp"
 
 namespace caffe {
 
@@ -213,6 +214,10 @@ void Solver<Dtype>::Step(int iters) {
         && (iter_ > 0 || param_.test_initialization())) {
       if (Caffe::root_solver()) {
         TestAll();
+
+#ifdef SAMPLE_FLOATS
+        net_->DumpSamplesAndResetCounters(iter_);
+#endif
       }
       if (requested_early_exit_) {
         // Break out of the while loop because stop was requested while testing.
