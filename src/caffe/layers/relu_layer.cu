@@ -29,6 +29,12 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   //     << " top_data: " << (unsigned long)top_data
   //     << " blocks: " << CAFFE_GET_BLOCKS(count)
   //     << " threads: " << CAFFE_CUDA_NUM_THREADS;
+
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN) {
+      sample_blob(top_data, top[0]->count(), this->activation_exp, this->activation_frac, SAMPLING_FREQ);
+    }
+#endif
 }
 
 template <typename Dtype>
@@ -52,6 +58,11 @@ void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     // NOLINT_NEXT_LINE(whitespace/operators)
     ReLUBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, bottom_data, bottom_diff, negative_slope);
+#ifdef SAMPLE_FLOATS
+      if(this->phase_ == TRAIN) {
+        sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, SAMPLING_FREQ);
+      }
+#endif
     CUDA_POST_KERNEL_CHECK;
   }
 }
