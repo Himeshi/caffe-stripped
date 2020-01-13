@@ -25,7 +25,7 @@ union Bits {
 	uint32_t ui;
 };
 
-#define SAMPLING_FREQ 1000
+#define SAMPLING_FREQ 10000
 
 namespace caffe {
 
