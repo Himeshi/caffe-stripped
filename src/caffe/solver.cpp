@@ -215,10 +215,6 @@ void Solver<Dtype>::Step(int iters) {
       if (Caffe::root_solver()) {
         TestAll();
 
-#ifdef SAMPLE_FLOATS
-        net_->DumpSamplesAndResetCounters(iter_);
-#endif
-
       }
       if (requested_early_exit_) {
         // Break out of the while loop because stop was requested while testing.
@@ -271,6 +267,13 @@ void Solver<Dtype>::Step(int iters) {
       callbacks_[i]->on_gradients_ready();
     }
     ApplyUpdate();
+
+#ifdef SAMPLE_FLOATS
+if (param_.test_interval() && iter_ % param_.test_interval() == 0
+            && iter_ > 0) {
+        net_->DumpSamplesAndResetCounters(iter_);
+}
+#endif
 
     SolverAction::Enum request = GetRequestedAction();
 
