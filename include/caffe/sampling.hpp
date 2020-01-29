@@ -20,11 +20,15 @@
 
 #define SAMPLE_FLOATS
 
+#define SAMPLE_VALUES
+
+//#define SAMPLE_EXP
+
 #define SAMPLING_FREQ 50000
 
 namespace caffe {
 
-void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, int sampling_frequency);
+void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency);
 
 void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, int sampling_frequency);
 
