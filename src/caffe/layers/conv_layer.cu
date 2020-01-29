@@ -22,15 +22,15 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
-      sample_blob(top[i]->gpu_data(), top[i]->count(), this->activation_exp, this->activation_frac, SAMPLING_FREQ);
+      sample_blob(top[i]->gpu_data(), top[i]->count(), this->activation_exp, this->activation_frac, this->activation, SAMPLING_FREQ);
     }
 #endif
 
   }
 #ifdef SAMPLE_FLOATS
   if(this->phase_ == TRAIN) {
-    sample_blob(weight, this->blobs_[0]->count(), this->weight_exp, this->weight_frac, SAMPLING_FREQ);
-    sample_blob(this->blobs_[1]->gpu_data(), this->blobs_[1]->count(), this->bias_exp, this->bias_frac, SAMPLING_FREQ);
+    sample_blob(weight, this->blobs_[0]->count(), this->weight_exp, this->weight_frac, this->weight, SAMPLING_FREQ);
+    sample_blob(this->blobs_[1]->gpu_data(), this->blobs_[1]->count(), this->bias_exp, this->bias_frac, this->bias, SAMPLING_FREQ);
   }
 #endif
 }
@@ -50,7 +50,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       }
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
-      sample_blob(this->blobs_[1]->gpu_diff(), this->blobs_[1]->count(), this->bias_gradient_exp, this->bias_gradient_frac, SAMPLING_FREQ);
+      sample_blob(this->blobs_[1]->gpu_diff(), this->blobs_[1]->count(), this->bias_gradient_exp, this->bias_gradient_frac, this->bias_gradient, SAMPLING_FREQ);
     }
 #endif
     }
@@ -64,7 +64,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
               top_diff + n * this->top_dim_, weight_diff);
 #ifdef SAMPLE_FLOATS
   if(this->phase_ == TRAIN) {
-    sample_blob(this->blobs_[0]->gpu_diff(), this->blobs_[0]->count(), this->weight_gradient_exp, this->weight_gradient_frac, SAMPLING_FREQ);
+    sample_blob(this->blobs_[0]->gpu_diff(), this->blobs_[0]->count(), this->weight_gradient_exp, this->weight_gradient_frac, this->weight_gradient, SAMPLING_FREQ);
   }
 #endif
         }
@@ -74,7 +74,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
               bottom_diff + n * this->bottom_dim_);
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN) {
-        sample_blob(bottom[i]->gpu_diff(), bottom[i]->count(), this->activation_gradient_exp, this->activation_gradient_frac, SAMPLING_FREQ);
+        sample_blob(bottom[i]->gpu_diff(), bottom[i]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, SAMPLING_FREQ);
       }
 #endif
         }

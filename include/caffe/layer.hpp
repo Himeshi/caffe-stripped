@@ -325,6 +325,13 @@ class Layer {
   std::map<int, int> bias_gradient_frac;
   std::map<int, int> activation_gradient_frac;
 
+  std::map<uint32_t, int> weight;
+  std::map<uint32_t, int> bias;
+  std::map<uint32_t, int> activation;
+  std::map<uint32_t, int> weight_gradient;
+  std::map<uint32_t, int> bias_gradient;
+  std::map<uint32_t, int> activation_gradient;
+
   /** @brief Using the CPU device, compute the layer output. */
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) = 0;
