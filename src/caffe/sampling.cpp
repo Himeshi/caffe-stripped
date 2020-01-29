@@ -18,13 +18,13 @@ void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, 
 			exp_map[0]++;
 			frac_map[0]++;
 		} else {
-			int exponent = (temp & 0x7C00) >> 10;
+			int exponent = (temp & 0x7F80) >> 7;
 			if(exponent) {
-				exp_map[exponent - 15]++;
-				frac_map[((temp & 0x03FF) | 0x0500)]++;
+				exp_map[exponent - 127]++;
+				frac_map[((temp & 0x007F) | 0x0080)]++;
 			} else {
-				exp_map[-14]++;
-				frac_map[temp & 0x03FF]++;
+				exp_map[-126]++;
+				frac_map[temp & 0x007F]++;
 			}
 		}
 #endif
