@@ -5,33 +5,47 @@
  *      Author: himeshi
  */
 
-#ifndef INCLUDE_CAFFE_SAMPLING_HPP_
-#define INCLUDE_CAFFE_SAMPLING_HPP_
-
-#include <iostream>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
-#include <cstdint>
-#include <map>
-#include "caffe/util/device_alternate.hpp"
-#include "caffe/fp16.hpp"
-
-#define SAMPLE_FLOATS
-
-#define SAMPLING_FREQ 50000
+#include "caffe/sampling.hpp"
 
 namespace caffe {
 
-void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, int sampling_frequency);
+void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency) {
+	fp16 temp;
+	for (int i = 0; i < blob_count; i+= sampling_frequency) {
+		cudaMemcpy(&temp, &blob[i], sizeof(fp16), cudaMemcpyDeviceToHost);
+#ifdef SAMPLE_EXP
+		if(temp == 0) {
+			exp_map[0]++;
+			frac_map[0]++;
+		} else {
+			int exponent = (temp & 0x7C00) >> 10;
+			if(exponent) {
+				exp_map[exponent - 15]++;
+				frac_map[((temp & 0x03FF) | 0x0500)]++;
+			} else {
+				exp_map[-14]++;
+				frac_map[temp & 0x03FF]++;
+			}
+		}
+#endif
 
-void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, int sampling_frequency);
-
-void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, int sampling_frequency);
-
-void print_map(std::map<int, int> sample_map);
+#ifdef SAMPLE_VALUES
+		val_map[temp]++;
+#endif
+	}
 }
 
+void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency) {
+	//printf("sampling\n");
+}
 
-#endif /* INCLUDE_CAFFE_SAMPLING_HPP_ */
+void print_map(std::map<int, int> sample_map) {
+	std::map<int,int>::const_iterator it;
+	for (it = sample_map.begin(); it!= sample_map.end(); it++){
+		std::cout << it->first<<" =>"<< it->second;
+	}
+	printf("\n");
+}
+
+}
+
