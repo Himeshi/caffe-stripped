@@ -9,6 +9,10 @@
 
 namespace caffe {
 
+#include "caffe/sampling.hpp"
+
+namespace caffe {
+
 void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency) {
 	fp16 temp;
 	for (int i = 0; i < blob_count; i+= sampling_frequency) {
@@ -18,13 +22,13 @@ void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, 
 			exp_map[0]++;
 			frac_map[0]++;
 		} else {
-			int exponent = (temp & 0x7C00) >> 10;
+			int exponent = (temp & 0x7E00) >> 9;
 			if(exponent) {
-				exp_map[exponent - 15]++;
-				frac_map[((temp & 0x03FF) | 0x0500)]++;
+				exp_map[exponent - 31]++;
+				frac_map[((temp & 0x01FF) | 0x0200)]++;
 			} else {
-				exp_map[-14]++;
-				frac_map[temp & 0x03FF]++;
+				exp_map[-30]++;
+				frac_map[temp & 0x01FF]++;
 			}
 		}
 #endif
@@ -48,4 +52,3 @@ void print_map(std::map<int, int> sample_map) {
 }
 
 }
-
