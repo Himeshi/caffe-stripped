@@ -29,8 +29,9 @@ void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, 
 #endif
 
 #ifdef SAMPLE_VALUES
+		temp = temp & 0x7FFF;
 		if(temp != 0)
-		  val_map[(temp & 0x7FFF) >> 2]++;
+		  val_map[temp >> 2]++;
 		else
 		  val_map[0]++;
 #endif
