@@ -44,6 +44,9 @@ void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, 
 #endif
 
 #ifdef SAMPLE_VALUES
+		if(p & 0x8000)
+			p = ~p + 1;
+
 		val_map[p]++;
 #endif
 	}
