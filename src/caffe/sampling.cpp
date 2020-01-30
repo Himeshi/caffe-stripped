@@ -9,7 +9,7 @@
 
 namespace caffe {
 
-void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<uint32_t, int> &val_map, int sampling_frequency) {
+void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency) {
 	float temp;
 	union Bits v;
 	for (int i = 0; i < blob_count; i+= sampling_frequency) {
@@ -32,12 +32,12 @@ void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map,
 #endif
 
 #ifdef SAMPLE_VALUES
-		val_map[v.ui]++;
+		val_map[(v.ui & 0x7FFFFFFF) >> 6]++;
 #endif
 	}
 }
 
-void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<uint32_t, int> &val_map, int sampling_frequency) {
+void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency) {
 	//printf("sampling\n");
 }
 

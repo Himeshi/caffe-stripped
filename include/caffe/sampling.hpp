@@ -33,9 +33,9 @@ union Bits {
 
 namespace caffe {
 
-void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<uint32_t, int> &val_map, int sampling_frequency);
+void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency);
 
-void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<uint32_t, int> &val_map, int sampling_frequency);
+void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency);
 
 void print_map(std::map<int, int> sample_map);
 }

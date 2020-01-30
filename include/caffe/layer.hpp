@@ -505,6 +505,7 @@ std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
   outfile << layer_param_.name() << "(" << layer_param_.type() << ")\n";
   std::map<int,int>::const_iterator it;
 
+#ifdef SAMPLE_EXP
   outfile << "weight exponents: ";
   for (it = weight_exp.begin(); it!= weight_exp.end(); it++){
     outfile << "(" << it->first<< ", " << it->second << "), ";
@@ -587,7 +588,52 @@ std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
     outfile << "(" << it->first<< ", " << it->second << "), ";
   }
   activation_gradient_frac.clear();
-  outfile << "\n\n";
+#endif
+
+#ifdef SAMPLE_VALUES
+  outfile << "weights: ";
+  for (it = weight.begin(); it!= weight.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  weight.clear();
+  outfile << "\n";
+
+  outfile << "biases: ";
+  for (it = bias.begin(); it!= bias.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  bias.clear();
+  outfile << "\n";
+
+  outfile << "activations: ";
+  for (it = activation.begin(); it!= activation.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  activation.clear();
+  outfile << "\n";
+
+  outfile << "weight gradients: ";
+  for (it = weight_gradient.begin(); it!= weight_gradient.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  weight_gradient.clear();
+  outfile << "\n";
+
+  outfile << "bias gradient: ";
+  for (it = bias_gradient.begin(); it!= bias_gradient.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  bias_gradient.clear();
+  outfile << "\n";
+
+  outfile << "activation gradients: ";
+  for (it = activation_gradient.begin(); it!= activation_gradient.end(); it++){
+    outfile << "(" << it->first<< ", " << it->second << "), ";
+  }
+  activation_gradient.clear();
+  outfile << "\n";
+#endif
+  outfile << "\n";
 
   return outfile;
 }
