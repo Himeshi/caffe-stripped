@@ -642,7 +642,7 @@ std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
   outfile << "\n";
 #endif
 
-#define SAMPLE_FOR_ERROR
+#ifdef SAMPLE_FOR_ERROR
   std::vector<uint32_t>::const_iterator it;
   outfile << "weights: ";
   for (it = weight_vector.begin(); it!= weight_vector.end(); it++){
