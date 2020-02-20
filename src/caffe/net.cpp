@@ -521,7 +521,11 @@ template <typename Dtype>
 void Net<Dtype>::DumpSamplesAndResetCounters(int iter) {
   //Create file
   std::stringstream filename;
+#ifdef SAMPLE_FOR_ERROR
+  filename << "samples_error/samples_" << iter << ".txt";
+#else
   filename << "samples/samples_" << iter << ".txt";
+#endif
   std::ofstream outfile (filename.str());
 
   //dump samples for each layer
