@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <map>
+#include <vector>
 #include "caffe/util/device_alternate.hpp"
 
 #define SAMPLE_FLOATS
