@@ -15,24 +15,27 @@
 #include <cstdio>
 #include <cstdint>
 #include <map>
+#include <vector>
 #include "caffe/util/device_alternate.hpp"
 #include "caffe/fp16.hpp"
 
 #define SAMPLE_FLOATS
 
-#define SAMPLE_VALUES
+//#define SAMPLE_VALUES
 
 //#define SAMPLE_EXP
+
+#define SAMPLE_FOR_ERROR
 
 #define SAMPLING_FREQ 50000
 
 namespace caffe {
 
-void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency);
+void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<uint32_t> &val_vector, int sampling_frequency);
 
-void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency);
+void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<uint32_t> &val_vector, int sampling_frequency);
 
-void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, int sampling_frequency);
+void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<uint32_t> &val_vector, int sampling_frequency);
 
 void print_map(std::map<int, int> sample_map);
 }
