@@ -344,6 +344,12 @@ class Layer {
   std::map<int, int> bias_gradient;
   std::map<int, int> activation_gradient;
 
+  std::vector<uint32_t> weight_vector;
+  std::vector<uint32_t> bias_vector;
+  std::vector<uint32_t> activation_vector;
+  std::vector<uint32_t> weight_gradient_vector;
+  std::vector<uint32_t> bias_gradient_vector;
+  std::vector<uint32_t> activation_gradient_vector;
 
   /** @brief Using the CPU device, compute the layer output. */
   virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
@@ -517,9 +523,9 @@ std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
   // print layer name
   outfile << "================================================\n";
   outfile << layer_param_.name() << "(" << layer_param_.type() << ")\n";
-  std::map<int,int>::const_iterator it;
 
 #ifdef SAMPLE_EXP
+  std::map<int,int>::const_iterator it;
   outfile << "weight exponents: ";
   for (it = weight_exp.begin(); it!= weight_exp.end(); it++){
     outfile << "(" << it->first<< ", " << it->second << "), ";
@@ -605,6 +611,7 @@ std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
 #endif
 
 #ifdef SAMPLE_VALUES
+  std::map<int,int>::const_iterator it;
   outfile << "weights: ";
   for (it = weight.begin(); it!= weight.end(); it++){
     outfile << "(" << it->first<< ", " << it->second << "), ";
@@ -645,6 +652,51 @@ std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
     outfile << "(" << it->first<< ", " << it->second << "), ";
   }
   activation_gradient.clear();
+  outfile << "\n";
+#endif
+
+#ifdef SAMPLE_FOR_ERROR
+  std::vector<uint32_t>::const_iterator it;
+  outfile << "weights: ";
+  for (it = weight_vector.begin(); it!= weight_vector.end(); it++){
+    outfile << *it << ", ";
+  }
+  weight_vector.clear();
+  outfile << "\n";
+
+  outfile << "biases: ";
+  for (it = bias_vector.begin(); it!= bias_vector.end(); it++){
+	outfile << *it << ", ";
+  }
+  bias_vector.clear();
+  outfile << "\n";
+
+  outfile << "activations: ";
+  for (it = activation_vector.begin(); it!= activation_vector.end(); it++){
+	outfile << *it << ", ";
+  }
+  activation_vector.clear();
+  outfile << "\n";
+
+  outfile << "weight gradients: ";
+  for (it = weight_gradient_vector.begin(); it!= weight_gradient_vector.end(); it++){
+	outfile << *it << ", ";
+  }
+  weight_gradient_vector.clear();
+  outfile << "\n";
+
+  outfile << "bias gradient: ";
+  for (it = bias_gradient_vector.begin(); it!= bias_gradient_vector.end(); it++){
+	outfile << *it << ", ";
+  }
+  bias_gradient_vector.clear();
+  outfile << "\n";
+
+  outfile << "activation gradients: ";
+  for (it = activation_gradient_vector.begin(); it!= activation_gradient_vector.end(); it++){
+	outfile << *it << ", ";
+  }
+  activation_gradient_vector.clear();
   outfile << "\n";
 #endif
   outfile << "\n";
