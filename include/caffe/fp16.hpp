@@ -18,6 +18,8 @@
 #include "caffe/util/device_alternate.hpp"
 //#include "caffe/util/mkl_alternate.hpp"
 
+//#define SATURATION_ROUNDING
+
 union Bits {
 	float f;
 	int32_t si;
@@ -26,6 +28,12 @@ union Bits {
 
 #define FP16_LIMB_SIZE 16
 #define FP16_TYPE uint16_t
+
+#define signN 0x80000000 // flt32 sign bit
+#define maxfp16roundN 0x7F7F8000
+#define minfp16roundN 0x00008000
+#define maxfp16 0x7F7F
+#define minfp16 0x0001
 
 namespace caffe {
 
