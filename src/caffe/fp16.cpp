@@ -49,6 +49,13 @@ fp16 fp32tofp16(float f) {
 	bool sign = v.ui & FLOAT_SIGN_MASK;
 	v.ui &= 0x7FFFFFFF;
 
+#ifdef FLOAT_ROUNDING
+	uint16_t roundSign = sign << 15;
+	if(v.ui > _G_MAXREAL_INT)
+		return _G_INFP | roundSign;
+	if(v.ui < _G_MINREAL_INT)
+		return 0;
+#endif
 	p = _G_MAXREALP & -(v.si >= _G_MAXREAL_INT);
 	p = _G_INFP & -(v.si >= FLOAT_INF);
 	p = _G_MINREALP & -(v.si <= _G_MINREAL_INT);

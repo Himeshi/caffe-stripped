@@ -18,6 +18,8 @@
 #include "caffe/util/device_alternate.hpp"
 #include "posit_constants.hpp"
 
+//#define FLOAT_ROUNDING
+
 namespace caffe {
 
 
