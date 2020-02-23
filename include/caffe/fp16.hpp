@@ -29,6 +29,7 @@ union Bits {
 #define FP16_LIMB_SIZE 16
 #define FP16_TYPE uint16_t
 
+#define shiftSign 16
 #define signN 0x80000000 // flt32 sign bit
 #define maxfp16roundN 0x7F7F8000
 #define minfp16roundN 0x00008000
