@@ -41,6 +41,12 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   uint32_t sign = v.si & signN;
   v.si ^= sign;
   sign >>= shiftSign; // logical shift
+#ifdef SATURATION_ROUNDING
+  if(v.ui >= maxfp16roundN)
+    return maxfp16 | sign;
+  if(v.ui <= minfp16roundN)
+    return minfp16 | sign;
+#endif
   s.si = mulN;
   s.si = s.f * v.f; // correct subnormals
   // get the bits that could potentially be cut off for rounding
