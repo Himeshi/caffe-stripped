@@ -48,7 +48,7 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
       outer_num_, dim, inner_num_, has_ignore_label_, ignore_label_, counts);
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
-      sample_blob(bottom[0]->gpu_data(), bottom[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+      sample_blob(prob_->gpu_data(), prob_->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
     }
 #endif
   Dtype loss;
