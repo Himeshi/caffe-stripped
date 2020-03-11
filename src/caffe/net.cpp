@@ -533,7 +533,7 @@ void Net<Dtype>::DumpSamplesAndResetCounters(int iter) {
   //Create file
   std::stringstream filename;
 #ifdef SAMPLE_FOR_ERROR
-  filename << "samples_error/samples_" << iter << ".txt";
+  filename << "samples_error_float/samples_" << iter << ".txt";
 #else
   filename << "samples/samples_" << iter << ".txt";
 #endif
