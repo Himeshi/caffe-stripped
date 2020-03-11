@@ -9,10 +9,10 @@
 
 namespace caffe {
 
-void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<uint32_t> &val_vector, int sampling_frequency) {
+void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<float> &val_vector, int sampling_frequency) {
 	fp16 p;
 	union Bits v;
-	for (int i = 0; i < blob_count; i+= sampling_frequency) {
+	for (int i = 0; i < blob_count; i += i * 2) {
 		cudaMemcpy(&p, &blob[i], sizeof(fp16), cudaMemcpyDeviceToHost);
 #ifdef SAMPLE_EXP
 		if(p == 0) {
@@ -51,12 +51,12 @@ void sample_blob(const fp16* blob, int blob_count, std::map<int, int> &exp_map, 
 #endif
 
 #ifdef SAMPLE_FOR_ERROR
-		val_vector.push_back(p);
+		val_vector.push_back(fp16tofp32(p));
 #endif
 	}
 }
 
-void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<uint32_t> &val_vector, int sampling_frequency) {
+void sample_blob(const double* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<float> &val_vector, int sampling_frequency) {
 	//printf("sampling\n");
 }
 
