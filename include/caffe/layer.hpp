@@ -332,12 +332,12 @@ class Layer {
   std::map<int, int> bias_gradient;
   std::map<int, int> activation_gradient;
 
-  std::vector<float> weight_vector;
-  std::vector<float> bias_vector;
-  std::vector<float> activation_vector;
-  std::vector<float> weight_gradient_vector;
-  std::vector<float> bias_gradient_vector;
-  std::vector<float> activation_gradient_vector;
+  std::vector<uint32_t> weight_vector;
+  std::vector<uint32_t> bias_vector;
+  std::vector<uint32_t> activation_vector;
+  std::vector<uint32_t> weight_gradient_vector;
+  std::vector<uint32_t> bias_gradient_vector;
+  std::vector<uint32_t> activation_gradient_vector;
 
   /** @brief Using the CPU device, compute the layer output. */
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -643,8 +643,8 @@ std::ostream& Layer<Dtype>::DumpSampleAndReset(std::ostream& outfile) {
 #endif
 
 #ifdef SAMPLE_FOR_ERROR
-  std::vector<float>::const_iterator it;
-  outfile << std::scientific << "weights: ";
+  std::vector<uint32_t>::const_iterator it;
+  outfile << "weights: ";
   for (it = weight_vector.begin(); it!= weight_vector.end(); it++){
     outfile << *it << ", ";
   }
