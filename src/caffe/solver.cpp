@@ -229,7 +229,15 @@ void Solver<Dtype>::Step(int iters) {
     // accumulate the loss and gradient
     Dtype loss = 0;
     for (int i = 0; i < param_.iter_size(); ++i) {
+#ifdef SAMPLE_FLOATS
+      if (param_.test_interval() && iter_ % param_.test_interval() == 0) {
+        loss += net_->ForwardBackward(1);
+      } else {
+        loss += net_->ForwardBackward();
+      }
+#else
       loss += net_->ForwardBackward();
+#endif
     }
     loss /= param_.iter_size();
     // average the loss across iterations for smoothed reporting
@@ -265,14 +273,13 @@ void Solver<Dtype>::Step(int iters) {
     for (int i = 0; i < callbacks_.size(); ++i) {
       callbacks_[i]->on_gradients_ready();
     }
-    ApplyUpdate();
 
 #ifdef SAMPLE_FLOATS
-if (param_.test_interval() && iter_ % param_.test_interval() == 0
-            && iter_ > 0) {
+if (param_.test_interval() && iter_ % param_.test_interval() == 0) {
         net_->DumpSamplesAndResetCounters(iter_);
 }
 #endif
+    ApplyUpdate();
 
     SolverAction::Enum request = GetRequestedAction();
 

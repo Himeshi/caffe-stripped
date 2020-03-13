@@ -27,7 +27,7 @@
 
 #define SAMPLE_FOR_ERROR
 
-#define SAMPLING_FREQ 50000
+#define SAMPLING_FREQ 100
 
 namespace caffe {
 

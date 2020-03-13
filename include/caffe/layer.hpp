@@ -136,7 +136,7 @@ class Layer {
    * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
    */
   inline Dtype Forward(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype, int sample = 0);
 
   /**
    * @brief Given the top blob error gradients, compute the bottom blob error
@@ -323,6 +323,7 @@ class Layer {
    *  the objective function. */
   vector<Dtype> loss_;
 
+  int sample_iter_;
   std::map<int, int> weight_exp;
   std::map<int, int> bias_exp;
   std::map<int, int> activation_exp;
@@ -456,7 +457,8 @@ class Layer {
 // functions.
 template <typename Dtype>
 inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype, int sample) {
+  sample_iter_ = sample;
   Dtype loss = 0;
   Reshape(bottom, top);
   switch (Caffe::mode()) {
