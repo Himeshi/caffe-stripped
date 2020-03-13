@@ -536,7 +536,7 @@ void Net<Dtype>::DumpSamplesAndResetCounters(int iter) {
 }
 
 template <typename Dtype>
-Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
+Dtype Net<Dtype>::ForwardFromTo(int start, int end, int sample) {
   CHECK_GE(start, 0);
   CHECK_LT(end, layers_.size());
   Dtype loss = 0;
@@ -544,7 +544,7 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
     for (int c = 0; c < before_forward_.size(); ++c) {
       before_forward_[c]->run(i);
     }
-    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
+    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i], sample);
     loss += layer_loss;
     if (debug_info_) { ForwardDebugInfo(i); }
     for (int c = 0; c < after_forward_.size(); ++c) {
@@ -565,11 +565,11 @@ Dtype Net<Dtype>::ForwardTo(int end) {
 }
 
 template <typename Dtype>
-const vector<Blob<Dtype>*>& Net<Dtype>::Forward(Dtype* loss) {
+const vector<Blob<Dtype>*>& Net<Dtype>::Forward(Dtype* loss, int sample) {
   if (loss != NULL) {
-    *loss = ForwardFromTo(0, layers_.size() - 1);
+    *loss = ForwardFromTo(0, layers_.size() - 1, sample);
   } else {
-    ForwardFromTo(0, layers_.size() - 1);
+    ForwardFromTo(0, layers_.size() - 1, sample);
   }
   return net_output_blobs_;
 }

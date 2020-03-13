@@ -35,7 +35,7 @@ class Net {
    * @brief Run Forward and return the result.
    *
    */
-  const vector<Blob<Dtype>*>& Forward(Dtype* loss = NULL);
+  const vector<Blob<Dtype>*>& Forward(Dtype* loss = NULL, int sample = 0);
   /// @brief DEPRECATED; use Forward() instead.
   const vector<Blob<Dtype>*>& ForwardPrefilled(Dtype* loss = NULL) {
     LOG_EVERY_N(WARNING, 1000) << "DEPRECATED: ForwardPrefilled() "
@@ -51,7 +51,7 @@ class Net {
    * the middle may be incorrect if all of the layers of a fan-in are not
    * included.
    */
-  Dtype ForwardFromTo(int start, int end);
+  Dtype ForwardFromTo(int start, int end, int sample = 0);
   Dtype ForwardFrom(int start);
   Dtype ForwardTo(int end);
   /// @brief DEPRECATED; set input blobs then use Forward() instead.
@@ -82,9 +82,9 @@ class Net {
    */
   void Reshape();
 
-  Dtype ForwardBackward() {
+  Dtype ForwardBackward(int sample = 0) {
     Dtype loss;
-    Forward(&loss);
+    Forward(&loss, sample);
     Backward();
     return loss;
   }
