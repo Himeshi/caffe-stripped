@@ -38,6 +38,8 @@ union Bits {
 
 #define BIAS_SAMPLING_FREQ 1
 
+#define LOSS_SAMPLING_FREQ 1
+
 namespace caffe {
 
 void sample_blob(const float* blob, int blob_count, std::map<int, int> &exp_map, std::map<int, int> &frac_map, std::map<int, int> &val_map, std::vector<uint32_t> &val_vector, int sampling_frequency);
