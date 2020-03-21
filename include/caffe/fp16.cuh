@@ -65,9 +65,9 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
 	if(v.ui < _G_MINREAL_INT)
 		return 0;
 #endif
-  p = _G_MAXREALP & -(v.si >= _G_MAXREAL_INT);
-  p = _G_INFP & -(v.si >= FLOAT_INF);
-  p = _G_MINREALP & -(v.si <= _G_MINREAL_INT);
+  p ^= (p ^_G_MAXREALP) & -(v.si >= _G_MAXREAL_INT);
+  p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
+  p ^= (p ^ _G_MINREALP) & -(v.si <= _G_MINREAL_INT);
 
   // min posit exponent in 16, 3 is 112
   // therefore all the float subnormals will be handled
@@ -93,7 +93,7 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
 #if _G_NBITS != 16
   temp_p <<= _G_POSIT_SHIFT_AMOUNT;
 #endif
-  p = temp_p & -((v.si < _G_MAXREAL_INT) & (v.si > _G_MINREAL_INT));
+  p ^= (temp_p ^ p) & -((v.si < _G_MAXREAL_INT) & (v.si > _G_MINREAL_INT));
 
   p = (p ^ -sign) + sign;
 
