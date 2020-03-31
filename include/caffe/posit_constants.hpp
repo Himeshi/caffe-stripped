@@ -63,6 +63,7 @@
 #define _G_MINREAL 3.725290298e-9
 #define _G_MAXREAL_INT 0x4D800000
 #define _G_MINREAL_INT 0x31800000
+#define MAX_REGIME 28
 
 #elif _G_ESIZE == 2
 #define _G_USEED 16
@@ -72,6 +73,7 @@
 #define _G_MINREAL 1.387779e-17
 #define _G_MAXREAL_INT 0x5B800000
 #define _G_MINREAL_INT 0x23800000
+#define MAX_REGIME 56
 
 #elif _G_ESIZE == 3
 #define _G_USEED 256
@@ -81,6 +83,7 @@
 #define _G_MINREAL 1.925929944e-34
 #define _G_MAXREAL_INT 0x77800000
 #define _G_MINREAL_INT 0x07800000
+#define MAX_REGIME 112
 
 #elif _G_ESIZE == 4
 #define _G_USEED 512
