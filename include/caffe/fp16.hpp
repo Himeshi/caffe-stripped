@@ -29,6 +29,11 @@ union Bits {
 	uint32_t ui;
 };
 
+
+struct decomposed_posit{
+    short sign, exponent, fraction, fraction_size;
+};
+
 typedef FP16_TYPE fp16;
 
 fp16 get_posit_from_parts(int exponent, unsigned int fraction,
@@ -37,6 +42,10 @@ fp16 get_posit_from_parts(int exponent, unsigned int fraction,
 float fp16tofp32(fp16 p);
 
 fp16 fp32tofp16(float f);
+
+struct decomposed_posit decompose_posit(fp16 p);
+
+fp16 get_posit_from_parts(int exponent, unsigned int fraction, unsigned int fraction_size);
 
 void print_gpu_float_array(const float* d_data, int size);
 

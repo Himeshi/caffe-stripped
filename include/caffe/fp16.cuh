@@ -100,5 +100,111 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   return p;
 }
 
+__device__ __inline__ struct decomposed_posit decompose_posit_gpu(fp16 p) {
+	struct decomposed_posit dp;
+
+	//get the sign
+	dp.sign = p >> (FP16_LIMB_SIZE - 1);
+	if (dp.sign) {
+		p = ~p + 1;
+	}
+
+	//handling it here so as to avoid error later when
+	//getting the regime later by fliping p
+	if (p == _G_MAXREALP) {
+		dp.exponent = _G_USEED_ZEROS * (_G_NBITS - 2);
+		dp.fraction = 1;
+		dp.fraction_size = 0;
+		return dp;
+	}
+
+	//get the regime
+	fp16 second_bit = p & SECOND_BIT_MASK;
+	int regime = 0;
+	int regime_length = 0;
+	p <<= 1;
+	if (second_bit) {
+		//sign of regime is +ve, find first 0
+		fp16 flipped = ~p;
+		regime = __clz(flipped) - FP16_LIMB_SIZE;
+		regime_length = regime + 1;
+		regime -= 1;
+	} else {
+		//sign of regime is -ve, find first 1
+		regime = __clz(p) - FP16_LIMB_SIZE;
+		regime_length = regime + 1;
+		regime = -regime;
+	}
+
+	//remove the regime and get exponent
+	p <<= regime_length;
+	dp.exponent = p >> (FP16_LIMB_SIZE - _G_ESIZE);
+	dp.exponent = _G_USEED_ZEROS * regime + dp.exponent;
+
+	//remove exponent and get the fraction
+	p <<= _G_ESIZE;
+	int running_length = 1 + regime_length + _G_ESIZE;
+	dp.fraction_size = GET_MAX((_G_NBITS - running_length), 0);
+	dp.fraction = p >> (FP16_LIMB_SIZE - dp.fraction_size);
+	dp.fraction = dp.fraction | (1 << dp.fraction_size);
+	return dp;
+}
+
+__device__ __inline__ fp16 get_posit_from_parts_gpu(int exponent, unsigned int fraction, unsigned int fraction_size) {
+	//assume the fraction is normalized and it's MSB is hidden already
+	fp16 p = 0;
+	int regime, regime_length, exponentp, ob, hb, sb, rb;
+	TEMP_TYPE temp;
+
+	//find regime and exponent
+	if (exponent >= 0) {
+		regime = exponent / _G_USEED_ZEROS;
+		exponentp = exponent - (_G_USEED_ZEROS * regime);
+		regime_length = regime + 2;
+		regime = ((1 << (regime + 1)) - 1) << 1;
+	} else {
+		regime = abs(exponent / _G_USEED_ZEROS);
+		if (exponent % _G_USEED_ZEROS)
+			regime += 1;
+		regime_length = regime + 1;
+		exponentp = exponent + (_G_USEED_ZEROS * regime);
+		regime = 1;
+	}
+
+	//assemble the regime
+	temp = regime;
+	int running_size = regime_length + 1;
+
+	//assemble the exponent
+	temp <<= _G_ESIZE;
+	int exponent_length = FLOAT_SIZE - __builtin_clz(abs(exponentp));
+	exponentp >>= (((exponent_length - _G_ESIZE)
+			+ abs((exponent_length - _G_ESIZE))) >> 1);
+	temp |= exponentp;
+	running_size += _G_ESIZE;
+
+	//assemble the fraction
+	temp <<= fraction_size;
+	temp |= fraction;
+	running_size += fraction_size;
+
+	int extra_bits = (running_size - _G_NBITS);
+
+	if (extra_bits > 0) {
+		//round
+		p = temp >> extra_bits;
+		ob = p & 0x0001;
+		hb = (temp >> (extra_bits - 1)) & 1ULL;
+		sb = ((1ULL << (extra_bits - 1)) - 1) & temp;
+		rb = (ob && hb) || (hb && sb);
+		p = p + rb;
+	} else {
+		// no need to round
+		p = temp << -extra_bits;
+	}
+
+	return p;
+}
+
 }
 #endif /* INCLUDE_CAFFE_FP16_HPP_ */
