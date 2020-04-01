@@ -58,7 +58,7 @@ fp16 fp32tofp16(float f) {
 #endif
 	p ^= (p ^_G_MAXREALP) & -(v.si >= _G_MAXREAL_INT);
 	p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
-	p ^= (p ^ _G_MINREALP) & -(0 != v.si &&  && v.si <= _G_MINREAL_INT);
+	p ^= (p ^ _G_MINREALP) & -(v.si != 0 && v.si <= _G_MINREAL_INT);
 
 	// min posit exponent in 16, 3 is 112
 	// therefore all the float subnormals will be handled
