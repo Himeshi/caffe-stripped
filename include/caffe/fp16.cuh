@@ -67,7 +67,7 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
 #endif
   p ^= (p ^_G_MAXREALP) & -(v.si >= _G_MAXREAL_INT);
   p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
-  p ^= (p ^ _G_MINREALP) & -(v.si <= _G_MINREAL_INT);
+  p ^= (p ^ _G_MINREALP) & -(v.si != 0 && v.si <= _G_MINREAL_INT);
 
   // min posit exponent in 16, 3 is 112
   // therefore all the float subnormals will be handled
@@ -222,29 +222,44 @@ __device__ __inline__ fp16 add_posit_gpu(fp16 a, fp16 b) {
 		return a | b;
 
 	//normal case
-	struct decomposed_posit a_decomposed = decompose_posit(a);
-	struct decomposed_posit b_decomposed = decompose_posit(b);
-
-	//make the exponents the same
-	int exponent_diff = a_decomposed.exponent - b_decomposed.exponent;
-	if (exponent_diff > 0) {
-		temp_a = a_decomposed.fraction << exponent_diff;
-		temp_b = b_decomposed.fraction;
-		exponent = b_decomposed.exponent;
-	} else {
-		temp_a = a_decomposed.fraction;
-		temp_b = b_decomposed.fraction << -exponent_diff;
-		exponent = a_decomposed.exponent;
-	}
+	struct decomposed_posit a_decomposed = decompose_posit_gpu(a);
+	struct decomposed_posit b_decomposed = decompose_posit_gpu(b);
 
 	//align the binary point
 	int fraction_diff = a_decomposed.fraction_size - b_decomposed.fraction_size;
 	if (fraction_diff > 0) {
-		temp_b <<= fraction_diff;
+		temp_a = a_decomposed.fraction;
+		temp_b = b_decomposed.fraction << fraction_diff;
 		fraction_size = a_decomposed.fraction_size;
 	} else {
-		temp_a <<= -fraction_diff;
+		temp_a = a_decomposed.fraction << -fraction_diff;
+		temp_b = b_decomposed.fraction;
 		fraction_size = b_decomposed.fraction_size;
+	}
+
+	//make the exponents the same
+	int exponent_diff = a_decomposed.exponent - b_decomposed.exponent;
+	if(abs(exponent_diff) > 13) {
+		//11 + 1 is the maximum number of possible fraction bits
+		//if you shift beyond this, then there is no overlap
+		// this is to make the addition possible within 64 bits
+		if(exponent_diff > 0) {
+			exponent = a_decomposed.exponent - 2;
+			temp_b = 1;
+			temp_a <<= 2;
+		} else {
+			exponent = b_decomposed.exponent - 2;
+			temp_a = 1;
+			temp_b <<= 2;
+		}
+	} else {
+		if (exponent_diff > 0) {
+			temp_a <<= exponent_diff;
+			exponent = b_decomposed.exponent;
+		} else {
+			temp_b <<= -exponent_diff;
+			exponent = a_decomposed.exponent;
+		}
 	}
 
 	//add the fractions
@@ -284,7 +299,7 @@ __device__ __inline__ fp16 add_posit_gpu(fp16 a, fp16 b) {
 		return result;
 	}
 
-	result = get_posit_from_parts(exponent, fraction, fraction_size);
+	result = get_posit_from_parts_gpu(exponent, fraction, fraction_size);
 
 	if (sign)
 		result = ~result + 1;
@@ -304,9 +319,15 @@ __device__ __inline__ fp16 multiply_posit_gpu(fp16 a, fp16 b) {
 	if (a == 0 || b == 0)
 		return 0;
 
+	if(a == 0x4000)
+		return b;
+
+	if(b == 0x4000)
+		return a;
+
 	//normal case
-	struct decomposed_posit a_decomposed = decompose_posit(a);
-	struct decomposed_posit b_decomposed = decompose_posit(b);
+	struct decomposed_posit a_decomposed = decompose_posit_gpu(a);
+	struct decomposed_posit b_decomposed = decompose_posit_gpu(b);
 
 	//get the sign of the result
 	int sign = a_decomposed.sign ^ b_decomposed.sign;
@@ -341,13 +362,313 @@ __device__ __inline__ fp16 multiply_posit_gpu(fp16 a, fp16 b) {
 		return result;
 	}
 
-	result = get_posit_from_parts(exponent, fraction, fraction_size);
+	result = get_posit_from_parts_gpu(exponent, fraction, fraction_size);
 
 	if (sign)
 		result = ~result + 1;
 
 	return (result << _G_POSIT_SHIFT_AMOUNT);
 }
+
+__device__ __inline__ fp16 fused_multiply_add_gpu(fp16* a, fp16* b, int count) {
+	fp16 a_i = 0, b_i = 0;
+	uint64_t acc1 = 0, acc2 = 0, acc3 = 0, acc4 = 0;
+	uint64_t temp1 = 0, temp2 = 0, temp3 = 0, temp4 = 0;
+	int first_shift, second_shift, third_shift, fourth_shift, carry2, carry3, carry4, acc_sign = 0;
+	fp16 result = 0;
+	int sign, exponent, fraction_size;
+	unsigned int fraction;
+	for (int i = 0; i < count; i++) {
+		a_i = a[i];
+		b_i = b[i];
+
+		if (a_i == _G_INFP || b_i == _G_INFP)
+			return _G_INFP;
+
+		if (a == 0 || b == 0) {
+			sign = 0;
+			exponent = 0;
+			fraction = 0;
+			fraction_size = 0;
+		} else if (a_i == 0x4000) {
+			struct decomposed_posit decomposed = decompose_posit_gpu(b_i);
+			sign = decomposed.sign;
+			exponent = decomposed.exponent;
+			fraction = decomposed.fraction;
+			fraction_size = decomposed.fraction_size;
+		} else if (b_i == 0x4000) {
+			struct decomposed_posit decomposed = decompose_posit_gpu(a_i);
+			sign = decomposed.sign;
+			exponent = decomposed.exponent;
+			fraction = decomposed.fraction;
+			fraction_size = decomposed.fraction_size;
+		} else {
+			//multiply
+			struct decomposed_posit a_decomposed = decompose_posit_gpu(a_i);
+			struct decomposed_posit b_decomposed = decompose_posit_gpu(b_i);
+
+			//get the sign of the result
+			sign = a_decomposed.sign ^ b_decomposed.sign;
+
+			//add the exponents
+			exponent = a_decomposed.exponent + b_decomposed.exponent;
+
+			//multiply the fractions
+			fraction = a_decomposed.fraction
+					* b_decomposed.fraction;
+
+			//get the fraction size
+			fraction_size = a_decomposed.fraction_size
+					+ b_decomposed.fraction_size;
+
+			//normalize fraction
+			unsigned int size_of_fraction = FLOAT_SIZE - __clz(fraction);
+			int fraction_size_diff = fraction_size - size_of_fraction + 1;
+			fraction_size = size_of_fraction - 1;
+			exponent -= fraction_size_diff;
+		}
+
+		if(fraction != 0) {
+			// 2 * (56 + 1) = 114
+			//subtract fraction size from exponent
+			exponent -= fraction_size;
+			exponent += 114;
+
+			//114 * 2 = 228 64*4 = 256
+			temp1 = 0; temp2 = 0; temp3 = 0; temp4 = 0;
+			temp4 = fraction << exponent;
+
+			// 64 - (fraction_size + 1)
+			first_shift = (63 - fraction_size);
+			second_shift = exponent - first_shift;
+			third_shift = exponent - (first_shift + second_shift);
+			fourth_shift = exponent - (first_shift + second_shift + third_shift);
+			if(exponent > first_shift) {
+				//temp3 needs to be populated
+				//calculate how many bits will go to temp3
+				temp3 = fraction << second_shift;
+			}
+
+			if(exponent > (first_shift + second_shift)) {
+				temp2 = fraction << third_shift;
+			}
+
+			if (exponent > (first_shift + second_shift + third_shift)) {
+				temp1 = fraction << fourth_shift;
+			}
+
+		    //update accumulator
+			carry4 = 0; carry3 = 0; carry2 = 0;
+			if(sign == acc_sign) {
+				carry4 = acc4 > (0xFFFFFFFFFFFFFFFF - temp4);
+				acc4 += temp4;
+				carry3 = acc3 > (0xFFFFFFFFFFFFFFFF - temp3 - carry4);
+				acc3 += (temp3 + carry4);
+				carry2 = acc2 > (0xFFFFFFFFFFFFFFFF - temp2 - carry3);
+				acc2 += (temp2 + carry3);
+				acc1 += (temp1 + carry2);
+			} else {
+				//figure out which is the larger value
+				int acc_larger = 0;
+				if(acc1 > temp1)
+					acc_larger = 1;
+				else if(acc1 == 0 && temp1 == 0 && acc2 > temp2)
+					acc_larger = 1;
+				else if(acc1 == 0 && temp1 == 0 && acc2 == 0 && temp2 == 0 && acc3 > temp3)
+					acc_larger = 1;
+				else if(acc1 == 0 && temp1 == 0 && acc2 == 0 && temp2 == 0 && acc3 == 0 && temp3 == 0 && acc4 > temp4)
+					acc_larger = 1;
+
+				if(acc_larger) {
+					//convert temp to 2's complement
+					temp4 = ~temp4;
+					temp3 = ~temp3;
+					temp2 = ~temp2;
+					temp1 = ~temp1;
+
+					temp4 += 1;
+					if (temp4 == 0)
+						temp3 += 1;
+					if (temp3 == 0)
+						temp2 += 1;
+					if (temp2 == 0)
+						temp1 += 1;
+				} else {
+					acc_sign = sign;
+
+					acc4 = ~acc4;
+					acc3 = ~acc3;
+					acc2 = ~acc2;
+					acc1 = ~acc1;
+
+					acc4 += 1;
+					if (acc4 == 0)
+						acc3 += 1;
+					if (acc3 == 0)
+						acc2 += 1;
+					if (acc2 == 0)
+						acc1 += 1;
+				}
+
+				carry4 = acc4 > (0xFFFFFFFFFFFFFFFF - temp4);
+				acc4 += temp4;
+				carry3 = acc3 > (0xFFFFFFFFFFFFFFFF - temp3 - carry4);
+				acc3 += (temp3 + carry4);
+				carry2 = acc2 > (0xFFFFFFFFFFFFFFFF - temp2 - carry3);
+				acc2 += (temp2 + carry3);
+				acc1 += (temp1 + carry2);
+
+			}
+		}
+	}
+
+	//get exponent
+	//find leading 1
+	int local_pos, leading_pos, final_exp;
+	if(acc1 != 0) {
+		local_pos = 64 - __clzll(acc1);
+		leading_pos = local_pos + (64 * 3);
+		final_exp = leading_pos - 115;
+		acc1 = acc1 & ~(1 << (local_pos - 1));
+	} else if(acc2 != 0) {
+		local_pos = 64 - __clzll(acc2);
+		leading_pos = local_pos + (64 * 2);
+		final_exp = leading_pos - 115;
+		acc2 = acc2 & ~(1 << (local_pos - 1));
+	} else if(acc3 != 0) {
+		local_pos = 64 - __clzll(acc3);
+		leading_pos = local_pos + 64;
+		final_exp = leading_pos - 115;
+		acc3 = acc3 & ~(1 << (local_pos - 1));
+	} else if(acc4 != 0) {
+		local_pos = 64 - __clzll(acc4);
+		leading_pos = local_pos;
+		final_exp = leading_pos - 115;
+		acc4 = acc4 & ~(1 << (local_pos - 1));
+	} else {
+		return result;
+	}
+
+
+	if (final_exp >= MAX_REGIME) {
+		result = _G_MAXREALP;
+		if (acc_sign)
+			result = ~result + 1;
+		return result;
+	}
+
+	if(final_exp <= -MAX_REGIME) {
+		result = _G_MINREALP;
+		if (acc_sign)
+			result = ~result + 1;
+		return result;
+	}
+
+	//convert acc into posit result
+	int regime, regime_length, exponentp, hb, sb, rb;
+	TEMP_TYPE temp;
+
+	//find regime and exponent
+	if (final_exp >= 0) {
+		regime = final_exp / _G_USEED_ZEROS;
+		exponentp = final_exp - (_G_USEED_ZEROS * regime);
+		regime_length = regime + 2;
+		regime = ((1 << (regime + 1)) - 1) << 1;
+	} else {
+		regime = abs(final_exp / _G_USEED_ZEROS);
+		if (final_exp % _G_USEED_ZEROS)
+			regime += 1;
+		regime_length = regime + 1;
+		exponentp = final_exp + (_G_USEED_ZEROS * regime);
+		regime = 1;
+	}
+
+	//assemble the regime
+	temp = regime;
+	int running_size = regime_length + 1;
+
+	//assemble the exponent
+	temp <<= _G_ESIZE;
+	int exponent_length = FLOAT_SIZE - __clz(abs(exponentp));
+	exponentp >>= (((exponent_length - _G_ESIZE)
+			+ abs((exponent_length - _G_ESIZE))) >> 1);
+	temp |= exponentp;
+	running_size += _G_ESIZE;
+
+	//assemble the fraction
+	uint64_t halfway_mask;
+	int remaining_space = _G_NBITS - running_size;
+	int hb_pos;
+	if(remaining_space > 0) {
+		int fraction_start = leading_pos - 1;
+		int fraction_end = leading_pos - remaining_space;
+		hb_pos = fraction_end - 1;
+		temp <<= remaining_space;
+		//fraction start can't be > 192
+		if (fraction_start > 128 && fraction_end > 128) {
+			result = temp | (acc2 >> (fraction_end - 129));
+		} else if (fraction_start > 128 && fraction_end <= 128) {
+			int dangling_bits = remaining_space - fraction_start + 128;
+			temp |= (acc2 << dangling_bits);
+			temp |= (acc3 >> (64 - dangling_bits));
+		} else if (fraction_start > 64 && fraction_end > 64) {
+			result = temp | (acc3 >> (fraction_end - 65));
+		} else if (fraction_start > 64 && fraction_end <= 64) {
+			int dangling_bits = remaining_space - fraction_start + 64;
+			temp |= (acc3 << dangling_bits);
+			temp |= (acc4 >> (64 - dangling_bits));
+		} else {
+			result = temp | (acc4 >> (fraction_end - 1));
+		}
+
+		if(hb_pos > 128) {
+			hb_pos -= 128;
+			hb = acc2 & (1 << (hb_pos - 1));
+			sb = (acc2 << (64 - hb_pos)) | acc3 | acc4;
+		} else if (hb_pos > 64) {
+			hb_pos -= 64;
+			hb = acc3 & (1 << (hb_pos - 1));
+			sb = (acc3 << (64 - hb_pos)) | acc4;
+		} else {
+			hb = acc4 & (1 << (hb_pos - 1));
+			sb = (acc4 << (64 - hb_pos));
+		}
+	} else if(remaining_space == 0) {
+		result = temp;
+		hb_pos = local_pos - 1;
+		halfway_mask = (1 << (hb_pos - 1));
+		if (hb_pos > 192) {
+			hb = acc1 & halfway_mask;
+			acc1 = acc1 & ~halfway_mask;
+		} else if (hb_pos > 128) {
+			hb = acc2 & halfway_mask;
+			acc2 = acc2 & ~halfway_mask;
+		} else if (hb_pos > 64) {
+			hb = acc3 & halfway_mask;
+			acc3 = acc3 & ~halfway_mask;
+		} else {
+			hb = acc4 & halfway_mask;
+			acc4 = acc4 & ~halfway_mask;
+		}
+		sb = acc1 | acc2 | acc3 | acc4;
+	}
+	else {
+		remaining_space = -remaining_space;
+		result = temp >> remaining_space;
+		halfway_mask = (1 << (remaining_space - 1));
+		hb = temp & halfway_mask;
+		sb = (temp & (halfway_mask - 1)) | acc1 | acc2 | acc3 | acc4;
+	}
+
+	rb = hb && ((result & 1) | sb);
+	result += rb;
+
+	if(acc_sign)
+		result = ~result + 1;
+
+	return result;
+}
+
 
 }
 #endif /* INCLUDE_CAFFE_FP16_HPP_ */

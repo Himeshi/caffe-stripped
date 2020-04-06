@@ -17,6 +17,7 @@
 
 #include "caffe/util/device_alternate.hpp"
 #include "posit_constants.hpp"
+#include "glog/logging.h"
 
 //#define FLOAT_ROUNDING
 
@@ -46,6 +47,8 @@ fp16 fp32tofp16(float f);
 struct decomposed_posit decompose_posit(fp16 p);
 
 fp16 get_posit_from_parts(int exponent, unsigned int fraction, unsigned int fraction_size);
+
+fp16 fused_multiply_add(fp16* a, fp16* b, int count);
 
 void print_gpu_float_array(const float* d_data, int size);
 
