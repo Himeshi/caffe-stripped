@@ -7,10 +7,10 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void DropoutForward(const int n, const fp16* in,
-    const unsigned int* mask, const unsigned int threshold, const float scale,
+    const unsigned int* mask, const unsigned int threshold, const fp16 scale,
     fp16* out) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * (mask[index] > threshold) * scale);
+    out[index] = multiply_posit_gpu(in[index], scale) * (mask[index] > threshold);
   }
 }
 
@@ -27,7 +27,7 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     // set thresholds
     // NOLINT_NEXT_LINE(whitespace/operators)
     DropoutForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, mask, uint_thres_, scale_, top_data);
+        count, bottom_data, mask, uint_thres_, fp32tofp16(scale_), top_data);
     CUDA_POST_KERNEL_CHECK;
   } else {
     caffe_copy(count, bottom_data, top_data);
@@ -41,10 +41,10 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 
 template <typename Dtype>
 __global__ void DropoutBackward(const int n, const fp16* in_diff,
-    const unsigned int* mask, const unsigned int threshold, const float scale,
+    const unsigned int* mask, const unsigned int threshold, const fp16 scale,
     fp16* out_diff) {
   CUDA_KERNEL_LOOP(index, n) {
-    out_diff[index] = fp32tofp16_gpu(fp16tofp32_gpu(in_diff[index]) * scale * (mask[index] > threshold));
+    out_diff[index] = multiply_posit_gpu(in_diff[index], scale) * (mask[index] > threshold);
   }
 }
 
@@ -62,7 +62,7 @@ void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       // NOLINT_NEXT_LINE(whitespace/operators)
       DropoutBackward<Dtype><<<CAFFE_GET_BLOCKS(count),
         CAFFE_CUDA_NUM_THREADS>>>(
-          count, top_diff, mask, uint_thres_, scale_, bottom_diff);
+          count, top_diff, mask, uint_thres_, fp32tofp16(scale_), bottom_diff);
       CUDA_POST_KERNEL_CHECK;
     } else {
       caffe_copy(top[0]->count(), top_diff, bottom_diff);
