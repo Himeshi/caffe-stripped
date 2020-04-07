@@ -35,7 +35,7 @@ namespace caffe {
 
 __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
     const cublasOperation_t TransB, const int M, const int N, const int K,
-    const float alpha, const fp16* A, const int lda, const fp16* B, const float beta,
+    const fp16 alpha, const fp16* A, const int lda, const fp16* B, const fp16 beta,
     const int ldb, fp16* C) {
 
   // Block row and column
@@ -50,7 +50,7 @@ __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
   int cCol = blockCol * BLOCK_SIZE + col;
   int cIndex = cRow * M + cCol;
 
-  float cValue = 0;
+  fp16 cValue = 0;
 
   int iter = ((K + BLOCK_SIZE - 1) / BLOCK_SIZE);
   int count = BLOCK_SIZE;
@@ -96,14 +96,19 @@ __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
     __syncthreads();
 
     for (int e = 0; e < count; ++e) {
-      cValue += fp16tofp32_gpu(As[col][e]) * alpha * fp16tofp32_gpu(Bs[row][e]);
+      fp16 mul = multiply_posit_gpu(alpha, As[col][e]);
+      mul = multiply_posit_gpu(mul, Bs[row][e]);
+      cValue = add_posit_gpu(cValue, mul);
     }
 
     __syncthreads();
   }
 
-  if(cRow < N && cCol < M)
-    C[cIndex] = fp32tofp16_gpu(cValue + (beta * fp16tofp32_gpu(C[cIndex])));
+  if(cRow < N && cCol < M) {
+    fp16 mul2 = multiply_posit_gpu(beta, C[cIndex]);
+    C[cIndex] = add_posit_gpu(cValue, mul2);
+  }
+
 }
 
 __global__ void MatMulSharedMemKernelWithFloat(const cublasOperation_t TransA,
@@ -343,9 +348,6 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
     const fp16 alpha, const fp16* A, const fp16* B, const fp16 beta,
     fp16* C) {
 
-  float tempAlpha = fp16tofp32(alpha);
-  float tempBeta = fp16tofp32(beta);
-
   // Note that cublas follows fortran order.
   int lda = (TransA == CblasNoTrans) ? K : M;
   int ldb = (TransB == CblasNoTrans) ? N : K;
@@ -357,7 +359,7 @@ void caffe_gpu_gemm<fp16>(const CBLAS_TRANSPOSE TransA,
 #ifdef CUSTOM_MAT_MUL
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
   dim3 dimGrid((M + BLOCK_SIZE - 1) / dimBlock.x, (N + BLOCK_SIZE - 1) / dimBlock.y);
-  MatMulSharedMemKernel<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, tempAlpha, B, ldb, A, tempBeta, lda, C);
+  MatMulSharedMemKernel<<<dimGrid, dimBlock>>>(cuTransB, cuTransA, N, M, K, alpha, B, ldb, A, beta, lda, C);
 #else
 #ifdef GEMM_NO_MALLOC
 
