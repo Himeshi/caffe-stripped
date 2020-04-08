@@ -987,21 +987,21 @@ void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
   }
 }
 
-__global__ void scal_kernel(const int n, const float alpha, fp16* X) {
+__global__ void scal_kernel(const int n, const fp16 alpha, fp16* X) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if(index < n)
-    X[index] = fp32tofp16_gpu(fp16tofp32_gpu(X[index]) * alpha);
+    X[index] = multiply_posit_gpu(X[index], alpha);
 }
 
 template <>
 void caffe_gpu_scal_half<float>(const int N, const float alpha, fp16 *X) {
-  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
+  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, fp32tofp16(alpha), X);
 }
 
 template <>
 void caffe_gpu_scal_half<double>(const int N, const double alpha, fp16 *X) {
   float alpha_float = alpha;
-  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha_float, X);
+  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, fp32tofp16(alpha_float), X);
 }
 
 template <>
@@ -1010,8 +1010,7 @@ void caffe_gpu_scal<float>(const int N, const float alpha, float *X) {
 }
 template <>
 void caffe_gpu_scal<fp16>(const int N, const fp16 alpha, fp16 *X) {
-  const float alpha_float = fp16tofp32(alpha);
-  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha_float, X);
+  scal_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, alpha, X);
 }
 
 template <>

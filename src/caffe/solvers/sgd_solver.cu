@@ -6,9 +6,9 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void SGDUpdate(int N, unsigned short* g, unsigned short* h,
-    Dtype momentum, Dtype local_rate) {
+    fp16 momentum, fp16 local_rate) {
   CUDA_KERNEL_LOOP(i, N) {
-    g[i] = h[i] = fp32tofp16_gpu(momentum*fp16tofp32_gpu(h[i]) + local_rate*fp16tofp32_gpu(g[i]));
+    g[i] = h[i] = add_posit_gpu(multiply_posit_gpu(momentum, h[i]), multiply_posit_gpu(local_rate, g[i]));
   }
 }
 template <typename Dtype>
@@ -16,7 +16,7 @@ void sgd_update_gpu(int N, unsigned short* g, unsigned short* h, Dtype momentum,
     Dtype local_rate) {
   SGDUpdate<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
       <<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
-      N, g, h, momentum, local_rate);
+      N, g, h, fp32tofp16(momentum), fp32tofp16(local_rate));
   CUDA_POST_KERNEL_CHECK;
 }
 template void sgd_update_gpu<float>(int, unsigned short*, unsigned short*, float, float);
