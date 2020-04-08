@@ -31,7 +31,7 @@ __global__ void LRNFillScale(const int nthreads, const fp16* const in,
     }
     // both add and subtract
     while (head < channels) {
-      accum_scale = add_posit_gpu(multiply_posit_gpu(in_off[head * step], in_off[head * step]));
+      accum_scale = add_posit_gpu(accum_scale, multiply_posit_gpu(in_off[head * step], in_off[head * step]));
       if (head - size >= 0) {
         accum_scale = subtract_posit_gpu(accum_scale, multiply_posit_gpu(in_off[(head - size) * step], in_off[(head - size) * step]));
       }
@@ -70,7 +70,7 @@ template <typename Dtype>
 __global__ void LRNComputeOutput(const int nthreads, const fp16* const in,
     const Dtype* const scale, const Dtype negative_beta, fp16* const out) {
   CUDA_KERNEL_LOOP(index, nthreads) {
-    out[index] = fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * pow(scale[index], negative_beta));
+    out[index] = multiply_posit_gpu(in[index], fp32tofp16_gpu(pow(scale[index], negative_beta)));
   }
 }
 
@@ -138,37 +138,32 @@ __global__ void LRNComputeDiff(const int nthreads,
     int head = 0;
     const int pre_pad = size - (size + 1) / 2;
     const int post_pad = size - pre_pad - 1;
-    Dtype accum_ratio = 0;
+    fp16 accum_ratio = 0;
     // accumulate values
     while (head < post_pad && head < channels) {
-      accum_ratio += (fp16tofp32_gpu(top_diff_off[head * step]) * fp16tofp32_gpu(top_off[head * step]) /
-          scale_off[head * step]);
+      accum_ratio = add_posit_gpu(accum_ratio, divide_posit_gpu(multiply_posit_gpu(top_diff_off[head * step], top_off[head * step]), fp32tofp16_gpu(scale_off[head * step])));
       ++head;
     }
     // both add and subtract
     while (head < channels) {
-      accum_ratio += (fp16tofp32_gpu(top_diff_off[head * step]) * fp16tofp32_gpu(top_off[head * step]) /
-          scale_off[head * step]);
+      accum_ratio = add_posit_gpu(accum_ratio, divide_posit_gpu(multiply_posit_gpu(top_diff_off[head * step], top_off[head * step]), fp32tofp16_gpu(scale_off[head * step])));
       if (head - size >= 0) {
-        accum_ratio -= (fp16tofp32_gpu(top_diff_off[(head - size) * step]) *
-            fp16tofp32_gpu(top_off[(head - size) * step]) / scale_off[(head - size) * step]);
+        accum_ratio = subtract_posit_gpu(accum_ratio, divide_posit_gpu(multiply_posit_gpu(top_diff_off[(head - size) * step], top_off[(head - size) * step]), fp32tofp16_gpu(scale_off[(head - size) * step])));
       }
       bottom_diff_off[(head - post_pad) * step] =
-          fp32tofp16_gpu(fp16tofp32_gpu(top_diff_off[(head - post_pad) * step])
-            * pow(scale_off[(head - post_pad) * step], negative_beta)
-          - cache_ratio * fp16tofp32_gpu(bottom_off[(head - post_pad) * step]) * accum_ratio);
+          subtract_posit_gpu(multiply_posit_gpu(top_diff_off[(head - post_pad) * step], fp32tofp16_gpu(pow(scale_off[(head - post_pad) * step], negative_beta))),
+          multiply_posit_gpu(fp32tofp16_gpu(cache_ratio), multiply_posit_gpu(bottom_off[(head - post_pad) * step], accum_ratio)));
       ++head;
     }
     // subtract only
     while (head < channels + post_pad) {
       if (head - size >= 0) {
-        accum_ratio -= fp16tofp32_gpu(top_diff_off[(head - size) * step]) *
-            fp16tofp32_gpu(top_off[(head - size) * step]) / scale_off[(head - size) * step];
+        accum_ratio = subtract_posit_gpu(accum_ratio, divide_posit_gpu(multiply_posit_gpu(top_diff_off[(head - size) * step],
+            top_off[(head - size) * step]), fp32tofp16_gpu(scale_off[(head - size) * step])));
       }
       bottom_diff_off[(head - post_pad) * step] =
-          fp32tofp16_gpu(fp16tofp32_gpu(top_diff_off[(head - post_pad) * step])
-            * pow(scale_off[(head - post_pad) * step], negative_beta)
-          - cache_ratio * fp16tofp32_gpu(bottom_off[(head - post_pad) * step]) * accum_ratio);
+          subtract_posit_gpu(multiply_posit_gpu(top_diff_off[(head - post_pad) * step], fp32tofp16_gpu(pow(scale_off[(head - post_pad) * step], negative_beta))),
+          multiply_posit_gpu(fp32tofp16_gpu(cache_ratio),  multiply_posit_gpu(bottom_off[(head - post_pad) * step], accum_ratio)));
       ++head;
     }
   }
