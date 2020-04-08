@@ -7,9 +7,9 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void ReLUForward(const int n, const fp16* in, fp16* out,
-    Dtype negative_slope) {
+    fp16 negative_slope) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = fp16tofp32_gpu(in[index]) > 0 ? in[index] : fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * negative_slope);
+    out[index] = fp16tofp32_gpu(in[index]) > 0 ? in[index] : multiply_posit_gpu(in[index], negative_slope);
   }
 }
 
@@ -22,7 +22,7 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
   // NOLINT_NEXT_LINE(whitespace/operators)
   ReLUForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-      count, bottom_data, top_data, negative_slope);
+      count, bottom_data, top_data, fp32tofp16(negative_slope));
   CUDA_POST_KERNEL_CHECK;
   // << " count: " << count << " bottom_data: "
   //     << (unsigned long)bottom_data
@@ -39,9 +39,11 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 
 template <typename Dtype>
 __global__ void ReLUBackward(const int n, const fp16* in_diff,
-    const fp16* in_data, fp16* out_diff, Dtype negative_slope) {
+    const fp16* in_data, fp16* out_diff, fp16 negative_slope) {
   CUDA_KERNEL_LOOP(index, n) {
-    out_diff[index] = fp32tofp16_gpu(fp16tofp32_gpu(in_diff[index]) * ((fp16tofp32_gpu(in_data[index]) > 0) + (fp16tofp32_gpu(in_data[index]) <= 0) * negative_slope));
+  Dtype in_data_index = fp16tofp32_gpu(in_data[index]);
+  fp16 temp = multiply_posit_gpu(fp32tofp16_gpu(in_data_index <= 0), negative_slope);
+  out_diff[index] = multiply_posit_gpu(in_diff[index], (add_posit_gpu(fp32tofp16_gpu(in_data_index > 0), temp)));
   }
 }
 
@@ -57,7 +59,7 @@ void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
     // NOLINT_NEXT_LINE(whitespace/operators)
     ReLUBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, bottom_data, bottom_diff, negative_slope);
+        count, top_diff, bottom_data, bottom_diff, fp32tofp16(negative_slope));
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN && this->sample_iter_) {
         sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);
