@@ -73,15 +73,15 @@ __global__ void AvePoolForward(const int nthreads,
     wstart = max(wstart, 0);
     hend = min(hend, height);
     wend = min(wend, width);
-    Dtype aveval = 0;
+    fp16 aveval = 0;
     const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        aveval += fp16tofp32_gpu(bottom_slice[h * width + w]);
+        aveval = add_posit_gpu(aveval, bottom_slice[h * width + w]);
       }
     }
-    top_data[index] = fp32tofp16_gpu(aveval / pool_size);
+    top_data[index] = divide_posit_gpu(aveval, fp32tofp16_gpu( (float) pool_size));
   }
 }
 
@@ -101,24 +101,24 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     const int hend = min(hstart + kernel_h, height);
     const int wstart = pw * stride_w;
     const int wend = min(wstart + kernel_w, width);
-    Dtype cumsum = 0.;
+    fp16 cumsum = 0.;
     const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
+        cumsum = add_posit_gpu(cumsum, bottom_slice[h * width + w]);
       }
     }
-    const float thres = rand_idx[index] * cumsum;
+    const fp16 thres = multiply_posit_gpu(fp32tofp16_gpu(rand_idx[index]), cumsum);
     // Second pass: get value, and set index.
     cumsum = 0;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
-        if (cumsum >= thres) {
+        cumsum = add_posit_gpu(cumsum, bottom_slice[h * width + w]);
+        if (fp16tofp32_gpu(cumsum) >= fp16tofp32_gpu(thres)) {
           rand_idx[index] = ((n * channels + c) * height + h) * width + w;
-          top_data[index] = fp32tofp16_gpu(bottom_slice[h * width + w]);
+          top_data[index] = bottom_slice[h * width + w];
           return;
         }
       }
@@ -144,18 +144,18 @@ __global__ void StoPoolForwardTest(const int nthreads,
     const int wstart = pw * stride_w;
     const int wend = min(wstart + kernel_w, width);
     // We set cumsum to be 0 to avoid divide-by-zero problems
-    Dtype cumsum = 0.;
-    Dtype cumvalues = 0.;
+    fp16 cumsum = 0.;
+    fp16 cumvalues = 0.;
     const fp16* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
-        cumvalues += fp16tofp32_gpu(bottom_slice[h * width + w]) * fp16tofp32_gpu(bottom_slice[h * width + w]);
+        cumsum = add_posit_gpu(cumsum, bottom_slice[h * width + w]);
+        cumvalues = add_posit_gpu(bottom_slice[h * width + w], bottom_slice[h * width + w]);
       }
     }
-    top_data[index] = fp32tofp16_gpu((cumsum > 0.) ? cumvalues / cumsum : 0.);
+    top_data[index] = fp32tofp16_gpu((fp16tofp32_gpu(cumsum) > 0.) ? divide_posit_gpu(cumvalues, cumsum) : 0.);
   }
 }
 
@@ -184,11 +184,6 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data,
         mask, top_mask);
-/* debug stuff
-	printf("1 %d %d dtype %d\n",CAFFE_GET_BLOCKS(count),CAFFE_CUDA_NUM_THREADS, sizeof(Dtype));
-	//caffe::MaxPoolForward<<<1,1>>>(count);     
-    printf("2 %d %d dtype %d\n",CAFFE_GET_BLOCKS(count),CAFFE_CUDA_NUM_THREADS, sizeof(Dtype));
-*/
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
@@ -250,7 +245,7 @@ __global__ void MaxPoolBackward(const int nthreads, const fp16* const top_diff,
     const int pwstart =
          (w + pad_w < kernel_w) ? 0 : (w + pad_w - kernel_w) / stride_w + 1;
     const int pwend = min((w + pad_w) / stride_w + 1, pooled_width);
-    Dtype gradient = 0;
+    fp16 gradient = 0;
     const int offset = (n * channels + c) * pooled_height * pooled_width;
     const fp16* const top_diff_slice = top_diff + offset;
     if (mask) {
@@ -258,7 +253,7 @@ __global__ void MaxPoolBackward(const int nthreads, const fp16* const top_diff,
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
           if (mask_slice[ph * pooled_width + pw] == h * width + w) {
-            gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]);
+            gradient = add_posit_gpu(top_diff_slice[ph * pooled_width + pw], gradient);
           }
         }
       }
@@ -267,12 +262,12 @@ __global__ void MaxPoolBackward(const int nthreads, const fp16* const top_diff,
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
           if (fp16tofp32_gpu(top_mask_slice[ph * pooled_width + pw]) == h * width + w) {
-            gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]);
+            gradient = add_posit_gpu(top_diff_slice[ph * pooled_width + pw], gradient);
           }
         }
       }
     }
-    bottom_diff[index] = fp32tofp16_gpu(gradient);
+    bottom_diff[index] = gradient;
   }
 }
 
@@ -294,7 +289,7 @@ __global__ void AvePoolBackward(const int nthreads, const fp16* const top_diff,
     const int phend = min(h / stride_h + 1, pooled_height);
     const int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     const int pwend = min(w / stride_w + 1, pooled_width);
-    Dtype gradient = 0;
+    fp16 gradient = 0;
     const fp16* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
@@ -305,10 +300,10 @@ __global__ void AvePoolBackward(const int nthreads, const fp16* const top_diff,
         int hend = min(hstart + kernel_h, height + pad_h);
         int wend = min(wstart + kernel_w, width + pad_w);
         int pool_size = (hend - hstart) * (wend - wstart);
-        gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]) / pool_size;
+        gradient = add_posit_gpu(gradient, divide_posit_gpu(top_diff_slice[ph * pooled_width + pw], fp32tofp16_gpu( (float) pool_size)));
       }
     }
-    bottom_diff[index] = fp32tofp16_gpu(gradient);
+    bottom_diff[index] = gradient;
   }
 }
 
@@ -331,18 +326,18 @@ __global__ void StoPoolBackward(const int nthreads,
     const int phend = min(h / stride_h + 1, pooled_height);
     const int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     const int pwend = min(w / stride_w + 1, pooled_width);
-    Dtype gradient = 0;
+    fp16 gradient = 0;
     const Dtype* const rand_idx_slice =
         rand_idx + (n * channels + c) * pooled_height * pooled_width;
     const fp16* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
-        gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]) *
-            (index == static_cast<int>(rand_idx_slice[ph * pooled_width + pw]));
+        gradient = add_posit_gpu(gradient, multiply_posit_gpu(top_diff_slice[ph * pooled_width + pw],
+            fp32tofp16_gpu(index == static_cast<int>(rand_idx_slice[ph * pooled_width + pw]))));
       }
     }
-    bottom_diff[index] = fp32tofp16_gpu(gradient);
+    bottom_diff[index] = gradient;
   }
 }
 

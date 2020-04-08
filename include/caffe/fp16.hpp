@@ -46,6 +46,12 @@ fp16 fp32tofp16(float f);
 
 struct decomposed_posit decompose_posit(fp16 p);
 
+fp16 add_posit(fp16 a, fp16 b);
+
+fp16 multiply_posit(fp16 a, fp16 b);
+
+fp16 divide_posit(fp16 a, fp16 b);
+
 fp16 get_posit_from_parts(int exponent, unsigned int fraction, unsigned int fraction_size);
 
 fp16 fused_multiply_add(fp16* a, fp16* b, int count);

@@ -361,6 +361,84 @@ fp16 multiply_posit(fp16 a, fp16 b) {
 	return (result << _G_POSIT_SHIFT_AMOUNT);
 }
 
+fp16 divide_posit(fp16 a, fp16 b) {
+	//a / b
+	fp16 result = 0;
+
+	//handle special cases
+	//NaR and inf
+	if (a == _G_INFP || b == _G_INFP)
+		return _G_INFP;
+
+	//zero
+	if (a == 0)
+		return 0;
+
+	if(b == 0)
+		return _G_INFP;
+
+	if(b == 0x4000)
+		return a;
+
+	//normal case
+	struct decomposed_posit a_decomposed = decompose_posit(a);
+	struct decomposed_posit b_decomposed = decompose_posit(b);
+
+	//get the sign of the result
+	int sign = a_decomposed.sign ^ b_decomposed.sign;
+
+	//subtract the exponents
+	int exponent = a_decomposed.exponent - b_decomposed.exponent;
+
+	//get the fraction size
+	unsigned int fraction_size = b_decomposed.fraction_size - a_decomposed.fraction_size;
+	exponent -= fraction_size;
+
+	//divide the fractions
+	//get at least 14 bits (for posit 16, 2)
+	uint32_t fraction = 0;
+	int shift;
+	if(fraction_size > 0) {
+		shift = fraction_size + 14;
+	} else {
+		shift = 14;
+	}
+	a_decomposed.fraction <<= shift;
+	fraction = a_decomposed.fraction / b_decomposed.fraction;
+	if(a_decomposed.fraction % b_decomposed.fraction)
+		fraction |= 1;
+	exponent -= shift;
+	fraction_size = 0;
+
+	//normalize fraction and hide the leading bit
+	unsigned int size_of_fraction = FLOAT_SIZE - __builtin_clz(fraction);
+	int fraction_size_diff = fraction_size - size_of_fraction + 1;
+	fraction_size = size_of_fraction - 1;
+	exponent -= fraction_size_diff;
+	fraction = fraction & ~(1 << fraction_size);
+
+	if (exponent >= MAX_REGIME) {
+		result = _G_MAXREALP;
+		if (sign)
+			result = ~result + 1;
+		return result;
+	}
+
+	if(exponent <= -MAX_REGIME) {
+		result = _G_MINREALP;
+		if (sign)
+			result = ~result + 1;
+		return result;
+	}
+
+	result = get_posit_from_parts(exponent, fraction, fraction_size);
+
+	if (sign)
+		result = ~result + 1;
+
+	return (result << _G_POSIT_SHIFT_AMOUNT);
+}
+
 fp16 fused_multiply_add(fp16* a, fp16* b, int count) {
 	fp16 a_i = 0, b_i = 0;
 	uint64_t acc1 = 0, acc2 = 0, acc3 = 0, acc4 = 0;
