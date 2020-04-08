@@ -88,7 +88,7 @@ __global__ void SoftmaxLossBackwardGPU(const int nthreads, const fp16* top,
       }
       counts[index] = fp32tofp16_gpu(0);
     } else {
-      bottom_diff[n * dim + label_value * spatial_dim + s] = fp32tofp16_gpu(fp16tofp32_gpu(bottom_diff[n * dim + label_value * spatial_dim + s]) - 1);
+      bottom_diff[n * dim + label_value * spatial_dim + s] = subtract_posit_gpu(bottom_diff[n * dim + label_value * spatial_dim + s], fp32tofp16_gpu(1));
       counts[index] = fp32tofp16_gpu(1);
     }
   }

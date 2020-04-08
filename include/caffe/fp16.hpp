@@ -48,6 +48,8 @@ struct decomposed_posit decompose_posit(fp16 p);
 
 fp16 add_posit(fp16 a, fp16 b);
 
+fp16 subtract_posit(fp16 a, fp16 b);
+
 fp16 multiply_posit(fp16 a, fp16 b);
 
 fp16 divide_posit(fp16 a, fp16 b);

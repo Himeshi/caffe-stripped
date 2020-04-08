@@ -30,7 +30,7 @@ __global__ void kernel_channel_subtract(const int count,
   CUDA_KERNEL_LOOP(index, count) {
     int n = index / channels / spatial_dim;
     int s = index % spatial_dim;
-    data[index] = fp32tofp16_gpu(fp16tofp32_gpu(data[index]) - channel_max[n * spatial_dim + s]);
+    data[index] = subtract_posit_gpu(data[index], fp32tofp16_gpu(channel_max[n * spatial_dim + s]));
   }
 }
 
@@ -47,11 +47,11 @@ __global__ void kernel_channel_sum(const int num, const int channels,
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
-    Dtype sum = 0;
+    fp16 sum = 0;
     for (int c = 0; c < channels; ++c) {
-      sum += fp16tofp32_gpu(data[(n * channels + c) * spatial_dim + s]);
+      sum = add_posit_gpu(sum, data[(n * channels + c) * spatial_dim + s]);
     }
-    channel_sum[index] = sum;
+    channel_sum[index] = fp16tofp32_gpu(sum);
   }
 }
 
@@ -62,7 +62,7 @@ __global__ void kernel_channel_div(const int count,
   CUDA_KERNEL_LOOP(index, count) {
     int n = index / channels / spatial_dim;
     int s = index % spatial_dim;
-    data[index] = fp32tofp16_gpu(fp16tofp32_gpu(data[index]) / channel_sum[n * spatial_dim + s]);
+    data[index] = divide_posit_gpu(data[index], fp32tofp16_gpu(channel_sum[n * spatial_dim + s]));
   }
 }
 
@@ -73,12 +73,11 @@ __global__ void kernel_channel_dot(const int num, const int channels,
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
-    Dtype dot = 0;
+    fp16 dot = 0;
     for (int c = 0; c < channels; ++c) {
-      dot += (fp16tofp32_gpu(data_1[(n * channels + c) * spatial_dim + s])
-          * fp16tofp32_gpu(data_2[(n * channels + c) * spatial_dim + s]));
+      dot = add_posit_gpu(dot, multiply_posit_gpu(data_1[(n * channels + c) * spatial_dim + s], data_2[(n * channels + c) * spatial_dim + s]));
     }
-    channel_dot[index] = dot;
+    channel_dot[index] = fp16tofp32_gpu(dot);
   }
 }
 

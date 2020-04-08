@@ -298,6 +298,12 @@ fp16 add_posit(fp16 a, fp16 b) {
 	return (result << _G_POSIT_SHIFT_AMOUNT);
 }
 
+fp16 subtract_posit(fp16 a, fp16 b) {
+	// a - b
+	b = ~b + 1;
+	return add_posit(a, b);
+}
+
 fp16 multiply_posit(fp16 a, fp16 b) {
 	fp16 result = 0;
 

@@ -22,30 +22,28 @@ __global__ void LRNFillScale(const int nthreads, const fp16* const in,
     int head = 0;
     const int pre_pad = (size - 1) / 2;
     const int post_pad = size - pre_pad - 1;
-    Dtype accum_scale = 0;
+    fp16 accum_scale = 0;
     // fill the scale at [n, :, h, w]
     // accumulate values
     while (head < post_pad && head < channels) {
-      accum_scale += (fp16tofp32_gpu(in_off[head * step]) * fp16tofp32_gpu(in_off[head * step]));
+      accum_scale = add_posit_gpu(accum_scale, multiply_posit_gpu(in_off[head * step], in_off[head * step]));
       ++head;
     }
     // both add and subtract
     while (head < channels) {
-      accum_scale += (fp16tofp32_gpu(in_off[head * step]) * fp16tofp32_gpu(in_off[head * step]));
+      accum_scale = add_posit_gpu(multiply_posit_gpu(in_off[head * step], in_off[head * step]));
       if (head - size >= 0) {
-        accum_scale -= (fp16tofp32_gpu(in_off[(head - size) * step])
-                       * fp16tofp32_gpu(in_off[(head - size) * step]));
+        accum_scale = subtract_posit_gpu(accum_scale, multiply_posit_gpu(in_off[(head - size) * step], in_off[(head - size) * step]));
       }
-      scale_off[(head - post_pad) * step] = k + accum_scale * alpha_over_size;
+      scale_off[(head - post_pad) * step] = k + fp16tofp32_gpu(accum_scale) * alpha_over_size;
       ++head;
     }
     // subtract only
     while (head < channels + post_pad) {
       if (head - size >= 0) {
-        accum_scale -= (fp16tofp32_gpu(in_off[(head - size) * step])
-                       * fp16tofp32_gpu(in_off[(head - size) * step]));
+        accum_scale = subtract_posit_gpu(accum_scale, multiply_posit_gpu(in_off[(head - size) * step], in_off[(head - size) * step]));
       }
-      scale_off[(head - post_pad) * step] = k + accum_scale * alpha_over_size;
+      scale_off[(head - post_pad) * step] = k + fp16tofp32_gpu(accum_scale) * alpha_over_size;
       ++head;
     }
   }

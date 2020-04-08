@@ -307,6 +307,12 @@ __device__ __inline__ fp16 add_posit_gpu(fp16 a, fp16 b) {
 	return (result << _G_POSIT_SHIFT_AMOUNT);
 }
 
+__device__ __inline__ fp16 subtract_posit_gpu(fp16 a, fp16 b) {
+	// a - b
+	b = ~b + 1;
+	return add_posit_gpu(a, b);
+}
+
 __device__ __inline__ fp16 multiply_posit_gpu(fp16 a, fp16 b) {
 	fp16 result = 0;
 
