@@ -407,7 +407,7 @@ __device__ __inline__ fp16 divide_posit_gpu(fp16 a, fp16 b) {
 
 	//get the fraction size
 	unsigned int fraction_size = b_decomposed.fraction_size - a_decomposed.fraction_size;
-	exponent -= fraction_size;
+	exponent += fraction_size;
 
 	//divide the fractions
 	//get at least 14 bits (for posit 16, 2)
@@ -418,9 +418,9 @@ __device__ __inline__ fp16 divide_posit_gpu(fp16 a, fp16 b) {
 	} else {
 		shift = 14;
 	}
-	a_decomposed.fraction <<= shift;
-	fraction = a_decomposed.fraction / b_decomposed.fraction;
-	if(a_decomposed.fraction % b_decomposed.fraction)
+	uint32_t a_fraction = a_decomposed.fraction << shift;
+	fraction = a_fraction / b_decomposed.fraction;
+	if(a_fraction % b_decomposed.fraction)
 		fraction |= 1;
 	exponent -= shift;
 	fraction_size = 0;
