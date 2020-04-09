@@ -101,7 +101,7 @@ __global__ void MatMulSharedMemKernel(const cublasOperation_t TransA,
       tempA[e] = multiply_posit_gpu(alpha, As[col][e]);
       tempB[e] = Bs[row][e];
     }
-    cValue = fused_multiply_add_gpu(tempA, tempB, e);
+    cValue = fused_multiply_add_gpu(tempA, tempB, count);
 
     __syncthreads();
   }
