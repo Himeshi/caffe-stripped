@@ -47,14 +47,14 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
   v.si ^= (0 ^ v.si) & -(p == 0);
 
   v.ui |= (sign << FLOAT_SIGN_SHIFT);
-  return v.f;
+  return (v.f * SCALING_FACTOR);
 
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   fp16 p = 0;
   union Bits v;
-  v.f = f;
+  v.f = f / SCALING_FACTOR;
   bool sign = v.ui & FLOAT_SIGN_MASK;
   v.ui &= 0x7FFFFFFF;
 
