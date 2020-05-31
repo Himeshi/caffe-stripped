@@ -20,7 +20,7 @@ float fp16tofp32(fp16 p) {
 	bool regime_sign = p & SECOND_BIT_MASK;
 
 	// get regime
-	v.ui = p << POSIT_LENGTH_PLUS_ONE;
+	v.ui = p << 1;
 	//int regime_length = (__builtin_clz(v.ui) & -!regime_sign) + (__builtin_clz(~v.ui) & -regime_sign);
 	int regime_length;
 	  if(regime_sign)
