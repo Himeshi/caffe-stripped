@@ -66,5 +66,6 @@
 #define _G_MINREAL_INT 0x30800000
 
 #endif
+#endif
 
 #endif /* INCLUDE_CAFFE_POSIT_CONSTANTS_HPP_ */
