@@ -13,7 +13,7 @@
 
 #define SCALING_FACTOR 0.25
 
-#define _G_NBITS 17
+#define _G_NBITS 18
 #define _G_ESIZE 1
 
 #define SIGN_MASK 0x80000000
@@ -66,7 +66,7 @@
 #define _G_MINREAL_INT 0x30800000
 #endif
 
-#elif G_NBITS == 18
+#elif _G_NBITS == 18
 #define _G_POSIT_SHIFT_AMOUNT 14
 #define _G_MAXREALP 0x7FFFC000
 #define _G_MINREALP 0x00004000
