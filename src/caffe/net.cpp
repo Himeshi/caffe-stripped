@@ -927,12 +927,12 @@ void Net<Dtype>::ToHDF5(const string& filename, bool write_diff) const {
       const int net_param_id = param_id_vecs_[layer_id][param_id];
       if (param_owners_[net_param_id] == -1) {
         // Only save params that own themselves
-        hdf5_save_nd_dataset<unsigned short>(layer_data_hid, dataset_name.str(),
+        hdf5_save_nd_dataset<unsigned int>(layer_data_hid, dataset_name.str(),
             *params_[net_param_id]);
       }
       if (write_diff) {
         // Write diffs regardless of weight-sharing
-        hdf5_save_nd_dataset<unsigned short>(layer_diff_hid, dataset_name.str(),
+        hdf5_save_nd_dataset<unsigned int>(layer_diff_hid, dataset_name.str(),
             *params_[net_param_id], true);
       }
     }

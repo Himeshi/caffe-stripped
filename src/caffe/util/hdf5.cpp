@@ -85,7 +85,7 @@ void hdf5_load_nd_dataset_helper(
 }
 
 template <>
-void hdf5_load_nd_dataset<unsigned short>(hid_t file_id, const char* dataset_name_,
+void hdf5_load_nd_dataset<unsigned int>(hid_t file_id, const char* dataset_name_,
         int min_dim, int max_dim, Blob<fp16>* blob, bool reshape) {
   Blob<float>* temp_blob = new Blob<float>();
   temp_blob->Reshape(blob->shape());
@@ -124,8 +124,8 @@ void hdf5_load_nd_dataset<double>(hid_t file_id, const char* dataset_name_,
 }
 
 template <>
-void hdf5_save_nd_dataset<unsigned short>(
-    const hid_t file_id, const string& dataset_name, const Blob<unsigned short>& blob,
+void hdf5_save_nd_dataset<unsigned int>(
+    const hid_t file_id, const string& dataset_name, const Blob<unsigned int>& blob,
     bool write_diff) {
   int num_axes = blob.num_axes();
   hsize_t *dims = new hsize_t[num_axes];

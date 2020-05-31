@@ -1709,7 +1709,7 @@ DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(sign, y[index] = (Dtype(0) < x[index])
 
 __global__ void sign_kernel_half(const int n, const fp16* x, fp16* y) {
   CUDA_KERNEL_LOOP(index, n) {
-    short x_index = x[index];
+    int x_index = x[index];
     y[index] = (fp16(0) < x_index) - (x_index < fp16(0));
   }
 }
