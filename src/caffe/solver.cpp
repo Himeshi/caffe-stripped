@@ -339,6 +339,10 @@ void Solver<Dtype>::Solve(const char* resume_file) {
     Dtype loss;
     net_->Forward(&loss);
 
+#ifdef SAMPLE_FLOATS
+        net_->DumpSamplesAndResetCounters(iter_);
+#endif
+
     UpdateSmoothedLoss(loss, start_iter, average_loss);
 
     LOG(INFO) << "Iteration " << iter_ << ", loss = " << smoothed_loss_;
