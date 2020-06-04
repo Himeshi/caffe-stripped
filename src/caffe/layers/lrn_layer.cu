@@ -65,6 +65,11 @@ void LRNLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   default:
     LOG(FATAL) << "Unknown normalization region.";
   }
+#ifdef SAMPLE_FLOATS
+  if(this->phase_ == TRAIN && this->sample_iter_) {
+    sample_blob(top[0]->gpu_data(), top[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+  }
+#endif
 }
 
 // TODO: check if it would be faster to just put it into the previous kernel.
@@ -116,6 +121,11 @@ void LRNLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   default:
     LOG(FATAL) << "Unknown normalization region.";
   }
+#ifdef SAMPLE_FLOATS
+  if(this->phase_ == TRAIN && this->sample_iter_) {
+    sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);
+  }
+#endif
 }
 
 template <typename Dtype>
