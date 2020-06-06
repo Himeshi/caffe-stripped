@@ -213,6 +213,9 @@ void Solver<Dtype>::Step(int iters) {
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
         && (iter_ > 0 || param_.test_initialization())) {
       if (Caffe::root_solver()) {
+#ifdef SAMPLE_FLOATS
+        net_->DumpSamplesAndResetCounters(iter_);
+#endif
         TestAll();
 
       }
@@ -275,12 +278,6 @@ void Solver<Dtype>::Step(int iters) {
       callbacks_[i]->on_gradients_ready();
     }
 
-#ifdef SAMPLE_FLOATS
-if (param_.test_interval() && iter_ % param_.test_interval() == 0) {
-        net_->DumpSamplesAndResetCounters(iter_);
-}
-#endif
-
     ApplyUpdate();
 
     SolverAction::Enum request = GetRequestedAction();
@@ -339,15 +336,14 @@ void Solver<Dtype>::Solve(const char* resume_file) {
     Dtype loss;
     net_->Forward(&loss);
 
-#ifdef SAMPLE_FLOATS
-        net_->DumpSamplesAndResetCounters(iter_);
-#endif
-
     UpdateSmoothedLoss(loss, start_iter, average_loss);
 
     LOG(INFO) << "Iteration " << iter_ << ", loss = " << smoothed_loss_;
   }
   if (param_.test_interval() && iter_ % param_.test_interval() == 0) {
+#ifdef SAMPLE_FLOATS
+	  net_->DumpSamplesAndResetCounters(iter_);
+#endif
     TestAll();
   }
   LOG(INFO) << "Optimization Done.";
