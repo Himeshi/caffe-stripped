@@ -18,7 +18,7 @@
 #include <vector>
 #include "caffe/util/device_alternate.hpp"
 
-#define SAMPLE_FLOATS
+//#define SAMPLE_FLOATS
 
 //#define SAMPLE_VALUES
 
