@@ -89,7 +89,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         if (scale_param) {
           Dtype result;
           caffe_gpu_dot_half(inner_dim_, product, sum_mult, &result);
-          *scale_diff = fp32tofp16(fp16tofp32(scale_diff) + result);
+          *scale_diff += result;
         } else {
           caffe_gpu_dot(inner_dim_, product, sum_mult, scale_diff);
         }
