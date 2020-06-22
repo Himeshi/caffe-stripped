@@ -19,7 +19,7 @@
 #include "caffe/util/device_alternate.hpp"
 #include "caffe/fp16.hpp"
 
-#define SAMPLE_FLOATS
+//#define SAMPLE_FLOATS
 
 //#define SAMPLE_VALUES
 
