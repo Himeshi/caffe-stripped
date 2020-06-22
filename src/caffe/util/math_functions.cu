@@ -1547,6 +1547,12 @@ __global__ void sqrt_kernel(const int n, const Dtype* a, Dtype* y) {
   }
 }
 
+__global__ void sqrt_kernel_half(const int n, const fp16* a, fp16* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = fp32tofp16_gpu(sqrt(fp16tofp32_gpu(a[index])));
+  }
+}
+
 template <>
 void caffe_gpu_sqrt<float>(const int N, const float* a, float* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
@@ -1558,6 +1564,13 @@ template <>
 void caffe_gpu_sqrt<double>(const int N, const double* a, double* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   sqrt_kernel<double><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, a, y);
+}
+
+template <>
+void caffe_gpu_sqrt<fp16>(const int N, const fp16* a, fp16* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  sqrt_kernel_half<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, y);
 }
 
