@@ -706,7 +706,6 @@ void caffe_gpu_gemv_half<float>(const CBLAS_TRANSPOSE TransA, const int M,
   float* tempY;
   int asize = M * N;
   cudaMalloc(&tempA, asize * sizeof(float));
-  cudaMalloc(&tempY, N * sizeof(float));
 
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
@@ -738,7 +737,6 @@ void caffe_gpu_gemv_half<double>(const CBLAS_TRANSPOSE TransA, const int M,
   double* tempY;
   int asize = M * N;
   cudaMalloc(&tempA, asize * sizeof(float));
-  cudaMalloc(&tempY, N * sizeof(float));
 
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
