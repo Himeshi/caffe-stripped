@@ -33,13 +33,13 @@ union Bits {
 #define shiftSign 24
 
 #define infN 0x7F800000 // flt32 infinity
-#define maxfp16N 0x43600000 // max flt16 normal as a flt32
+#define maxfp16N 0x43700000 // max flt16 normal as a flt32
 #define minN 0x3C800000 // min flt16 normal as a flt32
 #define signN 0x80000000 // flt32 sign bit
 
 #define infC 0x7F8
 #define nanN 0x7Fc00000 // a flt16 nan as a flt32
-#define maxC 0x436
+#define maxC 0x437
 #define minC 0x3C8
 #define signC 0xFFFFFF80 // flt16 sign bit
 
@@ -49,7 +49,7 @@ union Bits {
 #define subC 0x7 // max flt32 subnormal down shifted
 #define norC 0x8 // min flt32 normal down shifted
 
-#define maxD 0x3C1
+#define maxD 0x3C0
 #define minD 0x3C0
 
 #define SCALING_FACTOR 1.0
