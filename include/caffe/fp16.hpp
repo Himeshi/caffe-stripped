@@ -29,33 +29,28 @@ union Bits {
 #define FP16_LIMB_SIZE 16
 #define FP16_TYPE uint16_t
 
-#define fp16shift 13
-#define shiftSign 16
+#define fp16shift 20 // 23 - fp16fracsize
+#define shiftSign 24
 
 #define infN 0x7F800000 // flt32 infinity
-#define maxfp16N 0x477FE000 // max flt16 normal as a flt32
-#define minN 0x38800000 // min flt16 normal as a flt32
+#define maxfp16N 0x43600000 // max flt16 normal as a flt32
+#define minN 0x3C800000 // min flt16 normal as a flt32
 #define signN 0x80000000 // flt32 sign bit
 
-#define infC 0x3FC00
+#define infC 0x7F8
 #define nanN 0x7Fc00000 // a flt16 nan as a flt32
-#define maxC 0x23BFF
-#define minC 0x1C400
-#define signC 0xFFFF8000 // flt16 sign bit
+#define maxC 0x436
+#define minC 0x3C8
+#define signC 0xFFFFFF80 // flt16 sign bit
 
-#define mulN 0x52000000 // (1 << 23) / minN
-#define mulC 0x33800000 // minN / (1 << (23 - shift))
+#define mulN 0x4E000000 // (1 << 23) / minN
+#define mulC 0x3B000000 // minN / (1 << (23 - fp16shift))
 
-#define subC 0x003FF // max flt32 subnormal down shifted
-#define norC 0x00400 // min flt32 normal down shifted
+#define subC 0x7 // max flt32 subnormal down shifted
+#define norC 0x8 // min flt32 normal down shifted
 
-#define maxD 0x1C000
-#define minD 0x1C000
-
-#define maxfp16roundN 0x477FF000
-#define minfp16roundN 0x33000000
-#define maxfp16 0x7BFF
-#define minfp16 0x0001
+#define maxD 0x3C1
+#define minD 0x3C0
 
 namespace caffe {
 
