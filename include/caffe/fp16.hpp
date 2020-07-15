@@ -52,6 +52,8 @@ union Bits {
 #define maxD 0x3C1
 #define minD 0x3C0
 
+#define SCALING_FACTOR 1.0
+
 namespace caffe {
 
 typedef FP16_TYPE fp16;

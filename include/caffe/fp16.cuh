@@ -32,12 +32,12 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 f16value) {
   v.si <<= fp16shift;
   v.si ^= (s.si ^ v.si) & mask;
   v.si |= sign;
-  return v.f;
+  return v.f * SCALING_FACTOR;
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   union Bits v, s;
-  v.f = f;
+  v.f = f / SCALING_FACTOR;
   uint32_t sign = v.si & signN;
   v.si ^= sign;
   sign >>= shiftSign; // logical shift
