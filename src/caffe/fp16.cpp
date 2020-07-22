@@ -49,13 +49,6 @@ fp16 fp32tofp16(float f) {
 	bool sign = v.ui & FLOAT_SIGN_MASK;
 	v.ui &= 0x7FFFFFFF;
 
-#ifdef FLOAT_ROUNDING
-	uint16_t roundSign = sign << 15;
-	if(v.ui > _G_MAXREAL_INT)
-		return _G_INFP | roundSign;
-	if(v.ui < _G_MINREAL_INT)
-		return 0;
-#endif
 	p ^= (p ^_G_MAXREALP) & -(v.si >= _G_MAXREAL_INT);
 	p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
 	p ^= (p ^ _G_MINREALP) & -(v.si != 0 && v.si <= _G_MINREAL_INT);
@@ -73,6 +66,17 @@ fp16 fp32tofp16(float f) {
 	//if exponent is negative
 	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
 	int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
+	if(regime_and_exp_length > (_G_ESIZE + _G_MAX_REGIME_SIZE)) {
+		//check for maximum regime size
+		if(exp_sign) {
+			p = _G_MINREALP;
+		}
+		else {
+			p = _G_MAXREALP;
+		}
+		p = (p ^ -sign) + sign;
+		return p;
+	}
 
 	//assemble
 	regime_and_exp <<= (UNSIGNED_LONG_LONG_SIZE - regime_and_exp_length);

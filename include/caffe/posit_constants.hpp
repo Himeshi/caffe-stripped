@@ -13,6 +13,7 @@
 
 #define _G_NBITS 16
 #define _G_ESIZE 2
+#define _G_MAX_REGIME_SIZE 1
 
 #define SCALING_FACTOR 0.25
 
