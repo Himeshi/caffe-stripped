@@ -11,9 +11,9 @@
 #define FP16_LIMB_SIZE 16
 #define FP16_TYPE uint16_t
 
-#define _G_NBITS 16
-#define _G_ESIZE 2
-#define _G_MAX_REGIME_SIZE 1
+#define _G_NBITS 8
+#define _G_ESIZE 1
+#define _G_MAX_REGIME_SIZE 2
 
 #define SCALING_FACTOR 0.25
 
@@ -114,28 +114,43 @@
 #define _G_USEED 4
 #define _G_USEED_ZEROS 2
 #define POSIT_EXPONENT_MASK 1
-#define _G_MAXREAL 4096
-#define _G_MINREAL 0.0002441406250
-#define _G_MAXREAL_INT 0x45800000
-#define _G_MINREAL_INT 0x39800000
+
+#if _G_MAX_REGIME_SIZE == 2
+#define _G_MAXREAL_INT 0x41780000
+#define _G_MINREAL_INT 0x3D800000
+
+#elif _G_MAX_REGIME_SIZE == 3
+#define _G_MAXREAL_INT 0x42700000
+#define _G_MINREAL_INT 0x3C800000
+#endif
 
 #elif _G_ESIZE == 2
 #define _G_USEED 16
 #define _G_USEED_ZEROS 4
 #define POSIT_EXPONENT_MASK 3
-#define _G_MAXREAL 1.677721600e+7
-#define _G_MINREAL 5.960464478e-8
-#define _G_MAXREAL_INT 0x4B800000
-#define _G_MINREAL_INT 0x33800000
+
+#if _G_MAX_REGIME_SIZE == 2
+#define _G_MAXREAL_INT 0x43700000
+#define _G_MINREAL_INT 0x3B800000
+
+#elif _G_MAX_REGIME_SIZE == 3
+#define _G_MAXREAL_INT 0x45600000
+#define _G_MINREAL_INT 0x39800000
+#endif
 
 #elif _G_ESIZE == 3
 #define _G_USEED 256
 #define _G_USEED_ZEROS 8
 #define POSIT_EXPONENT_MASK 7
-#define _G_MAXREAL 2.814749767e+14
-#define _G_MINREAL 3.552713679e-15
-#define _G_MAXREAL_INT 0x57800000
-#define _G_MINREAL_INT 0x27800000
+
+#if _G_MAX_REGIME_SIZE == 2
+#define _G_MAXREAL_INT 0x47600000
+#define _G_MINREAL_INT 0x37800000
+
+#elif _G_MAX_REGIME_SIZE == 3
+#define _G_MAXREAL_INT 0x4B400000
+#define _G_MINREAL_INT 0x33800000
+#endif
 
 #elif _G_ESIZE == 4
 #define _G_USEED 512
