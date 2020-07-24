@@ -23,15 +23,22 @@ float fp16tofp32(fp16 p) {
 	v.ui = p << POSIT_LENGTH_PLUS_ONE;
 	//int regime_length = (__builtin_clz(v.ui) & -!regime_sign) + (__builtin_clz(~v.ui) & -regime_sign);
 	int regime_length;
-	  if(regime_sign)
-	    regime_length = (__builtin_clz(~v.ui));
-	  else
-	    regime_length = (__builtin_clz(v.ui));
+	if(regime_sign)
+	  regime_length = (__builtin_clz(~v.ui));
+	else
+	  regime_length = (__builtin_clz(v.ui));
+
+	if(regime_length >= _G_MAX_REGIME_SIZE) {
+		regime_length = _G_MAX_REGIME_SIZE;
+		v.ui <<= regime_length;
+	} else {
+		v.ui <<= (regime_length + 1);
+	}
+
 	int regime = (regime_length - regime_sign) << _G_ESIZE;
 	regime = (regime ^ -regime_sign) + regime_sign;
 
 	// assemble
-	v.ui <<= (regime_length + 1);
 	v.ui >>= (FLOAT_SIGN_PLUS_EXP_LENGTH - _G_ESIZE);
 	v.ui += ((SINGLE_PRECISION_BIAS - regime) << FLOAT_EXPONENT_SHIFT);
 
@@ -62,20 +69,15 @@ fp16 fp32tofp16(float f) {
 
 	//get regime and exponent
 	uint32_t exp = abs((v.si >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS);
-	TEMP_TYPE regime_and_exp = (((1 << ((exp >> _G_ESIZE) + 1)) - 1) << (_G_ESIZE + 1)) | (exp & POSIT_EXPONENT_MASK);;
+	int regime = exp >> _G_ESIZE;
+	TEMP_TYPE regime_and_exp = (((1 << (regime + 1)) - 1) << (_G_ESIZE + 1)) | (exp & POSIT_EXPONENT_MASK);
 	//if exponent is negative
 	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
 	int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
-	if(regime_and_exp_length > (_G_ESIZE + _G_MAX_REGIME_SIZE)) {
-		//check for maximum regime size
-		if(exp_sign) {
-			p = _G_MINREALP;
-		}
-		else {
-			p = _G_MAXREALP;
-		}
-		p = (p ^ -sign) + sign;
-		return p;
+	if(regime == _G_MAX_REGIME_SIZE) {
+		regime_and_exp_length -= 1;
+		regime_and_exp >>= (_G_ESIZE + 1);
+		regime_and_exp = (regime_and_exp << _G_ESIZE) | (exp & POSIT_EXPONENT_MASK);
 	}
 
 	//assemble
@@ -85,9 +87,7 @@ fp16 fp32tofp16(float f) {
 
 	//round
 	temp_p += (bool) (regime_and_exp & POSIT_HALFWAY_BIT_MASK) && ((temp_p & 1) | (regime_and_exp & POSIT_EXTRA_BITS_MASK));
-#if _G_NBITS != 16
 	temp_p <<= _G_POSIT_SHIFT_AMOUNT;
-#endif
 	p ^= (temp_p ^ p) & -((v.si < _G_MAXREAL_INT) & (v.si > _G_MINREAL_INT));
 
 	p = (p ^ -sign) + sign;
