@@ -134,6 +134,10 @@
 #elif _G_MAX_REGIME_SIZE == 6
 #define _G_MAXREAL_INT 0x45000000
 #define _G_MINREAL_INT 0x39800000
+
+#elif _G_MAX_REGIME_SIZE == 7
+#define _G_MAXREAL_INT 0x45800000
+#define _G_MINREAL_INT 0x38800000
 #endif
 
 #elif _G_ESIZE == 2
@@ -160,6 +164,10 @@
 #elif _G_MAX_REGIME_SIZE == 6
 #define _G_MAXREAL_INT 0x4A800000
 #define _G_MINREAL_INT 0x33800000
+
+#elif _G_MAX_REGIME_SIZE == 7
+#define _G_MAXREAL_INT 0x4B800000
+#define _G_MINREAL_INT 0x31800000
 #endif
 
 #elif _G_ESIZE == 3
@@ -186,6 +194,10 @@
 #elif _G_MAX_REGIME_SIZE == 6
 #define _G_MAXREAL_INT 0x55800000
 #define _G_MINREAL_INT 0x27800000
+
+#elif _G_MAX_REGIME_SIZE == 7
+#define _G_MAXREAL_INT 0x57800000
+#define _G_MINREAL_INT 0x23800000
 #endif
 
 #elif _G_ESIZE == 4
