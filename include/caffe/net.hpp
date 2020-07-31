@@ -301,6 +301,7 @@ class Net {
   /// They don't actually host the blobs (blobs_ does), so we simply store
   /// pointers.
   vector<vector<Blob<fp16>*> > bottom_vecs_;
+  vector<vector<Blob<Dtype>*> > bottom_vecs_dtype_;
   vector<vector<int> > bottom_id_vecs_;
   vector<vector<bool> > bottom_need_backward_;
   /// top_vecs stores the vectors containing the output for each layer
