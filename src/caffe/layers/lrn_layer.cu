@@ -61,7 +61,7 @@ void LRNLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     CrossChannelForward_gpu(bottom, top);
     break;
   case LRNParameter_NormRegion_WITHIN_CHANNEL:
-    WithinChannelForward(bottom, top, top_dtype);
+    WithinChannelForward(bottom, top, bottom_dtype, top_dtype);
     break;
   default:
     LOG(FATAL) << "Unknown normalization region.";
