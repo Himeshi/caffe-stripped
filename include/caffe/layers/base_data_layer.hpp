@@ -46,7 +46,7 @@ class BaseDataLayer : public Layer<Dtype> {
 template <typename Dtype>
 class Batch {
  public:
-  Blob<fp16> data_, label_;
+  Blob<Dtype> data_, label_;
 };
 
 template <typename Dtype>
@@ -63,18 +63,19 @@ class BasePrefetchingDataLayer :
   virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top);
   virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype);
 
  protected:
   virtual void InternalThreadEntry();
-  virtual void load_batch(Batch<fp16>* batch) = 0;
+  virtual void load_batch(Batch<Dtype>* batch) = 0;
 
-  vector<shared_ptr<Batch<fp16> > > prefetch_;
-  BlockingQueue<Batch<fp16>*> prefetch_free_;
-  BlockingQueue<Batch<fp16>*> prefetch_full_;
-  Batch<fp16>* prefetch_current_;
+  vector<shared_ptr<Batch<Dtype> > > prefetch_;
+  BlockingQueue<Batch<Dtype>*> prefetch_free_;
+  BlockingQueue<Batch<Dtype>*> prefetch_full_;
+  Batch<Dtype>* prefetch_current_;
 
-  Blob<fp16> transformed_data_;
+  Blob<Dtype> transformed_data_;
 };
 
 }  // namespace caffe

@@ -39,7 +39,7 @@ BasePrefetchingDataLayer<Dtype>::BasePrefetchingDataLayer(
       prefetch_(param.data_param().prefetch()),
       prefetch_free_(), prefetch_full_(), prefetch_current_() {
   for (int i = 0; i < prefetch_.size(); ++i) {
-    prefetch_[i].reset(new Batch<fp16>());
+    prefetch_[i].reset(new Batch<Dtype>());
     prefetch_free_.push(prefetch_[i].get());
   }
 }
@@ -86,7 +86,7 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
 
   try {
     while (!must_stop()) {
-      Batch<fp16>* batch = prefetch_free_.pop();
+      Batch<Dtype>* batch = prefetch_free_.pop();
       load_batch(batch);
 #ifndef CPU_ONLY
       if (Caffe::mode() == Caffe::GPU) {
@@ -112,7 +112,7 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
     const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
-  if (prefetch_current_) {
+/*  if (prefetch_current_) {
     prefetch_free_.push(prefetch_current_);
   }
   prefetch_current_ = prefetch_full_.pop("Waiting for data");
@@ -123,7 +123,7 @@ void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
     // Reshape to loaded labels.
     top[1]->ReshapeLike(prefetch_current_->label_);
     top[1]->set_cpu_data(prefetch_current_->label_.mutable_cpu_data());
-  }
+  }*/
 }
 
 #ifdef CPU_ONLY

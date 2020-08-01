@@ -28,12 +28,6 @@ DataLayer<Dtype>::~DataLayer() {
 template <typename Dtype>
 void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top) {
-#ifdef CUSTOM_DB
-  LOG(INFO) << "Custom db defined.\n";
-#ifdef CIFAR10
-  LOG(INFO) << "Custom db with CIFAR10 defined.\n";
-#endif
-#endif
   const int batch_size = this->layer_param_.data_param().batch_size();
   // Read a data point, and use it to initialize the top blob.
   Datum datum;
@@ -85,7 +79,7 @@ void DataLayer<Dtype>::Next() {
 
 // This function is called on prefetch thread
 template<typename Dtype>
-void DataLayer<Dtype>::load_batch(Batch<fp16>* batch) {
+void DataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   CPUTimer batch_timer;
   batch_timer.Start();
   double read_time = 0;
@@ -118,17 +112,13 @@ void DataLayer<Dtype>::load_batch(Batch<fp16>* batch) {
     // Apply data transformations (mirror, scale, crop...)
     timer.Start();
     int offset = batch->data_.offset(item_id);
-    fp16* top_data = batch->data_.mutable_cpu_data();
+    Dtype* top_data = batch->data_.mutable_cpu_data();
     this->transformed_data_.set_cpu_data(top_data + offset);
     this->data_transformer_->Transform(datum, &(this->transformed_data_));
     // Copy label.
     if (this->output_labels_) {
-      fp16* top_label = batch->label_.mutable_cpu_data();
-#ifdef CUSTOM_DB
+      Dtype* top_label = batch->label_.mutable_cpu_data();
       top_label[item_id] = datum.label();
-#else
-      top_label[item_id] = fp32tofp16(datum.label());
-#endif
     }
     trans_time += timer.MicroSeconds();
     Next();

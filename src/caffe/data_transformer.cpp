@@ -26,11 +26,7 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
     }
     BlobProto blob_proto;
     ReadProtoFromBinaryFileOrDie(mean_file.c_str(), &blob_proto);
-#ifdef CUSTOM_DB
-    data_mean_.FromProtoDataMean(blob_proto);
-#else
     data_mean_.FromProto(blob_proto);
-#endif
   }
   // check if we want to use mean_value
   if (param_.mean_value_size() > 0) {
@@ -44,7 +40,7 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const Datum& datum,
-                                       fp16* transformed_data) {
+                                       Dtype* transformed_data) {
   const string& data = datum.data();
   const int datum_channels = datum.channels();
   const int datum_height = datum.height();
@@ -61,16 +57,12 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   CHECK_GE(datum_height, crop_size);
   CHECK_GE(datum_width, crop_size);
 
-#ifndef CUSTOM_DB
-  fp16* mean = NULL;
-#endif
+  Dtype* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(datum_channels, data_mean_.channels());
     CHECK_EQ(datum_height, data_mean_.height());
     CHECK_EQ(datum_width, data_mean_.width());
-#ifndef CUSTOM_DB
     mean = data_mean_.mutable_cpu_data();
-#endif
   }
   if (has_mean_values) {
     CHECK(mean_values_.size() == 1 || mean_values_.size() == datum_channels) <<
@@ -101,11 +93,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
     }
   }
 
-#ifdef CUSTOM_DB
-  fp16 datum_element;
-#else
   Dtype datum_element;
-#endif
   int top_index, data_index;
   for (int c = 0; c < datum_channels; ++c) {
     for (int h = 0; h < height; ++h) {
@@ -117,48 +105,17 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
           top_index = (c * height + h) * width + w;
         }
         if (has_uint8) {
-#ifdef CUSTOM_DB
-          datum_element = (static_cast<uint8_t>(data[data_index * 2])) << 8 | static_cast<uint8_t>(data[data_index * 2 + 1]);
-#else
           datum_element = static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
-#endif
         } else {
-#ifdef CUSTOM_DB
-          datum_element = fp32tofp16(datum.float_data(data_index));
-#else
           datum_element = datum.float_data(data_index);
-#endif
         }
         if (has_mean_file) {
-          transformed_data[top_index] =
-#ifdef CUSTOM_DB
-#ifdef CIFAR10
-            datum_element;
-#else
-            fp32tofp16((fp16tofp32(datum_element) - fp16tofp32(mean[data_index])) * scale);
-#endif
-#else
-            fp32tofp16((datum_element - fp16tofp32(mean[data_index])) * scale);
-#endif
+          transformed_data[top_index] = (datum_element - mean[data_index]) * scale;
         } else {
           if (has_mean_values) {
-            transformed_data[top_index] =
-#ifdef CUSTOM_DB
-              fp32tofp16((fp16tofp32(datum_element) - mean_values_[c]) * scale);
-#else
-              fp32tofp16((datum_element - mean_values_[c]) * scale);
-#endif
+            transformed_data[top_index] = (datum_element - mean_values_[c]) * scale;
           } else {
-#ifdef CUSTOM_DB
-#ifdef MNIST
-            LOG(INFO) << "Custom db with MNIST defined.\n";
-            transformed_data[top_index] = (datum_element);
-#else
-            transformed_data[top_index] = fp32tofp16(fp16tofp32(datum_element) * scale);
-#endif
-#else
-            transformed_data[top_index] = fp32tofp16(datum_element * scale);
-#endif
+            transformed_data[top_index] = datum_element * scale;
           }
         }
       }
@@ -169,9 +126,9 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const Datum& datum,
-                                       Blob<fp16>* transformed_blob) {
+                                       Blob<Dtype>* transformed_blob) {
   // If datum is encoded, decode and transform the cv::image.
-  if (datum.encoded()) {
+/*  if (datum.encoded()) {
 #ifdef USE_OPENCV
     CHECK(!(param_.force_color() && param_.force_gray()))
         << "cannot set both force_color and force_gray";
@@ -191,7 +148,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
     if (param_.force_color() || param_.force_gray()) {
       LOG(ERROR) << "force_color and force_gray only for encoded datum";
     }
-  }
+  }*/
 
   const int crop_size = param_.crop_size();
   const int datum_channels = datum.channels();
@@ -217,14 +174,14 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
     CHECK_EQ(datum_width, width);
   }
 
-  fp16* transformed_data = transformed_blob->mutable_cpu_data();
+  Dtype* transformed_data = transformed_blob->mutable_cpu_data();
   Transform(datum, transformed_data);
 }
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
                                        Blob<fp16>* transformed_blob) {
-  const int datum_num = datum_vector.size();
+/*  const int datum_num = datum_vector.size();
   const int num = transformed_blob->num();
   const int channels = transformed_blob->channels();
   const int height = transformed_blob->height();
@@ -238,7 +195,7 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
     int offset = transformed_blob->offset(item_id);
     uni_blob.set_cpu_data(transformed_blob->mutable_cpu_data() + offset);
     Transform(datum_vector[item_id], &uni_blob);
-  }
+  }*/
 }
 
 #ifdef USE_OPENCV
@@ -292,7 +249,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   CHECK_GE(img_height, crop_size);
   CHECK_GE(img_width, crop_size);
 
-  fp16* mean = NULL;
+  Dtype* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(img_channels, data_mean_.channels());
     CHECK_EQ(img_height, data_mean_.height());
@@ -429,9 +386,9 @@ void DataTransformer<Dtype>::Transform(Blob<fp16>* input_blob,
     CHECK_EQ(input_height, data_mean_.height());
     CHECK_EQ(input_width, data_mean_.width());
     for (int n = 0; n < input_num; ++n) {
-      int offset = input_blob->offset(n);
-      caffe_sub(data_mean_.count(), input_data + offset,
-            data_mean_.cpu_data(), input_data + offset);
+      //int offset = input_blob->offset(n);
+      //caffe_sub(data_mean_.count(), input_data + offset,
+            //data_mean_.cpu_data(), input_data + offset);
     }
   }
 
