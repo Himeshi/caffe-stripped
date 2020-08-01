@@ -382,6 +382,7 @@ int time() {
   const vector<vector<Blob<caffe::fp16>*> >& bottom_vecs = caffe_net.bottom_vecs();
   const vector<vector<Blob<caffe::fp16>*> >& top_vecs = caffe_net.top_vecs();
   const vector<vector<Blob<float>*> >& top_vecs_dtype = caffe_net.top_vecs_dtype();
+  const vector<vector<Blob<float>*> >& bottom_vecs_dtype = caffe_net.bottom_vecs_dtype();
   const vector<vector<bool> >& bottom_need_backward =
       caffe_net.bottom_need_backward();
   LOG(INFO) << "*** Benchmark begins ***";
@@ -401,7 +402,7 @@ int time() {
     forward_timer.Start();
     for (int i = 0; i < layers.size(); ++i) {
       timer.Start();
-      layers[i]->Forward(bottom_vecs[i], top_vecs[i], top_vecs_dtype[i]);
+      layers[i]->Forward(bottom_vecs[i], top_vecs[i], bottom_vecs_dtype[i], top_vecs_dtype[i]);
       forward_time_per_layer[i] += timer.MicroSeconds();
     }
     forward_time += forward_timer.MicroSeconds();

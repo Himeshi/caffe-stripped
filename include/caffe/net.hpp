@@ -152,6 +152,9 @@ class Net {
   inline const vector<vector<Blob<fp16>*> >& top_vecs() const {
     return top_vecs_;
   }
+  inline const vector<vector<Blob<Dtype>*> >& bottom_vecs_dtype() const {
+    return bottom_vecs_dtype_;
+  }
   inline const vector<vector<Blob<Dtype>*> >& top_vecs_dtype() const {
     return top_vecs_dtype_;
   }
