@@ -7,7 +7,8 @@ namespace caffe {
 
 template <typename Dtype>
 void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+    const vector<Blob<Dtype>*>& top_dtype) {
   fp16* top_data = top[0]->mutable_gpu_data();
   const int count = bottom[0]->count();
   // Special case where we can ignore the input: scale or power is 0.

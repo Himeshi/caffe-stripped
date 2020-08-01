@@ -65,7 +65,8 @@ __global__ void AccuracyForwardWithPerClassGPU(const int nthreads,
 
 template <typename Dtype>
 void AccuracyLayer<Dtype>::Forward_gpu(
-    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top,
+    const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
   const fp16* bottom_label = bottom[1]->gpu_data();
   const int dim = bottom[0]->count() / outer_num_;

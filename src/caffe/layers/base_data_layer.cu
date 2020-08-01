@@ -6,7 +6,8 @@ namespace caffe {
 
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::Forward_gpu(
-    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top,
+    const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
   if (prefetch_current_) {
     prefetch_free_.push(prefetch_current_);
   }

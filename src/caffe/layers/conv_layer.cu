@@ -6,7 +6,8 @@ namespace caffe {
 
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+      const vector<Blob<Dtype>*>& top_dtype) {
 #ifdef CONVERT_SHARED
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();

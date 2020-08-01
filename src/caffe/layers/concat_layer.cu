@@ -26,7 +26,8 @@ __global__ void Concat(const int nthreads, const fp16* in_data,
 
 template <typename Dtype>
 void ConcatLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+      const vector<Blob<fp16>*>& top,const vector<Blob<Dtype>*>& bottom_dtype,
+      const vector<Blob<Dtype>*>& top_dtype) {
   if (bottom.size() == 1) { return; }
   fp16* top_data = top[0]->mutable_gpu_data();
   int offset_concat_axis = 0;

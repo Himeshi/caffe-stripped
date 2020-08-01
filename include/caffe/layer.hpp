@@ -136,7 +136,7 @@ class Layer {
    * Your layer should implement Forward_cpu and (optionally) Forward_gpu.
    */
   inline Dtype Forward(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype, int sample = 0);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype, int sample = 0);
 
   /**
    * @brief Given the top blob error gradients, compute the bottom blob error
@@ -360,7 +360,7 @@ class Layer {
    *        Fall back to Forward_cpu() if unavailable.
    */
   virtual void Forward_gpu(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
     // LOG(WARNING) << "Using CPU code as backup.";
     return Forward_cpu(bottom, top);
   }
@@ -457,7 +457,7 @@ class Layer {
 // functions.
 template <typename Dtype>
 inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype, int sample) {
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype, int sample) {
   sample_iter_ = sample;
   Dtype loss = 0;
   Reshape(bottom, top);
@@ -474,7 +474,7 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
     }
     break;
   case Caffe::GPU:
-    Forward_gpu(bottom, top, top_dtype);
+    Forward_gpu(bottom, top, bottom_dtype, top_dtype);
 #ifndef CPU_ONLY
     for (int top_id = 0; top_id < top.size(); ++top_id) {
       if (!this->loss(top_id)) { continue; }
