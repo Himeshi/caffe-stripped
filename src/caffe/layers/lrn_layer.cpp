@@ -23,7 +23,7 @@ void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     split_top_vec_.push_back(&square_input_);
     LayerParameter split_param;
     split_layer_.reset(new SplitLayer<Dtype>(split_param));
-    split_layer_->SetUp(bottom, split_top_vec_);
+    split_layer_->SetUp(bottom, split_top_vec_, bottom_dtype, top_dtype);
     // Set up square_layer_ to square the inputs.
     square_bottom_vec_.clear();
     square_top_vec_.clear();
@@ -32,7 +32,7 @@ void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     LayerParameter square_param;
     square_param.mutable_power_param()->set_power(Dtype(2));
     square_layer_.reset(new PowerLayer<Dtype>(square_param));
-    square_layer_->SetUp(square_bottom_vec_, square_top_vec_);
+    square_layer_->SetUp(square_bottom_vec_, square_top_vec_, bottom_dtype, top_dtype);
     // Set up pool_layer_ to sum over square neighborhoods of the input.
     pool_top_vec_.clear();
     pool_top_vec_.push_back(&pool_output_);
@@ -42,7 +42,7 @@ void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     pool_param.mutable_pooling_param()->set_pad(pre_pad_);
     pool_param.mutable_pooling_param()->set_kernel_size(size_);
     pool_layer_.reset(new PoolingLayer<Dtype>(pool_param));
-    pool_layer_->SetUp(square_top_vec_, pool_top_vec_);
+    pool_layer_->SetUp(square_top_vec_, pool_top_vec_, bottom_dtype, top_dtype);
     // Set up power_layer_ to compute (1 + alpha_/N^2 s)^-beta_, where s is
     // the sum of a squared neighborhood (the output of pool_layer_).
     power_top_vec_.clear();
@@ -52,7 +52,7 @@ void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     power_param.mutable_power_param()->set_scale(alpha_);
     power_param.mutable_power_param()->set_shift(Dtype(1));
     power_layer_.reset(new PowerLayer<Dtype>(power_param));
-    power_layer_->SetUp(pool_top_vec_, power_top_vec_);
+    power_layer_->SetUp(pool_top_vec_, power_top_vec_, bottom_dtype, top_dtype);
     // Set up a product_layer_ to compute outputs by multiplying inputs by the
     // inverse demoninator computed by the power layer.
     product_bottom_vec_.clear();
@@ -62,7 +62,7 @@ void LRNLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     EltwiseParameter* eltwise_param = product_param.mutable_eltwise_param();
     eltwise_param->set_operation(EltwiseParameter_EltwiseOp_PROD);
     product_layer_.reset(new EltwiseLayer<Dtype>(product_param));
-    product_layer_->SetUp(product_bottom_vec_, top);
+    product_layer_->SetUp(product_bottom_vec_, top, bottom_dtype, top_dtype);
   }
 }
 
