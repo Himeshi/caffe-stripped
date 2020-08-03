@@ -20,7 +20,8 @@ class CuDNNLCNLayer : public LRNLayer<Dtype> {
       : LRNLayer<Dtype>(param), handles_setup_(false), tempDataSize(0),
         tempData1(NULL), tempData2(NULL) {}
   virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype);
   virtual void Reshape(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top);
   virtual ~CuDNNLCNLayer();

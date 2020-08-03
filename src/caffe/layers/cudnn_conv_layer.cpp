@@ -16,8 +16,9 @@ namespace caffe {
  */
 template <typename Dtype>
 void CuDNNConvolutionLayer<Dtype>::LayerSetUp(
-    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
-  ConvolutionLayer<Dtype>::LayerSetUp(bottom, top);
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
+  ConvolutionLayer<Dtype>::LayerSetUp(bottom, top, bottom_dtype, top_dtype);
   // Initialize CUDA streams and cuDNN.
   stream_         = new cudaStream_t[this->group_ * CUDNN_STREAMS_PER_GROUP];
   handle_         = new cudnnHandle_t[this->group_ * CUDNN_STREAMS_PER_GROUP];

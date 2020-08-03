@@ -7,8 +7,9 @@ namespace caffe {
 
 template <typename Dtype>
 void CuDNNLCNLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top) {
-  LRNLayer<Dtype>::LayerSetUp(bottom, top);
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
+  LRNLayer<Dtype>::LayerSetUp(bottom, top, bottom_dtype, top_dtype);
 
   CUDNN_CHECK(cudnnCreate(&handle_));
   CUDNN_CHECK(cudnnCreateLRNDescriptor(&norm_desc_));

@@ -29,7 +29,8 @@ class PowerLayer : public NeuronLayer<Dtype> {
   explicit PowerLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype);
 
   virtual inline const char* type() const { return "Power"; }
 

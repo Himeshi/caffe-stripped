@@ -6,7 +6,8 @@ namespace caffe {
 
 template <typename Dtype>
 void LossLayer<Dtype>::LayerSetUp(
-    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top,
+	const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
   // LossLayers have a non-zero (1) loss by default.
   if (this->layer_param_.loss_weight_size() == 0) {
     this->layer_param_.add_loss_weight(Dtype(1));

@@ -17,7 +17,8 @@ class PythonLayer : public Layer<Dtype> {
       : Layer<Dtype>(param), self_(bp::handle<>(bp::borrowed(self))) { }
 
   virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
     // Disallow PythonLayer in MultiGPU training stage, due to GIL issues
     // Details: https://github.com/BVLC/caffe/issues/2936
     if (this->phase_ == TRAIN && Caffe::solver_count() > 1

@@ -32,7 +32,8 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
   explicit CuDNNConvolutionLayer(const LayerParameter& param)
       : ConvolutionLayer<Dtype>(param), handles_setup_(false) {}
   virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype);
   virtual void Reshape(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top);
   virtual ~CuDNNConvolutionLayer();

@@ -8,7 +8,8 @@ namespace caffe {
 
 template <typename Dtype>
 void EltwiseLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
   CHECK(this->layer_param().eltwise_param().coeff_size() == 0
       || this->layer_param().eltwise_param().coeff_size() == bottom.size()) <<
       "Eltwise Layer takes one coefficient per bottom blob.";

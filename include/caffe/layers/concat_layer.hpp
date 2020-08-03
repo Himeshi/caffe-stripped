@@ -19,7 +19,8 @@ class ConcatLayer : public Layer<Dtype> {
   explicit ConcatLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype);
   virtual void Reshape(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top);
 

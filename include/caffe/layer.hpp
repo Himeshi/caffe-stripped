@@ -77,9 +77,10 @@ class Layer {
    * This method may not be overridden.
    */
   void SetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+      const vector<Blob<Dtype>*>& top_dtype) {
     CheckBlobCounts(bottom, top);
-    LayerSetUp(bottom, top);
+    LayerSetUp(bottom, top, bottom_dtype, top_dtype);
     Reshape(bottom, top);
     SetLossWeights(top);
   }
@@ -101,7 +102,8 @@ class Layer {
    * adjust the top blob sizes.
    */
   virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {}
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {}
 
   /**
    * @brief Adjust the shapes of top blobs and internal buffers to accommodate

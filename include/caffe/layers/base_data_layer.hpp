@@ -25,7 +25,8 @@ class BaseDataLayer : public Layer<Dtype> {
   // DataLayerSetUp to do special data layer setup for individual layer types.
   // This method may not be overridden except by the BasePrefetchingDataLayer.
   virtual void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype);
   virtual void DataLayerSetUp(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top) {}
   // Data layers have no bottoms, so reshaping is trivial.
@@ -58,7 +59,8 @@ class BasePrefetchingDataLayer :
   // DataLayerSetUp to do special data layer setup for individual layer types.
   // This method may not be overridden.
   void LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype);
 
   virtual void Forward_cpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top);

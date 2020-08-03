@@ -9,8 +9,9 @@ namespace caffe {
 
 template <typename Dtype>
 void CuDNNSoftmaxLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
-  SoftmaxLayer<Dtype>::LayerSetUp(bottom, top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
+  SoftmaxLayer<Dtype>::LayerSetUp(bottom, top, bottom_dtype, top_dtype);
   // Initialize CUDNN.
   CUDNN_CHECK(cudnnCreate(&handle_));
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);

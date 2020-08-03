@@ -9,7 +9,8 @@ namespace caffe {
 
 template <typename Dtype>
 void AccuracyLayer<Dtype>::LayerSetUp(
-  const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
+  const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top,
+  const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
   top_k_ = this->layer_param_.accuracy_param().top_k();
 
   has_ignore_label_ =

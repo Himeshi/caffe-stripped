@@ -9,8 +9,9 @@ namespace caffe {
 
 template <typename Dtype>
 void DropoutLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
-  NeuronLayer<Dtype>::LayerSetUp(bottom, top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
+  NeuronLayer<Dtype>::LayerSetUp(bottom, top, bottom_dtype, top_dtype);
   threshold_ = this->layer_param_.dropout_param().dropout_ratio();
   DCHECK(threshold_ > 0.);
   DCHECK(threshold_ < 1.);

@@ -7,8 +7,9 @@ namespace caffe {
 
 template <typename Dtype>
 void PowerLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
-  NeuronLayer<Dtype>::LayerSetUp(bottom, top);
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
+  NeuronLayer<Dtype>::LayerSetUp(bottom, top, bottom_dtype, top_dtype);
   power_ = this->layer_param_.power_param().power();
   scale_ = this->layer_param_.power_param().scale();
   shift_ = this->layer_param_.power_param().shift();

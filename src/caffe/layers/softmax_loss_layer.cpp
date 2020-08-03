@@ -9,8 +9,9 @@ namespace caffe {
 
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::LayerSetUp(
-    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top) {
-  LossLayer<Dtype>::LayerSetUp(bottom, top);
+    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top,
+	const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
+  LossLayer<Dtype>::LayerSetUp(bottom, top, bottom_dtype, top_dtype);
   LayerParameter softmax_param(this->layer_param_);
   softmax_param.set_type("Softmax");
   softmax_layer_ = LayerRegistry<Dtype>::CreateLayer(softmax_param);

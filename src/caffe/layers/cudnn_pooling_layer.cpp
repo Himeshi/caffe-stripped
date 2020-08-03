@@ -7,8 +7,9 @@ namespace caffe {
 
 template <typename Dtype>
 void CuDNNPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top) {
-  PoolingLayer<Dtype>::LayerSetUp(bottom, top);
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
+  PoolingLayer<Dtype>::LayerSetUp(bottom, top, bottom_dtype, top_dtype);
   CUDNN_CHECK(cudnnCreate(&handle_));
   cudnn::createTensor4dDesc<Dtype>(&bottom_desc_);
   cudnn::createTensor4dDesc<Dtype>(&top_desc_);
