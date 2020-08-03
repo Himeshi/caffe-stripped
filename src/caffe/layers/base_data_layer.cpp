@@ -30,7 +30,7 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
       new DataTransformer<Dtype>(transform_param_, this->phase_));
   data_transformer_->InitRand();
   // The subclasses should setup the size of bottom and top
-  DataLayerSetUp(bottom, top);
+  DataLayerSetUp(bottom, top, bottom_dtype, top_dtype);
 }
 
 template <typename Dtype>
