@@ -397,6 +397,7 @@ void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
     if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
     top_id_vecs_[layer_id].push_back(blob_id);
     top_vecs_[layer_id].push_back(blob_pointer.get());
+    top_vecs_dtype_[layer_id].push_back(blob_pointer_dtype.get());
     if(layer_param->type() == "Accuracy") {
         //we want an accuracy layer output blob to be in Dtype to
         //avoid errors due to conversion in the printed result
