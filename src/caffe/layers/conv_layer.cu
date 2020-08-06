@@ -8,7 +8,7 @@ template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
       const vector<Blob<Dtype>*>& top_dtype) {
-#ifdef CONVERT_SHARED
+
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
@@ -16,6 +16,12 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   for (int i = 0; i < bottom.size(); ++i) {
+    if(this->layer_param_.name() == "conv1") {
+      int bottom_data_count = bottom_dtype[i]->count();
+      fp16* bottom_data_temp = bottom[i]->mutable_gpu_data();
+      Dtype* bottom_data_dtype = bottom_dtype[i]->mutable_gpu_data();
+      convert_to_fp16<<<CAFFE_GET_BLOCKS(bottom_data_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_data_count, bottom_data_dtype, bottom_data_temp);
+    }
     const fp16* bottom_data = bottom[i]->gpu_data();
     fp16* top_data = top[i]->mutable_gpu_data();
     for (int n = 0; n < this->num_; ++n) {
@@ -26,34 +32,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         this->forward_gpu_bias_half(top_data + n * this->top_dim_, bias);
       }
     }
-#ifdef SAMPLE_FLOATS
-    if(this->phase_ == TRAIN && this->sample_iter_) {
-      sample_blob(top[i]->gpu_data(), top[i]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
-    }
-#endif
   }
-
-#else
-  const fp16* weight = this->blobs_[0]->gpu_data();
-  for (int i = 0; i < bottom.size(); ++i) {
-    const fp16* bottom_data = bottom[i]->gpu_data();
-    fp16* top_data = top[i]->mutable_gpu_data();
-    for (int n = 0; n < this->num_; ++n) {
-      this->forward_gpu_gemm_half(bottom_data + n * this->bottom_dim_, weight,
-          top_data + n * this->top_dim_);
-      if (this->bias_term_) {
-        const fp16* bias = this->blobs_[1]->gpu_data();
-        this->forward_gpu_bias_half(top_data + n * this->top_dim_, bias);
-      }
-    }
-  }
-#endif
-#ifdef SAMPLE_FLOATS
-  if(this->phase_ == TRAIN && this->sample_iter_) {
-    sample_blob(weight, this->blobs_[0]->count(), this->weight_exp, this->weight_frac, this->weight, this->weight_vector, WEIGHT_SAMPLING_FREQ);
-    sample_blob(this->blobs_[1]->gpu_data(), this->blobs_[1]->count(), this->bias_exp, this->bias_frac, this->bias, this->bias_vector, BIAS_SAMPLING_FREQ);
-  }
-#endif
 }
 
 template <typename Dtype>
