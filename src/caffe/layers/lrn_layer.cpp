@@ -236,15 +236,16 @@ void LRNLayer<Dtype>::CrossChannelBackward_cpu(
 template <typename Dtype>
 void LRNLayer<Dtype>::WithinChannelBackward(
     const vector<Blob<fp16>*>& top, const vector<bool>& propagate_down,
-    const vector<Blob<fp16>*>& bottom) {
+    const vector<Blob<fp16>*>& bottom,const vector<Blob<Dtype>*>& top_dtype,
+	const vector<Blob<Dtype>*>& bottom_dtype) {
   if (propagate_down[0]) {
     vector<bool> product_propagate_down(2, true);
-    product_layer_->Backward(top, product_propagate_down, product_bottom_vec_);
-    power_layer_->Backward(power_top_vec_, propagate_down, pool_top_vec_);
-    pool_layer_->Backward(pool_top_vec_, propagate_down, square_top_vec_);
+    product_layer_->Backward(top, product_propagate_down, product_bottom_vec_, top_dtype, bottom_dtype);
+    power_layer_->Backward(power_top_vec_, propagate_down, pool_top_vec_, top_dtype, bottom_dtype);
+    pool_layer_->Backward(pool_top_vec_, propagate_down, square_top_vec_, top_dtype, bottom_dtype);
     square_layer_->Backward(square_top_vec_, propagate_down,
-                            square_bottom_vec_);
-    split_layer_->Backward(split_top_vec_, propagate_down, bottom);
+                            square_bottom_vec_, top_dtype, bottom_dtype);
+    split_layer_->Backward(split_top_vec_, propagate_down, bottom, top_dtype, bottom_dtype);
   }
 }
 

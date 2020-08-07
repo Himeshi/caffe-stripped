@@ -83,8 +83,7 @@ class AccuracyLayer : public Layer<Dtype> {
   }
   virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
-	  const vector<Blob<Dtype>*>& top_dtype,
-	  const vector<Blob<Dtype>*>& bottom_dtype);
+	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype);
 
   int label_axis_, outer_num_, inner_num_;
 

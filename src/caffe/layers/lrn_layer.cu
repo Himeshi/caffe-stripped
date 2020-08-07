@@ -118,7 +118,7 @@ void LRNLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     CrossChannelBackward_gpu(top, propagate_down, bottom);
     break;
   case LRNParameter_NormRegion_WITHIN_CHANNEL:
-    WithinChannelBackward(top, propagate_down, bottom);
+    WithinChannelBackward(top, propagate_down, bottom, top_dtype, bottom_dtype);
     break;
   default:
     LOG(FATAL) << "Unknown normalization region.";
