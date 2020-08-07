@@ -11,6 +11,10 @@ void SplitLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<Dtype>*>& top_dtype) {
   for (int i = 0; i < top.size(); ++i) {
     top[i]->ShareData(*bottom[0]);
+    if(this->layer_param_.name() == "label_mnist_1_split") {
+      top_dtype[i]->Reshape(bottom_dtype[0]->shape());
+      top_dtype[i]->ShareData(*bottom_dtype[0]);
+    }
   }
 }
 
