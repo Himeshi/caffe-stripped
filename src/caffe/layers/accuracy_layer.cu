@@ -8,7 +8,7 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void AccuracyForwardGPU(const int nthreads,
-          const fp16* bottom_data, const fp16* label, fp16* acc,
+          const fp16* bottom_data, const Dtype* label, fp16* acc,
           const int num, const int dim, const int spatial_dim,
           const int num_labels, const int top_k,
           const bool has_ignore_label_, const int ignore_label_,
@@ -16,7 +16,7 @@ __global__ void AccuracyForwardGPU(const int nthreads,
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int n = index / spatial_dim;
     const int s = index % spatial_dim;
-    const int label_value = static_cast<int>(fp16tofp32_gpu(label[n * spatial_dim + s]));
+    const int label_value = static_cast<int>(label[n * spatial_dim + s]);
     const Dtype prob_of_true_class = fp16tofp32_gpu(bottom_data[n * dim
                                                  + label_value * spatial_dim
                                                  + s]);
@@ -37,7 +37,7 @@ __global__ void AccuracyForwardGPU(const int nthreads,
 
 template <typename Dtype>
 __global__ void AccuracyForwardWithPerClassGPU(const int nthreads,
-          const fp16* bottom_data, const fp16* label,
+          const fp16* bottom_data, const Dtype* label,
           fp16* acc, fp16* counts,
           const int num, const int dim, const int spatial_dim,
           const int num_labels, const int top_k,
@@ -45,7 +45,7 @@ __global__ void AccuracyForwardWithPerClassGPU(const int nthreads,
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int n = index / spatial_dim;
     const int s = index % spatial_dim;
-    const int label_value = static_cast<int>(fp16tofp32_gpu(label[n * spatial_dim + s]));
+    const int label_value = static_cast<int>(label[n * spatial_dim + s]);
     const Dtype prob_of_true_class = fp16tofp32_gpu(bottom_data[n * dim
                                                  + label_value * spatial_dim
                                                  + s]);
@@ -68,7 +68,7 @@ void AccuracyLayer<Dtype>::Forward_gpu(
     const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top,
     const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
-  const fp16* bottom_label = bottom[1]->gpu_data();
+  const Dtype* bottom_label = bottom_dtype[1]->gpu_data();
   const int dim = bottom[0]->count() / outer_num_;
   const int num_labels = bottom[0]->shape(label_axis_);
   const int nthreads = outer_num_ * inner_num_;
