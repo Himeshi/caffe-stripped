@@ -66,7 +66,8 @@ class DropoutLayer : public NeuronLayer<Dtype> {
   virtual void Backward_cpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
   virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype);
 
   /// when divided by UINT_MAX, the randomly generated values @f$u\sim U(0,1)@f$
   Blob<unsigned int> rand_vec_;

@@ -111,7 +111,8 @@ template void LRNLayer<double>::CrossChannelForward_gpu(
 
 template <typename Dtype>
 void LRNLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype) {
   switch (this->layer_param_.lrn_param().norm_region()) {
   case LRNParameter_NormRegion_ACROSS_CHANNELS:
     CrossChannelBackward_gpu(top, propagate_down, bottom);

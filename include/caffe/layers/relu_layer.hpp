@@ -78,7 +78,8 @@ class ReLULayer : public NeuronLayer<Dtype> {
   virtual void Backward_cpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
   virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype);
 };
 
 }  // namespace caffe

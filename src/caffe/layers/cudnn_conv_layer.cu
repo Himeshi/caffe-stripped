@@ -72,7 +72,8 @@ void CuDNNConvolutionLayer<Dtype>::Forward_gpu(
 
 template <typename Dtype>
 void CuDNNConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype) {
   const Dtype* weight_temp_data = NULL;
   Dtype* weight_diff_temp = NULL;
   if (this->param_propagate_down_[0]) {

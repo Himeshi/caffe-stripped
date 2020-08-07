@@ -608,7 +608,7 @@ void Net<Dtype>::BackwardFromTo(int start, int end) {
     }
     if (layer_need_backward_[i]) {
       layers_[i]->Backward(
-          top_vecs_[i], bottom_need_backward_[i], bottom_vecs_[i]);
+          top_vecs_[i], bottom_need_backward_[i], bottom_vecs_[i], top_vecs_dtype_[i], bottom_vecs_dtype_[i]);
       if (debug_info_) { BackwardDebugInfo(i); }
     }
     for (int c = 0; c < after_backward_.size(); ++c) {

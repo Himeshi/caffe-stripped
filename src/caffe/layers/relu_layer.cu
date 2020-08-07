@@ -48,8 +48,8 @@ __global__ void ReLUBackward(const int n, const fp16* in_diff,
 
 template <typename Dtype>
 void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down,
-    const vector<Blob<fp16>*>& bottom) {
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype) {
   if (propagate_down[0]) {
     const fp16* bottom_data = bottom[0]->gpu_data();
     const fp16* top_diff = top[0]->gpu_diff();

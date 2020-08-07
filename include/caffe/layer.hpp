@@ -163,8 +163,8 @@ class Layer {
    * Your layer should implement Backward_cpu and (optionally) Backward_gpu.
    */
   inline void Backward(const vector<Blob<fp16>*>& top,
-      const vector<bool>& propagate_down,
-      const vector<Blob<fp16>*>& bottom);
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype);
 
   /**
    * @brief Returns the vector of learnable parameter blobs.
@@ -383,7 +383,9 @@ class Layer {
    */
   virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down,
-      const vector<Blob<fp16>*>& bottom) {
+      const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype,
+	  const vector<Blob<Dtype>*>& bottom_dtype) {
     // LOG(WARNING) << "Using CPU code as backup.";
     Backward_cpu(top, propagate_down, bottom);
   }
@@ -501,13 +503,15 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
 template <typename Dtype>
 inline void Layer<Dtype>::Backward(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down,
-    const vector<Blob<fp16>*>& bottom) {
+    const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype,
+	  const vector<Blob<Dtype>*>& bottom_dtype) {
   switch (Caffe::mode()) {
   case Caffe::CPU:
     Backward_cpu(top, propagate_down, bottom);
     break;
   case Caffe::GPU:
-    Backward_gpu(top, propagate_down, bottom);
+    Backward_gpu(top, propagate_down, bottom, top_dtype, bottom_dtype);
     break;
   default:
     LOG(FATAL) << "Unknown caffe mode.";

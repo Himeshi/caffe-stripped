@@ -122,7 +122,8 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype) {
   const fp16* top_diff = top[0]->gpu_diff();
   const fp16* top_data = top[0]->gpu_data();
   fp16* bottom_diff = bottom[0]->mutable_gpu_diff();

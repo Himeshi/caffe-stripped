@@ -148,7 +148,8 @@ void AccuracyLayer<Dtype>::Forward_gpu(
 
 template <typename Dtype>
 void AccuracyLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
+    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype) {
   if (propagate_down[1]) {  NOT_IMPLEMENTED;  }
 }
 

@@ -43,7 +43,8 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
       const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
 	  const vector<Blob<Dtype>*>& top_dtype);
   virtual void Backward_gpu(const vector<Blob<fp16>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom);
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype);
 
   bool handles_setup_;
   cudnnHandle_t* handle_;
