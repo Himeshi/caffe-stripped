@@ -410,7 +410,7 @@ int time() {
     for (int i = layers.size() - 1; i >= 0; --i) {
       timer.Start();
       layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
-                          bottom_vecs[i]);
+                          bottom_vecs[i], top_vecs_dtype[i], bottom_vecs_dtype[i]);
       backward_time_per_layer[i] += timer.MicroSeconds();
     }
     backward_time += backward_timer.MicroSeconds();
