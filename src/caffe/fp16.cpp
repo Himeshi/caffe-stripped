@@ -74,7 +74,7 @@ fp16 fp32tofp16(float f) {
 	//if exponent is negative
 	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
 	int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
-	if((regime_and_exp_length - _G_ESIZE) > _G_MAX_REGIME_SIZE && exp_sign) {
+	if((regime_and_exp_length - _G_ESIZE) > _G_MAX_REGIME_SIZE && !exp_sign) {
 		regime_and_exp_length -= 1;
 		regime_and_exp >>= (_G_ESIZE + 1);
 		regime_and_exp = (regime_and_exp << _G_ESIZE) | (exp & POSIT_EXPONENT_MASK);
