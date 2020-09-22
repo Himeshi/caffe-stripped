@@ -182,6 +182,10 @@ template <typename Dtype>
 void caffe_gpu_axpy(const int N, const Dtype alpha, const Dtype* X,
     Dtype* Y);
 
+template <typename Dtype>
+void caffe_gpu_axpy_with_bias(const int N, const Dtype alpha, const Dtype* X,
+    Dtype* Y, float x_bias, float* y_bias);
+
 void caffe_gpu_axpby_half(const int N, const float alpha, const fp16* X,
     const float beta, fp16* Y);
 
@@ -195,6 +199,12 @@ void caffe_gpu_axpby(const int N, const Dtype alpha, const Dtype* X,
 template <typename Dtype>
 void caffe_gpu_axpy_half(const int N, const Dtype alpha, const fp16* X,
     fp16* Y);
+
+template <typename Dtype>
+void caffe_expand_blob(int N, Dtype* out,const fp16* in, float bias);
+
+template <typename Dtype>
+void caffe_compress_blob(int N, Dtype* out, fp16* in, float* bias);
 
 void caffe_gpu_memcpy(const size_t N, const void *X, void *Y);
 

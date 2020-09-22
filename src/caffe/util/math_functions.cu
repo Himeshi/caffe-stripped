@@ -977,6 +977,79 @@ void caffe_gpu_axpy<fp16>(const int N, const fp16 alpha, const fp16* X,
 #endif
 }
 
+template <>
+void caffe_gpu_axpy_with_bias<float>(const int N, const float alpha, const float* X,
+    float* Y, float x_bias, float* y_bias) {
+//TODO
+}
+
+template <>
+void caffe_gpu_axpy_with_bias<double>(const int N, const double alpha, const double* X,
+    double* Y, float x_bias, float* y_bias) {
+//TODO
+}
+
+template <>
+void caffe_gpu_axpy_with_bias<fp16>(const int N, const fp16 alpha, const fp16* X,
+    fp16* Y, float x_bias, float* y_bias) {
+  float* tempX;
+  float* tempY;
+  cudaMalloc(&tempX, N * sizeof(float));
+  cudaMalloc(&tempY, N * sizeof(float));
+  const float alpha_float = fp16tofp32(alpha);
+
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
+
+  CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha_float, tempX, 1, tempY, 1));
+
+  int max_index;
+  CUBLAS_CHECK(cublasIsamax(Caffe::cublas_handle(), N, tempY, 1, &max_index));
+  cudaMemcpy(y_bias, tempY + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+  if(*y_bias == 0)
+    *y_bias = 1.0;
+  else
+    *y_bias = fabsf(*y_bias);
+
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
+  cudaFree(tempX);
+  cudaFree(tempY);
+}
+
+template <>
+void caffe_expand_blob(int N, float* out,const fp16* in, float bias) {
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, bias);
+}
+
+template <>
+void caffe_expand_blob(int N, double* out,const fp16* in, float bias) {
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, bias);
+}
+
+template <>
+void caffe_compress_blob(int N, float* in, fp16* out, float* bias) {
+  int max_index;
+  CUBLAS_CHECK(cublasIsamax(Caffe::cublas_handle(), N, in, 1, &max_index));
+  cudaMemcpy(bias, in + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+  *bias = fabsf(*bias);
+  if(*bias == 0 || isnan(*bias) || isinf(*bias))
+    *bias = 1.0;
+
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
+}
+
+template <>
+void caffe_compress_blob(int N, double* in, fp16* out, float* bias) {
+  int max_index;
+  CUBLAS_CHECK(cublasIdamax(Caffe::cublas_handle(), N, in, 1, &max_index));
+  cudaMemcpy(bias, in + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+  *bias = fabsf(*bias);
+  if(*bias == 0|| isnan(*bias) || isinf(*bias))
+    *bias = 1.0;
+
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
+}
+
 void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
   if (X != Y) {
     CUDA_CHECK(cudaMemcpy(Y, X, N, cudaMemcpyDefault));  // NOLINT(caffe/alt_fn)

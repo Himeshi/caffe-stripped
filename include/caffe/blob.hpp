@@ -233,9 +233,13 @@ class Blob {
   fp16* mutable_gpu_diff_half();
   void Update();
   void Update_half();
+  void Update_half_with_bias();
   void FromProto(const BlobProto& proto, bool reshape = true);
   void FromProtoDataMean(const BlobProto& proto, bool reshape = true);
   void ToProto(BlobProto* proto, bool write_diff = false) const;
+  void ToProtoWithBias(BlobProto* proto, bool write_diff = false) const;
+  float data_bias = 1.;
+  float diff_bias = 1.;
 
   /// @brief Compute the sum of absolute values (L1 norm) of the data.
   Dtype asum_data() const;

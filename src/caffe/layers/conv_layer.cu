@@ -12,7 +12,8 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
-  convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
+  //convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
+  caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   for (int i = 0; i < bottom.size(); ++i) {
@@ -43,7 +44,8 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
-  convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
+  caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+  //convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   fp16* weight_diff = this->blobs_[0]->mutable_gpu_diff();
