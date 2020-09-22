@@ -42,19 +42,19 @@ void print_gpu_float_array(const float* d_data, int size);
 
 void print_gpu_float_array(const double* d_data, int size);
 
-void print_gpu_fp16_array(const fp16* d_data, int size);
+void print_gpu_fp16_array(const fp16* d_data, int size, float bias = 1.0);
 
-__global__ void convert_to_fp16(const int n, float* in, fp16* out);
+__global__ void convert_to_fp16(const int n, float* in, fp16* out, float bias = 1.);
 
-__global__ void convert_to_fp16(const int n, double* in, fp16* out);
+__global__ void convert_to_fp16(const int n, double* in, fp16* out, float bias = 1.);
 
-__global__ void convert_to_float(const int n, fp16* in, float* out);
+__global__ void convert_to_float(const int n, fp16* in, float* out, float bias = 1.);
 
-__global__ void convert_to_float(const int n, fp16* in, double* out);
+__global__ void convert_to_float(const int n, fp16* in, double* out, float bias = 1.);
 
-__global__ void convert_to_fp16(const int n, const float* in, fp16* out);
+__global__ void convert_to_fp16(const int n, const float* in, fp16* out, float bias = 1.);
 
-__global__ void convert_to_fp16(const int n, const double* in, fp16* out);
+__global__ void convert_to_fp16(const int n, const double* in, fp16* out, float bias = 1.);
 
 __global__ void convert_to_float(const int n, const fp16* in, float* out);
 

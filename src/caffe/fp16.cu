@@ -2,32 +2,32 @@
 #include "caffe/fp16.cuh"
 namespace caffe {
 
-__global__ void convert_to_fp16(const int n, float* in, fp16* out) {
+__global__ void convert_to_fp16(const int n, float* in, fp16* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = fp32tofp16_gpu(in[index]);
+    out[index] = fp32tofp16_gpu(in[index] / bias);
   }
 }
 
-__global__ void convert_to_fp16(const int n, double* in, fp16* out) {
+__global__ void convert_to_fp16(const int n, double* in, fp16* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp32tofp16_gpu(in[index]);
+   out[index] = fp32tofp16_gpu(in[index] / bias);
   }
 }
-__global__ void convert_to_float(const int n,  fp16* in, float* out) {
+__global__ void convert_to_float(const int n,  fp16* in, float* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu(in[index]);
-  }
-}
-
-__global__ void convert_to_float(const int n,  fp16* in, double* out) {
-  CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu(in[index]);
+   out[index] = fp16tofp32_gpu(in[index]* bias);
   }
 }
 
-__global__ void convert_to_float(const int n, const fp16* in, float* out) {
+__global__ void convert_to_float(const int n,  fp16* in, double* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu(in[index]);
+   out[index] = fp16tofp32_gpu(in[index]* bias);
+  }
+}
+
+__global__ void convert_to_float(const int n, const fp16* in, float* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu(in[index]* bias);
   }
 }
 
@@ -54,9 +54,9 @@ __global__ void convert_to_float_2in1out(const int n1, const int n2, const fp16*
 }
 
 
-__global__ void convert_to_float(const int n, const fp16* in, double* out) {
+__global__ void convert_to_float(const int n, const fp16* in, double* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu(in[index]);
+   out[index] = fp16tofp32_gpu(in[index]* bias);
   }
 
 }
@@ -99,7 +99,7 @@ void print_gpu_float_array(const double* d_data, int size) {
 	free(h_data);
 }
 
-void print_gpu_fp16_array(const fp16* d_data, int size) {
+void print_gpu_fp16_array(const fp16* d_data, int size, float bias) {
 	fp16 *h_data;
 	h_data = (fp16 *) malloc(size * sizeof(fp16));
 	cudaMemcpy(h_data, d_data, size * sizeof(fp16), cudaMemcpyDeviceToHost);
@@ -107,7 +107,7 @@ void print_gpu_fp16_array(const fp16* d_data, int size) {
 	int i;
 	for (i = 0; i < size; i++) {
 	    if(h_data[i] != 0)
-		  printf("data[%d] = %f ", i, fp16tofp32(h_data[i]));
+		  printf("data[%d] = %f ", i, fp16tofp32(h_data[i]) * bias);
 	}
 	free(h_data);
 }
