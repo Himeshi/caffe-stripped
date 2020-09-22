@@ -247,6 +247,32 @@ void Blob<Dtype>::Update_half() {
   }
 }
 
+template <typename Dtype>
+void Blob<Dtype>::Update_half_with_bias() {
+  // We will perform update based on where the data is located.
+  switch (data_->head()) {
+  case SyncedMemory::HEAD_AT_CPU:
+    // perform computation on CPU
+    caffe_axpy(count_, fp32tofp16(-1),
+        static_cast<const fp16*>(diff_->cpu_data()),
+        static_cast<fp16*>(data_->mutable_cpu_data()));
+    break;
+  case SyncedMemory::HEAD_AT_GPU:
+  case SyncedMemory::SYNCED:
+#ifndef CPU_ONLY
+    // perform computation on GPU
+	caffe_gpu_axpy_with_bias(count_, fp32tofp16(-1),
+	      static_cast<const fp16*>(diff_->gpu_data()),
+	      static_cast<fp16*>(data_->mutable_gpu_data()), diff_bias, &(data_bias));
+#else
+    NO_GPU;
+#endif
+    break;
+  default:
+    LOG(FATAL) << "Syncedmem not initialized.";
+  }
+}
+
 template <> unsigned int Blob<unsigned int>::asum_data() const {
   NOT_IMPLEMENTED;
   return 0;
@@ -844,6 +870,66 @@ void Blob<fp16>::ToProto(BlobProto* proto, bool write_diff) const {
   const fp16* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
     proto->add_data(fp16tofp32(data_vec[i]));
+  }
+  if (write_diff) {
+    const fp16* diff_vec = cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      proto->add_diff(fp16tofp32(diff_vec[i]));
+    }
+  }
+}
+
+template <>
+void Blob<double>::ToProtoWithBias(BlobProto* proto, bool write_diff) const {
+  proto->clear_shape();
+  for (int i = 0; i < shape_.size(); ++i) {
+    proto->mutable_shape()->add_dim(shape_[i]);
+  }
+  proto->clear_double_data();
+  proto->clear_double_diff();
+  const double* data_vec = cpu_data();
+  for (int i = 0; i < count_; ++i) {
+    proto->add_double_data(data_vec[i]);
+  }
+  if (write_diff) {
+    const double* diff_vec = cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      proto->add_double_diff(diff_vec[i]);
+    }
+  }
+}
+
+template <>
+void Blob<float>::ToProtoWithBias(BlobProto* proto, bool write_diff) const {
+  proto->clear_shape();
+  for (int i = 0; i < shape_.size(); ++i) {
+    proto->mutable_shape()->add_dim(shape_[i]);
+  }
+  proto->clear_data();
+  proto->clear_diff();
+  const float* data_vec = cpu_data();
+  for (int i = 0; i < count_; ++i) {
+    proto->add_data(data_vec[i]);
+  }
+  if (write_diff) {
+    const float* diff_vec = cpu_diff();
+    for (int i = 0; i < count_; ++i) {
+      proto->add_diff(diff_vec[i]);
+    }
+  }
+}
+
+template <>
+void Blob<fp16>::ToProtoWithBias(BlobProto* proto, bool write_diff) const {
+  proto->clear_shape();
+  for (int i = 0; i < shape_.size(); ++i) {
+    proto->mutable_shape()->add_dim(shape_[i]);
+  }
+  proto->clear_data();
+  proto->clear_diff();
+  const fp16* data_vec = cpu_data();
+  for (int i = 0; i < count_; ++i) {
+    proto->add_data(fp16tofp32(data_vec[i]) * data_bias);
   }
   if (write_diff) {
     const fp16* diff_vec = cpu_diff();
