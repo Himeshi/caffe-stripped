@@ -62,7 +62,7 @@ __global__ void convert_to_float_3in1out(const int n1, const int n2, const int n
 
 __global__ void convert_to_float_2in1out(const int n1, const int n2, const fp16* in1, const fp16* in2, float* out);
 
-__global__ void convert_to_float(const int n, const fp16* in, double* out);
+__global__ void convert_to_float(const int n, const fp16* in, double* out, float bias = 1.);
 
 __global__ void outputweights(const int n, float* in);
 
