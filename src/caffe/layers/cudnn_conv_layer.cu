@@ -11,7 +11,7 @@ template <typename Dtype>
 void CuDNNConvolutionLayer<Dtype>::Forward_gpu(
     const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
 
-  const fp16* weight = this->blobs_[0]->gpu_data();
+  /*const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
   convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
@@ -66,13 +66,13 @@ void CuDNNConvolutionLayer<Dtype>::Forward_gpu(
     // stream, by launching an empty kernel into the default (null) stream.
     // NOLINT_NEXT_LINE(whitespace/operators)
     sync_conv_groups<<<1, 1>>>();
-  }
+  }*/
 }
 
 template <typename Dtype>
 void CuDNNConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  const Dtype* weight_temp_data = NULL;
+  /*const Dtype* weight_temp_data = NULL;
   Dtype* weight_diff_temp = NULL;
   if (this->param_propagate_down_[0]) {
     const fp16* weight = this->blobs_[0]->gpu_data();
@@ -178,7 +178,7 @@ void CuDNNConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     fp16* bias_diff = this->blobs_[1]->mutable_gpu_diff();
     int bias_diff_count = this->blobs_[1]->count();
     convert_to_fp16<<<CAFFE_GET_BLOCKS(bias_diff_count), CAFFE_CUDA_NUM_THREADS>>>(bias_diff_count, bias_diff_temp, bias_diff);
-  }
+  }*/
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(CuDNNConvolutionLayer);

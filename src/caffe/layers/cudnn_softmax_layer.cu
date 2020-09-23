@@ -10,7 +10,7 @@ namespace caffe {
 template <typename Dtype>
 void CuDNNSoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
-  const fp16* bottom_data = bottom[0]->gpu_data();
+  /*const fp16* bottom_data = bottom[0]->gpu_data();
   Blob<Dtype>* temp_bottom = (this->temp_bottom_);
   temp_bottom->Reshape(bottom[0]->shape());
   Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
@@ -31,13 +31,13 @@ void CuDNNSoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 
   fp16* top_data = top[0]->mutable_gpu_data();
   int top_data_count = top[0]->count();
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(top_data_count), CAFFE_CUDA_NUM_THREADS>>>(top_data_count, top_data_temp, top_data);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(top_data_count), CAFFE_CUDA_NUM_THREADS>>>(top_data_count, top_data_temp, top_data);*/
 }
 
 template <typename Dtype>
 void CuDNNSoftmaxLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  if (propagate_down[0]) {
+  /*if (propagate_down[0]) {
 
     const fp16* bottom_data = bottom[0]->gpu_data();
     Blob<Dtype>* temp_bottom = (this->temp_bottom_);
@@ -71,7 +71,7 @@ void CuDNNSoftmaxLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
     convert_to_fp16<<<CAFFE_GET_BLOCKS(bottom_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_count, bottom_diff_temp, bottom_diff);
-  }
+  }*/
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(CuDNNSoftmaxLayer);

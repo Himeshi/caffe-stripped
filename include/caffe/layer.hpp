@@ -59,7 +59,7 @@ class Layer {
         }
       }
       temp_top_ = new Blob<Dtype>();
-      temp_bottom_ = new Blob<Dtype>();
+      //temp_bottom_ = new Blob<Dtype>();
     }
   virtual ~Layer() {}
 

@@ -7,7 +7,7 @@ namespace caffe {
 template <typename Dtype>
 void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
-  const fp16* weight = this->blobs_[0]->gpu_data();
+  /*const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
   convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
@@ -27,8 +27,8 @@ void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     Dtype* top_data_temp = top_temp->mutable_gpu_data();
 
     for (int n = 0; n < this->num_; ++n) {
-      /*this->backward_gpu_gemm(temp_bottom_data + n * this->bottom_dim_, weight_temp_data,
-          top_data_temp + n * this->top_dim_);*/
+      //this->backward_gpu_gemm(temp_bottom_data + n * this->bottom_dim_, weight_temp_data,
+      //    top_data_temp + n * this->top_dim_);
 
       if (this->bias_term_) {
         const fp16* bias = this->blobs_[1]->gpu_data();
@@ -43,13 +43,13 @@ void DeconvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     fp16* top_data = top[i]->mutable_gpu_data();
     int top_data_count = top[i]->count();
     convert_to_fp16<<<CAFFE_GET_BLOCKS(top_data_count), CAFFE_CUDA_NUM_THREADS>>>(top_data_count, top_data_temp, top_data);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
-  const fp16* weight = this->blobs_[0]->gpu_data();
+  /*const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
   convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
@@ -90,14 +90,14 @@ void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
-          /*this->weight_gpu_gemm(temp_top_diff + n * this->top_dim_,
-              temp_bottom_data + n * this->bottom_dim_, weight_diff_temp);*/
+          //this->weight_gpu_gemm(temp_top_diff + n * this->top_dim_,
+          //    temp_bottom_data + n * this->bottom_dim_, weight_diff_temp);
         }
         // gradient w.r.t. bottom data, if necessary.
         if (propagate_down[i]) {
-          /*this->forward_gpu_gemm(temp_top_diff + n * this->top_dim_, weight_temp_data,
-              bottom_diff_temp + n * this->bottom_dim_,
-              this->param_propagate_down_[0]);*/
+          //this->forward_gpu_gemm(temp_top_diff + n * this->top_dim_, weight_temp_data,
+          //    bottom_diff_temp + n * this->bottom_dim_,
+          //    this->param_propagate_down_[0]);
         }
       }
     }
@@ -109,6 +109,6 @@ void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   convert_to_fp16<<<CAFFE_GET_BLOCKS(weight_diff_count), CAFFE_CUDA_NUM_THREADS>>>(weight_diff_count, weight_diff_temp, weight_diff);
 }
 
-INSTANTIATE_LAYER_GPU_FUNCS(DeconvolutionLayer);
+INSTANTIATE_LAYER_GPU_FUNCS(DeconvolutionLayer);*/
 
 }  // namespace caffe

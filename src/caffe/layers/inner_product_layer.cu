@@ -11,7 +11,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
 #ifdef CONVERT_SHARED
   const fp16* bottom_data = bottom[0]->gpu_data();
-  Blob<Dtype>* temp_bottom = (this->temp_bottom_);
+  Blob<Dtype>* temp_bottom = (this->temp_top_);
   temp_bottom->Reshape(bottom[0]->shape());
   Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
   int bottom_count = bottom[0]->count();
