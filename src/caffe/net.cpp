@@ -389,7 +389,7 @@ void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
     shared_ptr<Blob<Dtype> > blob_pointer_dtype(new Blob<Dtype>());
     const int blob_id = blobs_.size();
     blobs_.push_back(blob_pointer);
-    blobs_dtype_.push_back(blob_pointer_dtype);
+    //blobs_dtype_.push_back(blob_pointer_dtype);
     blob_names_.push_back(blob_name);
     blob_need_backward_.push_back(false);
     if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
@@ -399,7 +399,7 @@ void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
         //we want an accuracy layer output blob to be in Dtype to
         //avoid errors due to conversion in the printed result
         shared_ptr<Blob<Dtype> > blob_pointer_dtype(new Blob<Dtype>());
-        blobs_dtype_.push_back(blob_pointer_dtype);
+        //blobs_dtype_.push_back(blob_pointer_dtype);
         top_vecs_dtype_[layer_id].push_back(blob_pointer_dtype.get());
         net_output_blobs_dtype_.push_back(blob_pointer_dtype.get());
     }

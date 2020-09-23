@@ -48,14 +48,14 @@ class Layer {
       phase_ = param.phase();
       if (layer_param_.blobs_size() > 0) {
         blobs_.resize(layer_param_.blobs_size());
-        blobs_dtype_.resize(layer_param_.blobs_size());
+        //blobs_dtype_.resize(layer_param_.blobs_size());
         for (int i = 0; i < layer_param_.blobs_size(); ++i) {
           blobs_[i].reset(new Blob<fp16>());
           blobs_[i]->FromProto(layer_param_.blobs(i));
 
           //maintain dtype blobs to copy data before doing computations
-          blobs_dtype_[i].reset(new Blob<Dtype>());
-          blobs_dtype_[i]->FromProto(layer_param_.blobs(i));
+          //blobs_dtype_[i].reset(new Blob<Dtype>());
+          //blobs_dtype_[i]->FromProto(layer_param_.blobs(i));
         }
       }
       temp_top_ = new Blob<Dtype>();
@@ -313,9 +313,9 @@ class Layer {
   /** The vector that stores the learnable parameters as a set of blobs. */
   vector<shared_ptr<Blob<fp16> > > blobs_;
   /** The vector that stores the learnable parameters as a set of dtype blobs. */
-  vector<shared_ptr<Blob<Dtype> > > blobs_dtype_;
+  //vector<shared_ptr<Blob<Dtype> > > blobs_dtype_;
   Blob<Dtype>* temp_top_;
-  Blob<Dtype>* temp_bottom_;
+  //Blob<Dtype>* temp_bottom_;
   /** Vector indicating whether to compute the diff of each param blob. */
   vector<bool> param_propagate_down_;
 
