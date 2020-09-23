@@ -106,9 +106,9 @@ void DeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   }
   fp16* weight_diff = this->blobs_[0]->mutable_gpu_diff();
   int weight_diff_count = this->blobs_[0]->count();
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(weight_diff_count), CAFFE_CUDA_NUM_THREADS>>>(weight_diff_count, weight_diff_temp, weight_diff);
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(weight_diff_count), CAFFE_CUDA_NUM_THREADS>>>(weight_diff_count, weight_diff_temp, weight_diff);*/
 }
 
-INSTANTIATE_LAYER_GPU_FUNCS(DeconvolutionLayer);*/
+INSTANTIATE_LAYER_GPU_FUNCS(DeconvolutionLayer);
 
 }  // namespace caffe
