@@ -557,7 +557,7 @@ void caffe_gpu_gemm_half_with_floatB<float>(const CBLAS_TRANSPOSE TransA,
   cublasOperation_t cuTransB =
       (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasSgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
-      N, M, K, &alpha, tempB, ldb, tempA, lda, &beta, tempC, N));
+      N, M, K, &alpha, B, ldb, tempA, lda, &beta, tempC, N));
 
   convert_to_fp16<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, tempC, C);
   cudaFree(tempA);
@@ -585,11 +585,10 @@ void caffe_gpu_gemm_half_with_floatB<double>(const CBLAS_TRANSPOSE TransA,
   cublasOperation_t cuTransB =
       (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;
   CUBLAS_CHECK(cublasDgemm(Caffe::cublas_handle(), cuTransB, cuTransA,
-      N, M, K, &alpha, tempB, ldb, tempA, lda, &beta, tempC, N));
+      N, M, K, &alpha, B, ldb, tempA, lda, &beta, tempC, N));
   convert_to_fp16<<<CAFFE_GET_BLOCKS(M * N), CAFFE_CUDA_NUM_THREADS>>>(M * N, tempC, C);
 
   cudaFree(tempA);
-  cudaFree(tempB);
   cudaFree(tempC);
 }
 
@@ -818,8 +817,8 @@ template <>
 void caffe_gpu_gemv_with_float_weights<double>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const double alpha, const double* A, const fp16* x,
     const double beta, fp16* y) {
-  float* tempX;
-  float* tempY;
+  double* tempX;
+  double* tempY;
 
   cublasOperation_t cuTransA =
       (TransA == CblasNoTrans) ? CUBLAS_OP_T : CUBLAS_OP_N;
@@ -835,7 +834,7 @@ void caffe_gpu_gemv_with_float_weights<double>(const CBLAS_TRANSPOSE TransA, con
     convert_to_float<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, x, tempX);
   }
 
-  CUBLAS_CHECK(cublasSgemv(Caffe::cublas_handle(), cuTransA, N, M, &alpha, A, N, tempX, 1, &beta, tempY, 1));
+  CUBLAS_CHECK(cublasDgemv(Caffe::cublas_handle(), cuTransA, N, M, &alpha, A, N, tempX, 1, &beta, tempY, 1));
   if(cuTransA) {
     convert_to_fp16<<<CAFFE_GET_BLOCKS(M), CAFFE_CUDA_NUM_THREADS>>>(M, tempY, y);
   } else {

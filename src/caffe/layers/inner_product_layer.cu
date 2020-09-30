@@ -21,8 +21,8 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   if (M_ == 1) {
-	  caffe_gpu_gemv_with_float_weights(CblasNoTrans, N_, K_, (1.),
-    		weight_temp_data, bottom_data, (0.), top_data);
+	  caffe_gpu_gemv_with_float_weights(CblasNoTrans, N_, K_, Dtype(1.),
+    		weight_temp_data, bottom_data, Dtype(0.), top_data);
     if (bias_term_)
       caffe_gpu_axpy(N_, bias_multiplier_.cpu_data()[0],
                             this->blobs_[1]->gpu_data(), top_data);

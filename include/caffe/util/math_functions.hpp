@@ -187,7 +187,7 @@ void caffe_gpu_gemv_half(const CBLAS_TRANSPOSE TransA, const int M, const int N,
 template <typename Dtype>
 void caffe_gpu_gemv_with_float_weights(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const Dtype alpha, const Dtype* A, const fp16* x,
-    const float beta, fp16* y);
+    const Dtype beta, fp16* y);
 
 template <typename Dtype>
 void caffe_gpu_axpy(const int N, const Dtype alpha, const Dtype* X,
