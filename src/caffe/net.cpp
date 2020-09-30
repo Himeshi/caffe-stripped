@@ -963,11 +963,7 @@ void Net<Dtype>::Update() {
 template <typename Dtype>
 void Net<Dtype>::Update_half() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
-	if(i == 0 || i == 2) {
-	   learnable_params_[i]->Update_half_with_bias();
-	} else {
-	    learnable_params_[i]->Update_half();
-	}
+    learnable_params_[i]->Update_half();
   }
 }
 
