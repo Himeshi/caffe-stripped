@@ -11,13 +11,13 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void kernel_channel_max(const int num, const int channels,
-    const int spatial_dim, const fp16* data, Dtype* out) {
+    const int spatial_dim, const Dtype* data, Dtype* out) {
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
     Dtype maxval = -FLT_MAX;
     for (int c = 0; c < channels; ++c) {
-      maxval = max(fp16tofp32_gpu(data[(n * channels + c) * spatial_dim + s]), maxval);
+      maxval = max(data[(n * channels + c) * spatial_dim + s], maxval);
     }
     out[index] = maxval;
   }
@@ -25,6 +25,17 @@ __global__ void kernel_channel_max(const int num, const int channels,
 
 template <typename Dtype>
 __global__ void kernel_channel_subtract(const int count,
+    const int num, const int channels,
+    const int spatial_dim, const Dtype* channel_max, Dtype* data) {
+  CUDA_KERNEL_LOOP(index, count) {
+    int n = index / channels / spatial_dim;
+    int s = index % spatial_dim;
+    data[index] = data[index] - channel_max[n * spatial_dim + s];
+  }
+}
+
+template <typename Dtype>
+__global__ void kernel_channel_subtract_backward(const int count,
     const int num, const int channels,
     const int spatial_dim, const Dtype* channel_max, fp16* data) {
   CUDA_KERNEL_LOOP(index, count) {
@@ -35,21 +46,21 @@ __global__ void kernel_channel_subtract(const int count,
 }
 
 template <typename Dtype>
-__global__ void kernel_exp(const int count, const fp16* data, fp16* out) {
+__global__ void kernel_exp(const int count, const Dtype* data, Dtype* out) {
   CUDA_KERNEL_LOOP(index, count) {
-    out[index] = fp32tofp16_gpu(exp(fp16tofp32_gpu(data[index])));
+    out[index] = exp(data[index]);
   }
 }
 
 template <typename Dtype>
 __global__ void kernel_channel_sum(const int num, const int channels,
-    const int spatial_dim, const fp16* data, Dtype* channel_sum) {
+    const int spatial_dim, const Dtype* data, Dtype* channel_sum) {
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
     int n = index / spatial_dim;
     int s = index % spatial_dim;
     Dtype sum = 0;
     for (int c = 0; c < channels; ++c) {
-      sum += fp16tofp32_gpu(data[(n * channels + c) * spatial_dim + s]);
+      sum += data[(n * channels + c) * spatial_dim + s];
     }
     channel_sum[index] = sum;
   }
@@ -58,11 +69,11 @@ __global__ void kernel_channel_sum(const int num, const int channels,
 template <typename Dtype>
 __global__ void kernel_channel_div(const int count,
     const int num, const int channels,
-    const int spatial_dim, const Dtype* channel_sum, fp16* data) {
+    const int spatial_dim, const Dtype* channel_sum, Dtype* data) {
   CUDA_KERNEL_LOOP(index, count) {
     int n = index / channels / spatial_dim;
     int s = index % spatial_dim;
-    data[index] = fp32tofp16_gpu(fp16tofp32_gpu(data[index]) / channel_sum[n * spatial_dim + s]);
+    data[index] = data[index] / channel_sum[n * spatial_dim + s];
   }
 }
 
@@ -87,37 +98,46 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
     const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
-  fp16* top_data = top[0]->mutable_gpu_data();
-  Dtype* scale_data = scale_.mutable_gpu_data();
+  Blob<Dtype>* temp_bottom = (this->temp_bottom_);
+  temp_bottom->Reshape(bottom[0]->shape());
+  Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
   int count = bottom[0]->count();
+  convert_to_float<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count, bottom_data, temp_bottom_converted);
+  const Dtype* temp_bottom_data = temp_bottom->gpu_data();
+
+  (this->temp_top_)->Reshape(top[0]->shape());
+  Dtype* temp_top_data = (this->temp_top_)->mutable_gpu_data();
+  Dtype* scale_data = scale_.mutable_gpu_data();
   int channels = top[0]->shape(softmax_axis_);
-  caffe_copy(count, bottom_data, top_data);
+  caffe_copy(count, temp_bottom_data, temp_top_data);
   // We need to subtract the max to avoid numerical issues, compute the exp,
   // and then normalize.
   // compute max
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_channel_max<Dtype><<<CAFFE_GET_BLOCKS(outer_num_ * inner_num_),
-      CAFFE_CUDA_NUM_THREADS>>>(outer_num_, channels, inner_num_, top_data,
+      CAFFE_CUDA_NUM_THREADS>>>(outer_num_, channels, inner_num_, temp_top_data,
       scale_data);
   // subtract
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_channel_subtract<Dtype><<<CAFFE_GET_BLOCKS(count),
       CAFFE_CUDA_NUM_THREADS>>>(count, outer_num_, channels, inner_num_,
-      scale_data, top_data);
+      scale_data, temp_top_data);
   // exponentiate
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_exp<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-      count, top_data, top_data);
+      count, temp_top_data, temp_top_data);
   // sum after exp
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_channel_sum<Dtype><<<CAFFE_GET_BLOCKS(outer_num_ * inner_num_),
-      CAFFE_CUDA_NUM_THREADS>>>(outer_num_, channels, inner_num_, top_data,
+      CAFFE_CUDA_NUM_THREADS>>>(outer_num_, channels, inner_num_, temp_top_data,
       scale_data);
   // divide
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_channel_div<Dtype><<<CAFFE_GET_BLOCKS(count),
       CAFFE_CUDA_NUM_THREADS>>>(count, outer_num_, channels, inner_num_,
-      scale_data, top_data);
+      scale_data, temp_top_data);
+
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count, temp_top_data, top[0]->mutable_gpu_data());
 }
 
 template <typename Dtype>
@@ -137,7 +157,7 @@ void SoftmaxLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       CAFFE_CUDA_NUM_THREADS>>>(outer_num_, channels, inner_num_,
       top_diff, top_data, scale_data);
   // NOLINT_NEXT_LINE(whitespace/operators)
-  kernel_channel_subtract<Dtype><<<CAFFE_GET_BLOCKS(count),
+  kernel_channel_subtract_backward<Dtype><<<CAFFE_GET_BLOCKS(count),
       CAFFE_CUDA_NUM_THREADS>>>(count, outer_num_, channels, inner_num_,
       scale_data, bottom_diff);
   // elementwise multiplication
