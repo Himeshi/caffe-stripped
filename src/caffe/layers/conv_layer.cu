@@ -17,21 +17,32 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   for (int i = 0; i < bottom.size(); ++i) {
+    int bottom_data_count = bottom[i]->count();
+    Dtype* bottom_data_dtype;
     if(this->layer_param_.name() == "conv1") {
-      int bottom_data_count = bottom_dtype[i]->count();
-      fp16* bottom_data_temp = bottom[i]->mutable_gpu_data();
-      Dtype* bottom_data_dtype = bottom_dtype[i]->mutable_gpu_data();
-      convert_to_fp16<<<CAFFE_GET_BLOCKS(bottom_data_count), CAFFE_CUDA_NUM_THREADS>>>(bottom_data_count, bottom_data_dtype, bottom_data_temp);
+      bottom_data_dtype = bottom_dtype[i]->mutable_gpu_data();
+    } else  {
+      const fp16* bottom_data = bottom[i]->gpu_data();
+      this->temp_bottom_->Reshape(bottom[i]->shape());
+      bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
+      caffe_expand_blob(bottom_data_count, bottom_data_dtype, bottom_data, bottom[i]->data_bias);
     }
-    const fp16* bottom_data = bottom[i]->gpu_data();
     fp16* top_data = top[i]->mutable_gpu_data();
+    this->temp_top_->Reshape(top[i]->shape());
+    Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
+
     for (int n = 0; n < this->num_; ++n) {
-      this->forward_gpu_gemm_half_with_float_weights(bottom_data + n * this->bottom_dim_, weight_temp_data,
-          top_data + n * this->top_dim_);
+      this->forward_gpu_gemm(bottom_data_dtype + n * this->bottom_dim_, weight_temp_data,
+          temp_top_data + n * this->top_dim_);
       if (this->bias_term_) {
         const fp16* bias = this->blobs_[1]->gpu_data();
-        this->forward_gpu_bias_half(top_data + n * this->top_dim_, bias);
+        Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
+        int bias_count = this->blobs_[1]->count();
+        caffe_expand_blob(bias_count, bias_temp, bias, this->blobs_[1]->data_bias);
+        const Dtype* bias_temp_data = this->blobs_dtype_[1]->gpu_data();
+        this->forward_gpu_bias(temp_top_data + n * this->top_dim_, bias_temp_data);
       }
+      caffe_compress_blob(top[i]->count(), temp_top_data, top_data, &(top[i]->data_bias));
     }
   }
 }
@@ -44,32 +55,48 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
   caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
-  //convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   fp16* weight_diff = this->blobs_[0]->mutable_gpu_diff();
+  Dtype* temp_weight_diff = this->blobs_dtype_[0]->mutable_gpu_diff();
+
   for (int i = 0; i < top.size(); ++i) {
-    const fp16* top_diff = top[i]->gpu_diff();
+	const fp16* top_diff = top[i]->gpu_diff();
+    this->temp_top_->Reshape(top[i]->shape());
+    Dtype* temp_top_diff = this->temp_top_->mutable_gpu_diff();
+    caffe_expand_blob(top[i]->count(), temp_top_diff, top_diff, top[i]->diff_bias);
+
     // Bias gradient, if necessary.
     if (this->bias_term_ && this->param_propagate_down_[1]) {
       fp16* bias_diff = this->blobs_[1]->mutable_gpu_diff();
+      Dtype* temp_bias_diff = this->blobs_dtype_[1]->mutable_gpu_diff();
       for (int n = 0; n < this->num_; ++n) {
-        this->backward_gpu_bias_half(bias_diff, top_diff + n * this->top_dim_);
+        this->backward_gpu_bias(temp_bias_diff, temp_top_diff + n * this->top_dim_);
       }
+      caffe_compress_blob(this->blobs_[1]->count(), temp_bias_diff, bias_diff, &((this->blobs_[1])->diff_bias));
     }
+
     if (this->param_propagate_down_[0] || propagate_down[i]) {
       const fp16* bottom_data = bottom[i]->gpu_data();
+      this->temp_bottom_->Reshape(bottom[i]->shape());
+      Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
+      int bottom_count = bottom[i]->count();
+      caffe_expand_blob(bottom_count, temp_bottom_data, bottom_data, bottom[i]->data_bias);
+
       fp16* bottom_diff = bottom[i]->mutable_gpu_diff();
+      Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
-          this->weight_gpu_gemm_half(bottom_data + n * this->bottom_dim_,
-              top_diff + n * this->top_dim_, weight_diff);
+          this->weight_gpu_gemm(temp_bottom_data + n * this->bottom_dim_,
+            temp_top_diff + n * this->top_dim_, temp_weight_diff);
+          caffe_compress_blob(this->blobs_[0]->count(), temp_weight_diff, weight_diff, &((this->blobs_[0])->diff_bias));
         }
         // gradient w.r.t. bottom data, if necessary.
         if (propagate_down[i]) {
-          this->backward_gpu_gemm_half_with_float(top_diff + n * this->top_dim_, weight_temp_data,
-              bottom_diff + n * this->bottom_dim_);
+          this->backward_gpu_gemm(temp_top_diff + n * this->top_dim_, weight_temp_data,
+            temp_bottom_diff + n * this->bottom_dim_);
+          caffe_compress_blob(bottom_count, temp_bottom_diff, bottom_diff, &(bottom[i]->diff_bias));
         }
       }
     }

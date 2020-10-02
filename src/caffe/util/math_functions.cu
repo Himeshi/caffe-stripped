@@ -980,7 +980,7 @@ void caffe_compress_blob(int N, float* in, fp16* out, float* bias) {
   CUBLAS_CHECK(cublasIsamax(Caffe::cublas_handle(), N, in, 1, &max_index));
   cudaMemcpy(bias, in + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
   *bias = fabsf(*bias);
-  if(*bias == 0 || isnan(*bias) || isinf(*bias))
+  if(*bias == 0)
     *bias = 1.0;
 
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
@@ -992,7 +992,7 @@ void caffe_compress_blob(int N, double* in, fp16* out, float* bias) {
   CUBLAS_CHECK(cublasIdamax(Caffe::cublas_handle(), N, in, 1, &max_index));
   cudaMemcpy(bias, in + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
   *bias = fabsf(*bias);
-  if(*bias == 0|| isnan(*bias) || isinf(*bias))
+  if(*bias == 0)
     *bias = 1.0;
 
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);

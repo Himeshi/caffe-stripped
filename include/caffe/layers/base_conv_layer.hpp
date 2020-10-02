@@ -153,7 +153,7 @@ class BaseConvolutionLayer : public Layer<Dtype> {
           stride_.gpu_data(), dilation_.gpu_data(), col_buff);
     }
   }
-  inline void conv_im2col_gpu_half(const fp16* data, fp16* col_buff) {
+/*  inline void conv_im2col_gpu_half(const fp16* data, fp16* col_buff) {
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
       im2col_gpu(data, conv_in_channels_,
           conv_input_shape_.cpu_data()[1], conv_input_shape_.cpu_data()[2],
@@ -167,8 +167,23 @@ class BaseConvolutionLayer : public Layer<Dtype> {
           kernel_shape_.gpu_data(), pad_.gpu_data(),
           stride_.gpu_data(), dilation_.gpu_data(), col_buff);
     }
+  }*/
+  inline void conv_col2im_gpu(const Dtype* col_buff, Dtype* data) {
+    if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
+      col2im_gpu(col_buff, conv_in_channels_,
+          conv_input_shape_.cpu_data()[1], conv_input_shape_.cpu_data()[2],
+          kernel_shape_.cpu_data()[0], kernel_shape_.cpu_data()[1],
+          pad_.cpu_data()[0], pad_.cpu_data()[1],
+          stride_.cpu_data()[0], stride_.cpu_data()[1],
+          dilation_.cpu_data()[0], dilation_.cpu_data()[1], data);
+    } else {
+      col2im_nd_gpu(col_buff, num_spatial_axes_, num_kernels_col2im_,
+          conv_input_shape_.gpu_data(), col_buffer_.gpu_shape(),
+          kernel_shape_.gpu_data(), pad_.gpu_data(), stride_.gpu_data(),
+          dilation_.gpu_data(), data);
+    }
   }
-/*  inline void conv_col2im_gpu(const Dtype* col_buff, Dtype* data) {
+/*  inline void conv_col2im_gpu_half(const fp16* col_buff, fp16* data) {
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
       col2im_gpu(col_buff, conv_in_channels_,
           conv_input_shape_.cpu_data()[1], conv_input_shape_.cpu_data()[2],
@@ -183,21 +198,6 @@ class BaseConvolutionLayer : public Layer<Dtype> {
           dilation_.gpu_data(), data);
     }
   }*/
-  inline void conv_col2im_gpu_half(const fp16* col_buff, fp16* data) {
-    if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
-      col2im_gpu(col_buff, conv_in_channels_,
-          conv_input_shape_.cpu_data()[1], conv_input_shape_.cpu_data()[2],
-          kernel_shape_.cpu_data()[0], kernel_shape_.cpu_data()[1],
-          pad_.cpu_data()[0], pad_.cpu_data()[1],
-          stride_.cpu_data()[0], stride_.cpu_data()[1],
-          dilation_.cpu_data()[0], dilation_.cpu_data()[1], data);
-    } else {
-      col2im_nd_gpu(col_buff, num_spatial_axes_, num_kernels_col2im_,
-          conv_input_shape_.gpu_data(), col_buffer_.gpu_shape(),
-          kernel_shape_.gpu_data(), pad_.gpu_data(), stride_.gpu_data(),
-          dilation_.gpu_data(), data);
-    }
-  }
 #endif
 
   int num_kernels_im2col_;
@@ -209,8 +209,8 @@ class BaseConvolutionLayer : public Layer<Dtype> {
   int col_offset_;
   int output_offset_;
 
-  Blob<fp16> col_buffer_;
-  Blob<fp16> bias_multiplier_;
+  Blob<Dtype> col_buffer_;
+  Blob<Dtype> bias_multiplier_;
 };
 
 }  // namespace caffe

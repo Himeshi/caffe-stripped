@@ -254,7 +254,7 @@ void BaseConvolutionLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
   if (bias_term_) {
     vector<int> bias_multiplier_shape(1, out_spatial_dim_);
     bias_multiplier_.Reshape(bias_multiplier_shape);
-    caffe_set(bias_multiplier_.count(), fp32tofp16(1),
+    caffe_set(bias_multiplier_.count(), Dtype(1.),
         bias_multiplier_.mutable_cpu_data());
   }
 }
@@ -331,7 +331,7 @@ void BaseConvolutionLayer<Dtype>::backward_cpu_bias(Dtype* bias,
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::forward_gpu_gemm(const Dtype* input,
     const Dtype* weights, Dtype* output, bool skip_im2col) {
-  /*const Dtype* col_buff = input;
+  const Dtype* col_buff = input;
   if (!is_1x1_) {
     if (!skip_im2col) {
       conv_im2col_gpu(input, col_buffer_.mutable_gpu_data());
@@ -343,13 +343,13 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_gemm(const Dtype* input,
         group_, conv_out_spatial_dim_, kernel_dim_,
 		(Dtype)1., weights + weight_offset_ * g, col_buff + col_offset_ * g,
 		(Dtype)0., output + output_offset_ * g);
-  }*/
+  }
 }
 
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half(const fp16* input,
     const fp16* weights, fp16* output, bool skip_im2col) {
-  const fp16* col_buff = input;
+	/* const fp16* col_buff = input;
   if (!is_1x1_) {
     if (!skip_im2col) {
         conv_im2col_gpu_half(input, col_buffer_.mutable_gpu_data());
@@ -361,13 +361,13 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half(const fp16* input,
         group_, conv_out_spatial_dim_, kernel_dim_,
         fp32tofp16(1.), weights + weight_offset_ * g, col_buff + col_offset_ * g,
 		fp32tofp16(0), output + output_offset_ * g);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half_with_float_weights(const fp16* input,
     const Dtype* weights, fp16* output, bool skip_im2col) {
-  const fp16* col_buff = input;
+/*  const fp16* col_buff = input;
   if (!is_1x1_) {
     if (!skip_im2col) {
         conv_im2col_gpu_half(input, col_buffer_.mutable_gpu_data());
@@ -379,7 +379,7 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half_with_float_weights(const
         group_, conv_out_spatial_dim_, kernel_dim_,
         Dtype(1.), weights + weight_offset_ * g, col_buff + col_offset_ * g,
 		Dtype(0), output + output_offset_ * g);
-  }
+  }*/
 }
 
 template <typename Dtype>
@@ -393,9 +393,9 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_bias(Dtype* output,
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::forward_gpu_bias_half(fp16* output,
     const fp16* bias) {
-  caffe_gpu_gemm(CblasNoTrans, CblasNoTrans, num_output_,
+/*  caffe_gpu_gemm(CblasNoTrans, CblasNoTrans, num_output_,
       out_spatial_dim_, 1, fp32tofp16(1.0), bias, bias_multiplier_.gpu_data(),
-	  fp32tofp16(1.0), output);
+	  fp32tofp16(1.0), output);*/
 }
 
 template <typename Dtype>
@@ -410,7 +410,7 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_bias_half_with_float(fp16* output,
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::backward_gpu_gemm(const Dtype* output,
     const Dtype* weights, Dtype* input) {
-  /*Dtype* col_buff = col_buffer_.mutable_gpu_data();
+  Dtype* col_buff = col_buffer_.mutable_gpu_data();
   if (is_1x1_) {
     col_buff = input;
   }
@@ -422,13 +422,13 @@ void BaseConvolutionLayer<Dtype>::backward_gpu_gemm(const Dtype* output,
   }
   if (!is_1x1_) {
     conv_col2im_gpu(col_buff, input);
-  }*/
+  }
 }
 
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::backward_gpu_gemm_half(const fp16* output,
     const fp16* weights, fp16* input) {
-  fp16* col_buff = col_buffer_.mutable_gpu_data();
+/*  Dtype* col_buff = col_buffer_.mutable_gpu_data();
   if (is_1x1_) {
     col_buff = input;
   }
@@ -440,13 +440,13 @@ void BaseConvolutionLayer<Dtype>::backward_gpu_gemm_half(const fp16* output,
   }
   if (!is_1x1_) {
 	  conv_col2im_gpu_half(col_buff, input);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::backward_gpu_gemm_half_with_float(const fp16* output,
     const Dtype* weights, fp16* input) {
-  fp16* col_buff = col_buffer_.mutable_gpu_data();
+/*  fp16* col_buff = col_buffer_.mutable_gpu_data();
   if (is_1x1_) {
     col_buff = input;
   }
@@ -458,13 +458,13 @@ void BaseConvolutionLayer<Dtype>::backward_gpu_gemm_half_with_float(const fp16* 
   }
   if (!is_1x1_) {
 	  conv_col2im_gpu_half(col_buff, input);
-  }
+  }*/
 }
 
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::weight_gpu_gemm(const Dtype* input,
     const Dtype* output, Dtype* weights) {
-  /*const Dtype* col_buff = input;
+  const Dtype* col_buff = input;
   if (!is_1x1_) {
     conv_im2col_gpu(input, col_buffer_.mutable_gpu_data());
     col_buff = col_buffer_.gpu_data();
@@ -474,13 +474,13 @@ void BaseConvolutionLayer<Dtype>::weight_gpu_gemm(const Dtype* input,
         kernel_dim_, conv_out_spatial_dim_,
         (Dtype)1., output + output_offset_ * g, col_buff + col_offset_ * g,
         (Dtype)1., weights + weight_offset_ * g);
-  }*/
+  }
 }
 
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::weight_gpu_gemm_half(const fp16* input,
     const fp16* output, fp16* weights) {
-  const fp16* col_buff = input;
+/*  const fp16* col_buff = input;
   if (!is_1x1_) {
     conv_im2col_gpu_half(input, col_buffer_.mutable_gpu_data());
     col_buff = col_buffer_.gpu_data();
@@ -490,7 +490,7 @@ void BaseConvolutionLayer<Dtype>::weight_gpu_gemm_half(const fp16* input,
         kernel_dim_, conv_out_spatial_dim_,
         fp32tofp16(1.), output + output_offset_ * g, col_buff + col_offset_ * g,
 		fp32tofp16(1.), weights + weight_offset_ * g);
-  }
+  }*/
 }
 
 template <typename Dtype>
@@ -503,8 +503,8 @@ void BaseConvolutionLayer<Dtype>::backward_gpu_bias(Dtype* bias,
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::backward_gpu_bias_half(fp16* bias,
     const fp16* input) {
-  caffe_gpu_gemv(CblasNoTrans, num_output_, out_spatial_dim_, fp32tofp16(1.0),
-    input, bias_multiplier_.gpu_data(), fp32tofp16(1.0), bias);
+/*  caffe_gpu_gemv(CblasNoTrans, num_output_, out_spatial_dim_, fp32tofp16(1.0),
+    input, bias_multiplier_.gpu_data(), fp32tofp16(1.0), bias);*/
 }
 
 #endif  // !CPU_ONLY
