@@ -68,6 +68,8 @@ __global__ void outputweights(const int n, float* in);
 
 __global__ void outputweights(const int n, double* in);
 
+__global__ void checkforinf(const int n, fp16* in);
+
 void init_cuda_buffer(void);
 }
 #endif /* INCLUDE_CAFFE_FP16_HPP_ */

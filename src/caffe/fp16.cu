@@ -112,4 +112,12 @@ void print_gpu_fp16_array(const fp16* d_data, int size, float bias) {
 	free(h_data);
 }
 
+__global__ void checkforinf(const int n, fp16* in) {
+  CUDA_KERNEL_LOOP(index, n) {
+    if(in[index] == _G_INFP) {
+      printf("inf!\n");
+    }
+  }
+}
+
 }
