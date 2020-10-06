@@ -9,13 +9,11 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void MaxPoolForward(const int nthreads,
-    const fp16* const bottom_data, const int num, const int channels,
+    const Dtype* const bottom_data, const int num, const int channels,
     const int height, const int width, const int pooled_height,
     const int pooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
-    fp16* const top_data, int* mask, fp16* top_mask) {
-
-
+    Dtype* const top_data, int* mask, Dtype* top_mask) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -27,38 +25,34 @@ __global__ void MaxPoolForward(const int nthreads,
     const int wend = min(wstart + kernel_w, width);
     hstart = max(hstart, 0);
     wstart = max(wstart, 0);
-    float maxval = -FLT_MAX;
+    Dtype maxval = -FLT_MAX;
     int maxidx = -1;
-    const fp16* const bottom_slice =
+    const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-		  
-        if (fp16tofp32_gpu(bottom_slice[h * width + w]) > maxval) {
+        if (bottom_slice[h * width + w] > maxval) {
           maxidx = h * width + w;
-          maxval = fp16tofp32_gpu(bottom_slice[maxidx]);
+          maxval = bottom_slice[maxidx];
         }
-        
       }
     }
-    
-    top_data[index] = fp32tofp16_gpu(maxval);
+    top_data[index] = maxval;
     if (mask) {
       mask[index] = maxidx;
     } else {
-      top_mask[index] = fp32tofp16_gpu(maxidx);
+      top_mask[index] = maxidx;
     }
-    
   }
 }
 
 template <typename Dtype>
 __global__ void AvePoolForward(const int nthreads,
-    const fp16* const bottom_data, const int num, const int channels,
+    const Dtype* const bottom_data, const int num, const int channels,
     const int height, const int width, const int pooled_height,
     const int pooled_width, const int kernel_h, const int kernel_w,
     const int stride_h, const int stride_w, const int pad_h, const int pad_w,
-    fp16* const top_data) {
+    Dtype* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -74,24 +68,24 @@ __global__ void AvePoolForward(const int nthreads,
     hend = min(hend, height);
     wend = min(wend, width);
     Dtype aveval = 0;
-    const fp16* const bottom_slice =
+    const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        aveval += fp16tofp32_gpu(bottom_slice[h * width + w]);
+        aveval += bottom_slice[h * width + w];
       }
     }
-    top_data[index] = fp32tofp16_gpu(aveval / pool_size);
+    top_data[index] = aveval / pool_size;
   }
 }
 
 template <typename Dtype>
 __global__ void StoPoolForwardTrain(const int nthreads,
-    const fp16* const bottom_data,
+    const Dtype* const bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, Dtype* const rand_idx, fp16* const top_data) {
+    const int stride_w, Dtype* const rand_idx, Dtype* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -102,12 +96,12 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     const int wstart = pw * stride_w;
     const int wend = min(wstart + kernel_w, width);
     Dtype cumsum = 0.;
-    const fp16* const bottom_slice =
+    const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
+        cumsum += bottom_slice[h * width + w];
       }
     }
     const float thres = rand_idx[index] * cumsum;
@@ -115,10 +109,10 @@ __global__ void StoPoolForwardTrain(const int nthreads,
     cumsum = 0;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
+        cumsum += bottom_slice[h * width + w];
         if (cumsum >= thres) {
           rand_idx[index] = ((n * channels + c) * height + h) * width + w;
-          top_data[index] = fp32tofp16_gpu(bottom_slice[h * width + w]);
+          top_data[index] = bottom_slice[h * width + w];
           return;
         }
       }
@@ -129,11 +123,11 @@ __global__ void StoPoolForwardTrain(const int nthreads,
 
 template <typename Dtype>
 __global__ void StoPoolForwardTest(const int nthreads,
-    const fp16* const bottom_data,
+    const Dtype* const bottom_data,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, fp16* const top_data) {
+    const int stride_w, Dtype* const top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     const int pw = index % pooled_width;
     const int ph = (index / pooled_width) % pooled_height;
@@ -146,18 +140,19 @@ __global__ void StoPoolForwardTest(const int nthreads,
     // We set cumsum to be 0 to avoid divide-by-zero problems
     Dtype cumsum = 0.;
     Dtype cumvalues = 0.;
-    const fp16* const bottom_slice =
+    const Dtype* const bottom_slice =
         bottom_data + (n * channels + c) * height * width;
     // First pass: get sum
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        cumsum += fp16tofp32_gpu(bottom_slice[h * width + w]);
-        cumvalues += fp16tofp32_gpu(bottom_slice[h * width + w]) * fp16tofp32_gpu(bottom_slice[h * width + w]);
+        cumsum += bottom_slice[h * width + w];
+        cumvalues += bottom_slice[h * width + w] * bottom_slice[h * width + w];
       }
     }
-    top_data[index] = fp32tofp16_gpu((cumsum > 0.) ? cumvalues / cumsum : 0.);
+    top_data[index] = (cumsum > 0.) ? cumvalues / cumsum : 0.;
   }
 }
+
 
 
 template <typename Dtype>
@@ -165,38 +160,41 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
       const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
+  int bottom_data_count = bottom[0]->count();
+  this->temp_bottom_->Reshape(bottom[0]->shape());
+  Dtype* bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
+  caffe_expand_blob(bottom_data_count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
+
   fp16* top_data = top[0]->mutable_gpu_data();
+  this->temp_top_->Reshape(top[0]->shape());
+  Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
+
   int count = top[0]->count();
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   int* mask = NULL;
-  fp16* top_mask = NULL;
+  Dtype* top_mask = NULL;
  
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
-      top_mask = top[1]->mutable_gpu_data();
+      top_mask = this->temp_top_->mutable_gpu_diff();
     } else {
       mask = max_idx_.mutable_gpu_data();
     }
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, bottom[0]->num(), channels_,
+        count, bottom_data_dtype, bottom[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
-        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data,
+        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, temp_top_data,
         mask, top_mask);
-/* debug stuff
-	printf("1 %d %d dtype %d\n",CAFFE_GET_BLOCKS(count),CAFFE_CUDA_NUM_THREADS, sizeof(Dtype));
-	//caffe::MaxPoolForward<<<1,1>>>(count);     
-    printf("2 %d %d dtype %d\n",CAFFE_GET_BLOCKS(count),CAFFE_CUDA_NUM_THREADS, sizeof(Dtype));
-*/
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
     AvePoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, bottom[0]->num(), channels_,
+        count, bottom_data_dtype, bottom[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
-        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, top_data);
+        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, temp_top_data);
     break;
   case PoolingParameter_PoolMethod_STOCHASTIC:
     if (this->phase_ == TRAIN) {
@@ -206,38 +204,34 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       // NOLINT_NEXT_LINE(whitespace/operators)
       StoPoolForwardTrain<Dtype><<<CAFFE_GET_BLOCKS(count),
                                    CAFFE_CUDA_NUM_THREADS>>>(
-          count, bottom_data, bottom[0]->num(), channels_,
+          count, bottom_data_dtype, bottom[0]->num(), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
           kernel_w_, stride_h_, stride_w_,
-          rand_idx_.mutable_gpu_data(), top_data);
+          rand_idx_.mutable_gpu_data(), temp_top_data);
     } else {
       // NOLINT_NEXT_LINE(whitespace/operators)
       StoPoolForwardTest<Dtype><<<CAFFE_GET_BLOCKS(count),
                                   CAFFE_CUDA_NUM_THREADS>>>(
-          count, bottom_data, bottom[0]->num(), channels_,
+          count, bottom_data_dtype, bottom[0]->num(), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
-          kernel_w_, stride_h_, stride_w_, top_data);
+          kernel_w_, stride_h_, stride_w_, temp_top_data);
     }
     break;
   default:
     LOG(FATAL) << "Unknown pooling method.";
   }
-#ifdef SAMPLE_FLOATS
-      if(this->phase_ == TRAIN && this->sample_iter_) {
-        sample_blob(top_data, count, this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
-      }
-#endif
+  caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
   CUDA_POST_KERNEL_CHECK;
 }
 
 
 template <typename Dtype>
-__global__ void MaxPoolBackward(const int nthreads, const fp16* const top_diff,
-    const int* const mask, const fp16* const top_mask, const int num,
+__global__ void MaxPoolBackward(const int nthreads, const Dtype* const top_diff,
+    const int* const mask, const Dtype* const top_mask, const int num,
     const int channels, const int height, const int width,
     const int pooled_height, const int pooled_width, const int kernel_h,
     const int kernel_w, const int stride_h, const int stride_w, const int pad_h,
-    const int pad_w, fp16* const bottom_diff) {
+    const int pad_w, Dtype* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -253,37 +247,37 @@ __global__ void MaxPoolBackward(const int nthreads, const fp16* const top_diff,
     const int pwend = min((w + pad_w) / stride_w + 1, pooled_width);
     Dtype gradient = 0;
     const int offset = (n * channels + c) * pooled_height * pooled_width;
-    const fp16* const top_diff_slice = top_diff + offset;
+    const Dtype* const top_diff_slice = top_diff + offset;
     if (mask) {
       const int* const mask_slice = mask + offset;
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
           if (mask_slice[ph * pooled_width + pw] == h * width + w) {
-            gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]);
+            gradient += top_diff_slice[ph * pooled_width + pw];
           }
         }
       }
     } else {
-      const fp16* const top_mask_slice = top_mask + offset;
+      const Dtype* const top_mask_slice = top_mask + offset;
       for (int ph = phstart; ph < phend; ++ph) {
         for (int pw = pwstart; pw < pwend; ++pw) {
-          if (fp16tofp32_gpu(top_mask_slice[ph * pooled_width + pw]) == h * width + w) {
-            gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]);
+          if (top_mask_slice[ph * pooled_width + pw] == h * width + w) {
+            gradient += top_diff_slice[ph * pooled_width + pw];
           }
         }
       }
     }
-    bottom_diff[index] = fp32tofp16_gpu(gradient);
+    bottom_diff[index] = gradient;
   }
 }
 
 template <typename Dtype>
-__global__ void AvePoolBackward(const int nthreads, const fp16* const top_diff,
+__global__ void AvePoolBackward(const int nthreads, const Dtype* const top_diff,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
     const int stride_w, const int pad_h, const int pad_w,
-    fp16* const bottom_diff) {
+    Dtype* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -296,7 +290,7 @@ __global__ void AvePoolBackward(const int nthreads, const fp16* const top_diff,
     const int pwstart = (w < kernel_w) ? 0 : (w - kernel_w) / stride_w + 1;
     const int pwend = min(w / stride_w + 1, pooled_width);
     Dtype gradient = 0;
-    const fp16* const top_diff_slice =
+    const Dtype* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
@@ -306,21 +300,21 @@ __global__ void AvePoolBackward(const int nthreads, const fp16* const top_diff,
         int hend = min(hstart + kernel_h, height + pad_h);
         int wend = min(wstart + kernel_w, width + pad_w);
         int pool_size = (hend - hstart) * (wend - wstart);
-        gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]) / pool_size;
+        gradient += top_diff_slice[ph * pooled_width + pw] / pool_size;
       }
     }
-    bottom_diff[index] = fp32tofp16_gpu(gradient);
+    bottom_diff[index] = gradient;
   }
 }
 
 
 template <typename Dtype>
 __global__ void StoPoolBackward(const int nthreads,
-    const Dtype* const rand_idx, const fp16* const top_diff,
+    const Dtype* const rand_idx, const Dtype* const top_diff,
     const int num, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
     const int kernel_h, const int kernel_w, const int stride_h,
-    const int stride_w, fp16* const bottom_diff) {
+    const int stride_w, Dtype* const bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
     // find out the local offset
@@ -335,15 +329,15 @@ __global__ void StoPoolBackward(const int nthreads,
     Dtype gradient = 0;
     const Dtype* const rand_idx_slice =
         rand_idx + (n * channels + c) * pooled_height * pooled_width;
-    const fp16* const top_diff_slice =
+    const Dtype* const top_diff_slice =
         top_diff + (n * channels + c) * pooled_height * pooled_width;
     for (int ph = phstart; ph < phend; ++ph) {
       for (int pw = pwstart; pw < pwend; ++pw) {
-        gradient += fp16tofp32_gpu(top_diff_slice[ph * pooled_width + pw]) *
+        gradient += top_diff_slice[ph * pooled_width + pw] *
             (index == static_cast<int>(rand_idx_slice[ph * pooled_width + pw]));
       }
     }
-    bottom_diff[index] = fp32tofp16_gpu(gradient);
+    bottom_diff[index] = gradient;
   }
 }
 
@@ -356,50 +350,53 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     return;
   }
   const fp16* top_diff = top[0]->gpu_diff();
+  this->temp_top_->Reshape(top[0]->shape());
+  Dtype* temp_top_diff = this->temp_top_->mutable_gpu_diff();
+  caffe_expand_blob(top[0]->count(), temp_top_diff, top_diff, top[0]->diff_bias);
+
   fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
   const int count = bottom[0]->count();
-  caffe_gpu_set_half(count, Dtype(0.), bottom_diff);
+  this->temp_bottom_->Reshape(bottom[0]->shape());
+  Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
+  caffe_gpu_set(count, Dtype(0.), temp_bottom_diff);
+
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;
-  const fp16* top_mask = NULL;
+  const Dtype* top_mask = NULL;
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     if (use_top_mask) {
-      top_mask = top[1]->gpu_data();
+      top_mask = this->temp_top_->gpu_diff();;
     } else {
       mask = max_idx_.gpu_data();
     }
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, mask, top_mask, top[0]->num(), channels_,
+        count, temp_top_diff, mask, top_mask, top[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_,
         kernel_h_, kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_,
-        bottom_diff);
+		temp_bottom_diff);
     break;
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
     AvePoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, top[0]->num(), channels_,
+        count, temp_top_diff, top[0]->num(), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
-        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, bottom_diff);
+        kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, temp_bottom_diff);
     break;
   case PoolingParameter_PoolMethod_STOCHASTIC:
     // NOLINT_NEXT_LINE(whitespace/operators)
     StoPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, rand_idx_.gpu_data(), top_diff,
+        count, rand_idx_.gpu_data(), temp_top_diff,
         top[0]->num(), channels_, height_, width_, pooled_height_,
         pooled_width_, kernel_h_, kernel_w_, stride_h_, stride_w_,
-        bottom_diff);
+		temp_bottom_diff);
     break;
   default:
     LOG(FATAL) << "Unknown pooling method.";
   }
-#ifdef SAMPLE_FLOATS
-      if(this->phase_ == TRAIN && this->sample_iter_) {
-        sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);
-      }
-#endif
+  caffe_compress_blob(count, temp_bottom_diff, bottom_diff, &(bottom[0]->diff_bias));
   CUDA_POST_KERNEL_CHECK;
 }
 
