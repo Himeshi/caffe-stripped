@@ -19,6 +19,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   fp16* top_data = top[0]->mutable_gpu_data();
   this->temp_top_->Reshape(top[0]->shape());
   Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
+  caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
 
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
@@ -76,6 +77,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
     fp16* weight = this->blobs_[0]->mutable_gpu_diff();
     Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_diff();
+    caffe_expand_blob(this->blobs_dtype_[0]->count(), weight_temp, weight, this->blobs_[0]->diff_bias);
 
     // Gradient with respect to weight
     if (transpose_) {
@@ -100,6 +102,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
     fp16* bias = this->blobs_[1]->mutable_gpu_diff();
     Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_diff();
+    caffe_expand_blob(this->blobs_dtype_[1]->count(), bias_temp, bias, this->blobs_[1]->diff_bias);
 
     // Gradient with respect to bias
     caffe_gpu_gemv(CblasTrans, M_, N_, Dtype(1.), top_diff_dtype,
@@ -124,6 +127,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
     this->temp_bottom_->Reshape(bottom[0]->shape());
     Dtype* bottom_diff_temp = this->temp_bottom_->mutable_gpu_diff();
+    caffe_expand_blob(bottom[0]->count(), bottom_diff_temp, bottom_diff, bottom[0]->diff_bias);
 
     if (transpose_) {
       caffe_gpu_gemm(CblasNoTrans, CblasTrans,

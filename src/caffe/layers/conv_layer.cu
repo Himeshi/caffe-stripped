@@ -31,6 +31,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     fp16* top_data = top[i]->mutable_gpu_data();
     this->temp_top_->Reshape(top[i]->shape());
     Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
+    caffe_expand_blob(top[i]->count(), temp_top_data, top_data, top[i]->data_bias);
 
     for (int n = 0; n < this->num_; ++n) {
       this->forward_gpu_gemm(bottom_data_dtype + n * this->bottom_dim_, weight_temp_data,
@@ -60,6 +61,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
   fp16* weight_diff = this->blobs_[0]->mutable_gpu_diff();
   Dtype* temp_weight_diff = this->blobs_dtype_[0]->mutable_gpu_diff();
+  caffe_expand_blob(weight_count, temp_weight_diff, weight_diff, this->blobs_[0]->diff_bias);
 
   for (int i = 0; i < top.size(); ++i) {
 	const fp16* top_diff = top[i]->gpu_diff();
@@ -71,6 +73,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     if (this->bias_term_ && this->param_propagate_down_[1]) {
       fp16* bias_diff = this->blobs_[1]->mutable_gpu_diff();
       Dtype* temp_bias_diff = this->blobs_dtype_[1]->mutable_gpu_diff();
+      caffe_expand_blob(this->blobs_dtype_[1]->count(), temp_bias_diff, bias_diff, this->blobs_[1]->diff_bias);
       for (int n = 0; n < this->num_; ++n) {
         this->backward_gpu_bias(temp_bias_diff, temp_top_diff + n * this->top_dim_);
       }
@@ -86,6 +89,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
       fp16* bottom_diff = bottom[i]->mutable_gpu_diff();
       Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
+      caffe_expand_blob(bottom_count, temp_bottom_diff, bottom_diff, bottom[i]->diff_bias);
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
