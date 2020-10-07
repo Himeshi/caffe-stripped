@@ -142,6 +142,7 @@ void SGDSolver<Dtype>::Normalize(int param_id) {
 #ifndef CPU_ONLY
     caffe_gpu_scal_half(net_params[param_id]->count(), accum_normalization,
         net_params[param_id]->mutable_gpu_diff_half());
+    net_params[param_id]->diff_bias = accum_normalization * net_params[param_id]->diff_bias;
 #else
     NO_GPU;
 #endif
@@ -188,18 +189,21 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
     if (local_decay) {
       if (regularization_type == "L2") {
         // add weight decay
-        caffe_gpu_axpy_half(net_params[param_id]->count(),
-            local_decay,
-            net_params[param_id]->gpu_data(),
-            net_params[param_id]->mutable_gpu_diff());
+    	caffe_gpu_axpy_half_with_bias(net_params[param_id]->count(),
+    	    local_decay,
+    	    net_params[param_id]->gpu_data(),
+    	    net_params[param_id]->mutable_gpu_diff(),
+    	  	net_params[param_id]->data_bias, &(net_params[param_id]->diff_bias));
       } else if (regularization_type == "L1") {
-        caffe_gpu_sign(net_params[param_id]->count(),
-            net_params[param_id]->gpu_data(),
-            temp_[param_id]->mutable_gpu_data());
-        caffe_gpu_axpy_half(net_params[param_id]->count(),
-            local_decay,
-            temp_[param_id]->gpu_data(),
-            net_params[param_id]->mutable_gpu_diff());
+    	  caffe_gpu_sign(net_params[param_id]->count(),
+    	      net_params[param_id]->gpu_data(),
+    	      temp_[param_id]->mutable_gpu_data());
+    	      temp_[param_id]->data_bias = net_params[param_id]->data_bias;
+    	  caffe_gpu_axpy_half_with_bias(net_params[param_id]->count(),
+    	      local_decay,
+    	      temp_[param_id]->gpu_data(),
+    	      net_params[param_id]->mutable_gpu_diff(),
+    	      temp_[param_id]->data_bias, &(net_params[param_id]->diff_bias));
       } else {
         LOG(FATAL) << "Unknown regularization type: " << regularization_type;
       }
@@ -239,10 +243,26 @@ void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
-    sgd_update_gpu(net_params[param_id]->count(),
-        net_params[param_id]->mutable_gpu_diff(),
-        history_[param_id]->mutable_gpu_data(),
-        momentum, local_rate);
+	  Dtype* g_temp = net_params_dtype[param_id]->mutable_gpu_diff();
+	    caffe_expand_blob(net_params[param_id]->count(),
+	  			g_temp, net_params[param_id]->gpu_diff(),
+	  			net_params[param_id]->diff_bias);
+
+	  Dtype* h_temp = net_params_dtype[param_id]->mutable_gpu_data();
+	    caffe_expand_blob(history_[param_id]->count(),
+	  			h_temp, history_[param_id]->gpu_data(),
+	  			history_[param_id]->data_bias);
+
+	    sgd_update_gpu(net_params[param_id]->count(),
+	          g_temp, h_temp, momentum, local_rate);
+
+	    caffe_compress_blob(net_params[param_id]->count(), g_temp,
+	          net_params[param_id]->mutable_gpu_diff(),
+	          &(net_params[param_id]->diff_bias));
+
+	    caffe_compress_blob(history_[param_id]->count(), h_temp,
+	          history_[param_id]->mutable_gpu_data(),
+	          &(history_[param_id]->data_bias));
 #else
     NO_GPU;
 #endif
