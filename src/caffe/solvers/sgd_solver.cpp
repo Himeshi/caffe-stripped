@@ -220,7 +220,7 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
 
 #ifndef CPU_ONLY
 template <typename Dtype>
-void sgd_update_gpu(int N, fp16* g, fp16* h, Dtype momentum,
+void sgd_update_gpu(int N, Dtype* g, Dtype* h, Dtype momentum,
 		Dtype local_rate);
 #endif
 
