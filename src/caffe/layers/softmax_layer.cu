@@ -105,6 +105,7 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   caffe_expand_blob(count, temp_bottom_converted, bottom_data, bottom[0]->data_bias);
   const Dtype* temp_bottom_data = temp_bottom->gpu_data();
 
+  fp16* top_data = top[0]->mutable_gpu_data();
   (this->temp_top_)->Reshape(top[0]->shape());
   Dtype* temp_top_data = (this->temp_top_)->mutable_gpu_data();
   Dtype* scale_data = scale_.mutable_gpu_data();
