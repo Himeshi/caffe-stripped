@@ -102,7 +102,7 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   temp_bottom->Reshape(bottom[0]->shape());
   Dtype* temp_bottom_converted = temp_bottom->mutable_gpu_data();
   int count = bottom[0]->count();
-  convert_to_float<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count, bottom_data, temp_bottom_converted);
+  caffe_expand_blob(count, temp_bottom_converted, bottom_data, bottom[0]->data_bias);
   const Dtype* temp_bottom_data = temp_bottom->gpu_data();
 
   (this->temp_top_)->Reshape(top[0]->shape());
@@ -137,7 +137,7 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       CAFFE_CUDA_NUM_THREADS>>>(count, outer_num_, channels, inner_num_,
       scale_data, temp_top_data);
 
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count, temp_top_data, top[0]->mutable_gpu_data());
+  caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
 }
 
 template <typename Dtype>
