@@ -186,6 +186,9 @@ class Net {
   inline const vector<Blob<fp16>*>& learnable_params() const {
     return learnable_params_;
   }
+  inline const vector<Blob<Dtype>*>& learnable_params_dtype() const {
+    return learnable_params_dtype_;
+  }
   /// @brief returns the learnable parameter learning rate multipliers
   inline const vector<float>& params_lr() const { return params_lr_; }
   inline const vector<bool>& has_params_lr() const { return has_params_lr_; }
@@ -327,7 +330,9 @@ class Net {
   vector<Blob<Dtype>*> net_output_blobs_dtype_;
   /// The parameters in the network.
   vector<shared_ptr<Blob<fp16> > > params_;
+  vector<shared_ptr<Blob<Dtype> > > params_dtype_;
   vector<Blob<fp16>*> learnable_params_;
+  vector<Blob<Dtype>*> learnable_params_dtype_;
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),

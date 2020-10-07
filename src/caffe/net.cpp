@@ -450,6 +450,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
   }
   const int net_param_id = params_.size();
   params_.push_back(layers_[layer_id]->blobs()[param_id]);
+  params_dtype_.push_back(layers_[layer_id]->blobs_dtype()[param_id]);
   param_id_vecs_[layer_id].push_back(net_param_id);
   param_layer_indices_.push_back(make_pair(layer_id, param_id));
   ParamSpec default_param_spec;
@@ -466,6 +467,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
     }
     const int learnable_param_id = learnable_params_.size();
     learnable_params_.push_back(params_[net_param_id].get());
+    learnable_params_dtype_.push_back(params_dtype_[net_param_id].get());
     learnable_param_ids_.push_back(learnable_param_id);
     has_params_lr_.push_back(param_spec->has_lr_mult());
     has_params_decay_.push_back(param_spec->has_decay_mult());

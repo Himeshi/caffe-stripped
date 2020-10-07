@@ -227,6 +227,7 @@ void sgd_update_gpu(int N, Dtype* g, Dtype* h, Dtype momentum,
 template <typename Dtype>
 void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
+  const vector<Blob<Dtype>*>& net_params_dtype = this->net_->learnable_params_dtype();
   const vector<float>& net_params_lr = this->net_->params_lr();
   Dtype momentum = this->param_.momentum();
   Dtype local_rate = rate * net_params_lr[param_id];
