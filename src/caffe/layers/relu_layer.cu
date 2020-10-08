@@ -68,6 +68,7 @@ void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
     Dtype* bottom_diff_dtype = this->temp_bottom_->mutable_gpu_diff();
+    caffe_expand_blob(bottom[0]->count(), bottom_diff_dtype, bottom_diff, bottom[0]->diff_bias);
 
     Dtype negative_slope = this->layer_param_.relu_param().negative_slope();
     // NOLINT_NEXT_LINE(whitespace/operators)

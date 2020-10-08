@@ -20,7 +20,7 @@ class Filler {
  public:
   explicit Filler(const FillerParameter& param) : filler_param_(param) {}
   virtual ~Filler() {}
-  virtual void Fill(Blob<fp16>* blob) = 0;
+  virtual void Fill(Blob<Dtype>* blob) = 0;
  protected:
   FillerParameter filler_param_;
 };  // class Filler
@@ -32,10 +32,10 @@ class ConstantFiller : public Filler<Dtype> {
  public:
   explicit ConstantFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<fp16>* blob) {
-    fp16* data = blob->mutable_cpu_data();
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
     const int count = blob->count();
-    const fp16 value = fp32tofp16(this->filler_param_.value());
+    const Dtype value = this->filler_param_.value();
     CHECK(count);
     for (int i = 0; i < count; ++i) {
       data[i] = value;
@@ -51,7 +51,7 @@ class UniformFiller : public Filler<Dtype> {
  public:
   explicit UniformFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<fp16>* blob) {
+  virtual void Fill(Blob<Dtype>* blob) {
     CHECK(blob->count());
     caffe_rng_uniform<Dtype>(blob->count(), Dtype(this->filler_param_.min()),
         Dtype(this->filler_param_.max()), blob->mutable_cpu_data());
@@ -66,8 +66,8 @@ class GaussianFiller : public Filler<Dtype> {
  public:
   explicit GaussianFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<fp16>* blob) {
-	  fp16* data = blob->mutable_cpu_data();
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
     CHECK(blob->count());
     caffe_rng_gaussian<Dtype>(blob->count(), Dtype(this->filler_param_.mean()),
         Dtype(this->filler_param_.std()), blob->mutable_cpu_data());
@@ -85,7 +85,7 @@ class GaussianFiller : public Filler<Dtype> {
       int* mask = reinterpret_cast<int*>(rand_vec_->mutable_cpu_data());
       caffe_rng_bernoulli(blob->count(), non_zero_probability, mask);
       for (int i = 0; i < blob->count(); ++i) {
-        data[i] = fp32tofp16(fp16tofp32(data[i]) * mask[i]);
+        data[i] *= mask[i];
       }
     }
   }
@@ -102,8 +102,8 @@ class PositiveUnitballFiller : public Filler<Dtype> {
  public:
   explicit PositiveUnitballFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<fp16>* blob) {
-    fp16* data = blob->mutable_cpu_data();
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
     DCHECK(blob->count());
     caffe_rng_uniform<Dtype>(blob->count(), 0, 1, blob->mutable_cpu_data());
     // We expect the filler to not be called very frequently, so we will
@@ -113,10 +113,10 @@ class PositiveUnitballFiller : public Filler<Dtype> {
     for (int i = 0; i < blob->shape(0); ++i) {
       Dtype sum = 0;
       for (int j = 0; j < dim; ++j) {
-        sum += fp16tofp32(data[i * dim + j]);
+        sum += data[i * dim + j];
       }
       for (int j = 0; j < dim; ++j) {
-        data[i * dim + j] = fp32tofp16(fp16tofp32(data[i * dim + j]) / sum);
+        data[i * dim + j] /= sum;
       }
     }
     CHECK_EQ(this->filler_param_.sparse(), -1)
@@ -145,7 +145,7 @@ class XavierFiller : public Filler<Dtype> {
  public:
   explicit XavierFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<fp16>* blob) {
+  virtual void Fill(Blob<Dtype>* blob) {
     CHECK(blob->count());
     int fan_in = blob->count() / blob->shape(0);
     // Compatibility with ND blobs
@@ -190,7 +190,7 @@ class MSRAFiller : public Filler<Dtype> {
  public:
   explicit MSRAFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<fp16>* blob) {
+  virtual void Fill(Blob<Dtype>* blob) {
     CHECK(blob->count());
     int fan_in = blob->count() / blob->shape(0);
     // Compatibility with ND blobs
@@ -251,16 +251,16 @@ class BilinearFiller : public Filler<Dtype> {
  public:
   explicit BilinearFiller(const FillerParameter& param)
       : Filler<Dtype>(param) {}
-  virtual void Fill(Blob<fp16>* blob) {
+  virtual void Fill(Blob<Dtype>* blob) {
     CHECK_EQ(blob->num_axes(), 4) << "Blob must be 4 dim.";
     CHECK_EQ(blob->width(), blob->height()) << "Filter must be square";
-    fp16* data = blob->mutable_cpu_data();
+    Dtype* data = blob->mutable_cpu_data();
     int f = ceil(blob->width() / 2.);
     Dtype c = (blob->width() - 1) / (2. * f);
     for (int i = 0; i < blob->count(); ++i) {
       Dtype x = i % blob->width();
       Dtype y = (i / blob->width()) % blob->height();
-      data[i] = fp32tofp16((1 - fabs(x / f - c)) * (1 - fabs(y / f - c)));
+      data[i] = (1 - fabs(x / f - c)) * (1 - fabs(y / f - c));
     }
     CHECK_EQ(this->filler_param_.sparse(), -1)
          << "Sparsity not supported by this Filler.";
