@@ -306,7 +306,7 @@ void caffe_gpu_rng_bernoulli(const int n, const Dtype p, int* r);
 
 template <typename Dtype>
 void caffe_gpu_dot_half(const int n, const fp16* x, const fp16* y,
-    Dtype* out);
+    Dtype* out, float x_bias, float y_bias);
 
 template <typename Dtype>
 void caffe_gpu_dot(const int n, const Dtype* x, const Dtype* y, Dtype* out);

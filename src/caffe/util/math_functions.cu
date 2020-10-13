@@ -1030,8 +1030,9 @@ void caffe_compress_blob(int N, float* in, fp16* out, float* bias) {
   CUBLAS_CHECK(cublasIsamax(Caffe::cublas_handle(), N, in, 1, &max_index));
   cudaMemcpy(bias, in + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
   *bias = fabsf(*bias);
-  if(*bias == 0)
+  if(*bias == 0) {
     *bias = 1.0;
+  }
 
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
 }
@@ -1184,50 +1185,27 @@ __global__ void DotKernelStepTwo(const int n, float* x) {
 
 template <>
 void caffe_gpu_dot_half<float>(const int n, const fp16* x, const fp16* y,
-    float* out) {
-#ifdef CUSTOM_DOT
-  #ifdef GEMM_NO_MALLOC
-    float* temp = cuda_buffer;
-    if (((n + DOT_BLOCK_SIZE - 1) / DOT_BLOCK_SIZE)> CUDA_BUFFER_SIZE ){
-      printf(" buffer overflow, need to increase CUDA_BUFFER_SIZE to greater than %d \n",((n + DOT_BLOCK_SIZE - 1) / DOT_BLOCK_SIZE)  );
-      exit(0);
-    }
-  #else
-    float* temp;
-    cudaMalloc(&temp, ((n + DOT_BLOCK_SIZE - 1) / DOT_BLOCK_SIZE)  * sizeof(float));
-  #endif
-  DotKernel<<<(n + DOT_BLOCK_SIZE - 1) / DOT_BLOCK_SIZE, DOT_BLOCK_SIZE>>>(n, x, y, temp);
-  int ntemp = (DOT_BLOCK_SIZE + n - 1) / DOT_BLOCK_SIZE;
-  while(ntemp > 1) {
-    DotKernelStepTwo<<<(DOT_BLOCK_SIZE + ntemp - 1) / DOT_BLOCK_SIZE, DOT_BLOCK_SIZE>>>(ntemp, temp);
-    ntemp = (DOT_BLOCK_SIZE + ntemp - 1) / DOT_BLOCK_SIZE;
-  }
-  cudaMemcpy(out, temp, sizeof(float), cudaMemcpyDeviceToHost);
-  #ifndef GEMM_NO_MALLOC
-    cudaFree(temp);
-  #endif
-#else
+    float* out, float x_bias, float y_bias) {
   float* tempX;
   float* tempY;
   cudaMalloc(&tempX, n * sizeof(float));
   cudaMalloc(&tempY, n * sizeof(float));
-  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
-  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY);
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX, x_bias);
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY, y_bias);
   CUBLAS_CHECK(cublasSdot(Caffe::cublas_handle(), n, tempX, 1, tempY, 1, out));
   cudaFree(tempX);
   cudaFree(tempY);
-#endif
 }
 
 template <>
 void caffe_gpu_dot_half<double>(const int n, const fp16* x, const fp16* y,
-    double* out) {
+    double* out, float x_bias, float y_bias) {
   double* tempX;
   double* tempY;
   cudaMalloc(&tempX, n * sizeof(double));
   cudaMalloc(&tempY, n * sizeof(double));
-  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX);
-  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY);
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, x, tempX, x_bias);
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, y, tempY, y_bias);
   CUBLAS_CHECK(cublasDdot(Caffe::cublas_handle(), n, tempX, 1, tempY, 1, out));
   cudaFree(tempX);
   cudaFree(tempY);

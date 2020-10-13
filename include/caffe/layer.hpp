@@ -493,7 +493,7 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<fp16>*>& bottom,
       const fp16* data = top[top_id]->gpu_data();
       const fp16* loss_weights = top[top_id]->gpu_diff();
       Dtype blob_loss = 0;
-      caffe_gpu_dot_half(count, data, loss_weights, &blob_loss);
+      caffe_gpu_dot_half(count, data, loss_weights, &blob_loss, top[top_id]->data_bias, top[top_id]->diff_bias);
       loss += blob_loss;
     }
 #endif
