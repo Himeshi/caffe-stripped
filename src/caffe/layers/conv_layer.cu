@@ -44,8 +44,8 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         const Dtype* bias_temp_data = this->blobs_dtype_[1]->gpu_data();
         this->forward_gpu_bias(temp_top_data + n * this->top_dim_, bias_temp_data);
       }
-      caffe_compress_blob(top[i]->count(), temp_top_data, top_data, &(top[i]->data_bias));
     }
+    caffe_compress_blob(top[i]->count(), temp_top_data, top_data, &(top[i]->data_bias));
   }
 }
 
