@@ -81,11 +81,16 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     }
 
     if (this->param_propagate_down_[0] || propagate_down[i]) {
-      const fp16* bottom_data = bottom[i]->gpu_data();
-      this->temp_bottom_->Reshape(bottom[i]->shape());
-      Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
       int bottom_count = bottom[i]->count();
-      caffe_expand_blob(bottom_count, temp_bottom_data, bottom_data, bottom[i]->data_bias);
+      Dtype* temp_bottom_data;
+      if(this->layer_param_.name() == "conv1") {
+        temp_bottom_data = bottom_dtype[i]->mutable_gpu_data();
+      } else {
+        const fp16* bottom_data = bottom[i]->gpu_data();
+        this->temp_bottom_->Reshape(bottom[i]->shape());
+        temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
+        caffe_expand_blob(bottom_count, temp_bottom_data, bottom_data, bottom[i]->data_bias);
+      }
 
       fp16* bottom_diff = bottom[i]->mutable_gpu_diff();
       Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
