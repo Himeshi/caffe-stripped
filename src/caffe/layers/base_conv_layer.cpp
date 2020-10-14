@@ -387,9 +387,9 @@ void BaseConvolutionLayer<Dtype>::forward_gpu_gemm_half_with_float_weights(const
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::forward_gpu_bias(Dtype* output,
     const Dtype* bias) {
-  /*caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_output_,
-      out_spatial_dim_, 1, fp32tofp16(1.), bias, bias_multiplier_.gpu_data(),
-	  fp32tofp16(1.), output);*/
+  caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_output_,
+      out_spatial_dim_, 1, (Dtype)1., bias, bias_multiplier_.gpu_data(),
+	  (Dtype)1., output);
 }
 
 template <typename Dtype>
@@ -498,8 +498,8 @@ void BaseConvolutionLayer<Dtype>::weight_gpu_gemm_half(const fp16* input,
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::backward_gpu_bias(Dtype* bias,
     const Dtype* input) {
-  /*caffe_gpu_gemv<Dtype>(CblasNoTrans, num_output_, out_spatial_dim_, 1.,
-      input, bias_multiplier_.gpu_data(), 1., bias);*/
+  caffe_gpu_gemv<Dtype>(CblasNoTrans, num_output_, out_spatial_dim_, 1.,
+      input, bias_multiplier_.gpu_data(), 1., bias);
 }
 
 template <typename Dtype>
