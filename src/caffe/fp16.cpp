@@ -22,12 +22,12 @@ float fp16tofp32(fp16 p) {
 	// get regime
 	v.ui = p << POSIT_LENGTH_PLUS_ONE;
 	int regime_length = 0, regime = 0;
-	if(!regime_sign) {
+	if(regime_sign) {
       v.ui &= 0x7fffffff;
 	} else {
 	  regime_length = (__builtin_clz(v.ui));
       v.ui <<= (regime_length + 1);
-      int regime = (regime_length - regime_sign) << _G_ESIZE;
+      regime = (regime_length - regime_sign) << _G_ESIZE;
       regime = (regime ^ -regime_sign) + regime_sign;
 	}
 
@@ -67,7 +67,7 @@ fp16 fp32tofp16(float f) {
 	//if exponent is negative
 	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
 	int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
-	if((regime_and_exp_length - _G_ESIZE) >= 0 && !exp_sign) {
+	if(exp == 0) {
 		regime_and_exp_length = 1;
 		regime_and_exp = 1;
 	}
