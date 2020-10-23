@@ -38,6 +38,10 @@ float fp16tofp32(fp16 p);
 
 fp16 fp32tofp16(float f);
 
+float fp16tofp32_bwd(fp16 p);
+
+fp16 fp32tofp16_bwd(float f);
+
 void print_gpu_float_array(const float* d_data, int size);
 
 void print_gpu_float_array(const double* d_data, int size);
@@ -57,6 +61,20 @@ __global__ void convert_to_fp16(const int n, const float* in, fp16* out, float b
 __global__ void convert_to_fp16(const int n, const double* in, fp16* out, float bias = 1.);
 
 __global__ void convert_to_float(const int n, const fp16* in, float* out, float bias = 1.);
+
+__global__ void convert_to_fp16_bwd(const int n, float* in, fp16* out, float bias = 1.);
+
+__global__ void convert_to_fp16_bwd(const int n, double* in, fp16* out, float bias = 1.);
+
+__global__ void convert_to_float_bwd(const int n, fp16* in, float* out, float bias = 1.);
+
+__global__ void convert_to_float_bwd(const int n, fp16* in, double* out, float bias = 1.);
+
+__global__ void convert_to_fp16_bwd(const int n, const float* in, fp16* out, float bias = 1.);
+
+__global__ void convert_to_fp16_bwd(const int n, const double* in, fp16* out, float bias = 1.);
+
+__global__ void convert_to_float_bwd(const int n, const fp16* in, float* out, float bias = 1.);
 
 __global__ void convert_to_float_3in1out(const int n1, const int n2, const int n3, const fp16* in1, const fp16* in2, const fp16* in3, float* out);
 
