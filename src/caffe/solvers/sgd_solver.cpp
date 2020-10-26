@@ -131,7 +131,7 @@ void SGDSolver<Dtype>::Normalize(int param_id) {
   if (this->param_.iter_size() == 1) {
     return;
   } else {
-    LOG(FATAL) << "Normalization with bias not handled."
+    LOG(FATAL) << "Normalization with bias not handled.";
   }
   // Scale gradient to counterbalance accumulation.
   const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
