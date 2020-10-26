@@ -265,7 +265,7 @@ void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 	          net_params[param_id]->mutable_gpu_diff(),
 	          &(net_params[param_id]->diff_bias));
 
-	    caffe_compress_blob_bwd(history_[param_id]->count(), h_temp,
+	    caffe_compress_blob(history_[param_id]->count(), h_temp,
 	          history_[param_id]->mutable_gpu_data(),
 	          &(history_[param_id]->data_bias));
 #else
