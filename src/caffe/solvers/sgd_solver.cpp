@@ -128,7 +128,11 @@ void SGDSolver<Dtype>::ApplyUpdate() {
 
 template <typename Dtype>
 void SGDSolver<Dtype>::Normalize(int param_id) {
-  if (this->param_.iter_size() == 1) { return; }
+  if (this->param_.iter_size() == 1) {
+    return;
+  } else {
+    LOG(FATAL) << "Normalization with bias not handled."
+  }
   // Scale gradient to counterbalance accumulation.
   const vector<Blob<fp16>*>& net_params = this->net_->learnable_params();
   const Dtype accum_normalization = Dtype(1.) / this->param_.iter_size();
@@ -245,7 +249,7 @@ void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   case Caffe::GPU: {
 #ifndef CPU_ONLY
 	  Dtype* g_temp = net_params_dtype[param_id]->mutable_gpu_diff();
-	    caffe_expand_blob(net_params[param_id]->count(),
+	    caffe_expand_blob_bwd(net_params[param_id]->count(),
 	  			g_temp, net_params[param_id]->gpu_diff(),
 	  			net_params[param_id]->diff_bias);
 
@@ -257,11 +261,11 @@ void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
 	    sgd_update_gpu(net_params[param_id]->count(),
 	          g_temp, h_temp, momentum, local_rate);
 
-	    caffe_compress_blob(net_params[param_id]->count(), g_temp,
+	    caffe_compress_blob_bwd(net_params[param_id]->count(), g_temp,
 	          net_params[param_id]->mutable_gpu_diff(),
 	          &(net_params[param_id]->diff_bias));
 
-	    caffe_compress_blob(history_[param_id]->count(), h_temp,
+	    caffe_compress_blob_bwd(history_[param_id]->count(), h_temp,
 	          history_[param_id]->mutable_gpu_data(),
 	          &(history_[param_id]->data_bias));
 #else

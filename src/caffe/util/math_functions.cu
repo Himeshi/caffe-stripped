@@ -946,7 +946,7 @@ void caffe_gpu_axpy_with_bias<fp16>(const int N, const fp16 alpha, const fp16* X
   cudaMalloc(&tempY, N * sizeof(float));
   const float alpha_float = fp16tofp32(alpha);
 
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
+  convert_to_float_bwd<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
 
   CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha_float, tempX, 1, tempY, 1));
@@ -977,7 +977,7 @@ void caffe_gpu_axpy_half_with_bias(const int N, const float alpha, const fp16* X
   cudaMalloc(&tempX, N * sizeof(float));
   cudaMalloc(&tempY, N * sizeof(float));
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
+  convert_to_float_bwd<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
 
   CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha, tempX, 1, tempY, 1));
 
@@ -994,7 +994,7 @@ void caffe_gpu_axpy_half_with_bias(const int N, const float alpha, const fp16* X
     *y_bias = v.f;
   }
 
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
+  convert_to_fp16_bwd<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
   cudaFree(tempX);
   cudaFree(tempY);
 }
@@ -1007,7 +1007,7 @@ void caffe_gpu_axpy_half_with_bias(const int N, const double alpha, const fp16* 
   cudaMalloc(&tempX, N * sizeof(double));
   cudaMalloc(&tempY, N * sizeof(double));
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
-  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
+  convert_to_float_bwd<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
 
   CUBLAS_CHECK(cublasDaxpy(Caffe::cublas_handle(), N, &alpha, tempX, 1, tempY, 1));
 
@@ -1024,7 +1024,7 @@ void caffe_gpu_axpy_half_with_bias(const int N, const double alpha, const fp16* 
     *y_bias = v.f;
   }
 
-  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
+  convert_to_fp16_bwd<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
   cudaFree(tempX);
   cudaFree(tempY);
 }
