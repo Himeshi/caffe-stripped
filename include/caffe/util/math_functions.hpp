@@ -253,6 +253,9 @@ template <typename Dtype>
 void caffe_gpu_scal(const int N, const Dtype alpha, Dtype *X);
 
 template <typename Dtype>
+void caffe_gpu_scal_half_bwd(const int N, const Dtype alpha, fp16 *X);
+
+template <typename Dtype>
 void caffe_gpu_scal_half(const int N, const Dtype alpha, fp16 *X);
 
 #ifndef CPU_ONLY

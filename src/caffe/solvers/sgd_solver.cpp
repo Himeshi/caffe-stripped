@@ -144,7 +144,7 @@ void SGDSolver<Dtype>::Normalize(int param_id) {
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
-    caffe_gpu_scal_half(net_params[param_id]->count(), accum_normalization,
+    caffe_gpu_scal_half_bwd(net_params[param_id]->count(), accum_normalization,
         net_params[param_id]->mutable_gpu_diff_half());
     net_params[param_id]->diff_bias = accum_normalization * net_params[param_id]->diff_bias;
 #else
