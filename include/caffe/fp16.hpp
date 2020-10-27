@@ -48,6 +48,8 @@ void print_gpu_float_array(const double* d_data, int size);
 
 void print_gpu_fp16_array(const fp16* d_data, int size, float bias = 1.0);
 
+void print_gpu_fp16_array_bwd(const fp16* d_data, int size, float bias = 1.0);
+
 __global__ void convert_to_fp16(const int n, float* in, fp16* out, float bias = 1.);
 
 __global__ void convert_to_fp16(const int n, double* in, fp16* out, float bias = 1.);
