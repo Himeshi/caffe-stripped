@@ -77,7 +77,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
     fp16* weight = this->blobs_[0]->mutable_gpu_diff();
     Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_diff();
-    caffe_expand_blob(this->blobs_dtype_[0]->count(), weight_temp, weight, this->blobs_[0]->diff_bias);
+    caffe_expand_blob_bwd(this->blobs_dtype_[0]->count(), weight_temp, weight, this->blobs_[0]->diff_bias);
 
     // Gradient with respect to weight
     if (transpose_) {
