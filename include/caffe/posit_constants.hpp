@@ -11,6 +11,9 @@
 #define FP16_LIMB_SIZE 8
 #define FP16_TYPE uint8_t
 
+#define _G_NBITS 8
+#define _G_ESIZE 1
+
 #define SCALING_FACTOR 1.0
 
 #define SIGN_MASK 0x8000
