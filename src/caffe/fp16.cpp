@@ -54,10 +54,11 @@ fp16 fp32tofp16(float f) {
 
 	//assemble
 	uint32_t temp = fraction >> (exp + 1);
-	int rb = (temp & POSIT_HALFWAY_BIT_MASK) && ((temp & 0x01000000) || (temp & 0x007fffff));
+	int rb = (temp & POSIT_HALFWAY_BIT_MASK) && ((temp & 0x00010000) || (temp & 0x00007fff));
 	temp = (temp >> 24) + rb;
-	temp |= (sign << 7);
+	temp <<= 8;
 	p ^= (temp ^ p) & -((v.si < _G_MAXREAL_INT) & (v.si > _G_MINREAL_INT));
+	p |= (sign << 15);
 
 	return p;
 }
