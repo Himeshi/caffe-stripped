@@ -23,62 +23,63 @@ float fp16tofp32(fp16 p) {
 	v.ui = p << POSIT_LENGTH_PLUS_ONE;
 	//int regime_length = (__builtin_clz(v.ui) & -!regime_sign) + (__builtin_clz(~v.ui) & -regime_sign);
 	int regime_length;
-	if(regime_sign)
-	  regime_length = (__builtin_clz(~v.ui));
-	else
-	  regime_length = (__builtin_clz(v.ui));
-
-	if(regime_length >= _G_MAX_REGIME_SIZE && regime_sign) {
-		regime_length = _G_MAX_REGIME_SIZE;
-		v.ui <<= regime_length;
-	} else {
-		v.ui <<= (regime_length + 1);
-	}
-
+	  if(regime_sign)
+	    regime_length = (__builtin_clz(~v.ui));
+	  else
+	    regime_length = (__builtin_clz(v.ui));
 	int regime = (regime_length - regime_sign) << _G_ESIZE;
 	regime = (regime ^ -regime_sign) + regime_sign;
 
 	// assemble
-	v.ui >>= (FLOAT_SIGN_PLUS_EXP_LENGTH - _G_ESIZE);
+	v.ui <<= (regime_length + 1);
+	if (regime_sign) {
+        regime -= (v.ui >> (FLOAT_SIZE - _G_ESIZE));
+        regime *= 2;
+	} else {
+        regime -= (v.ui >> (FLOAT_SIZE - _G_ESIZE));
+        regime = 2 * regime - 1;
+	}
+	regime = abs(regime);
+
+	v.ui <<= _G_ESIZE;
+	v.ui >>= FLOAT_SIGN_PLUS_EXP_LENGTH;
 	v.ui += ((SINGLE_PRECISION_BIAS - regime) << FLOAT_EXPONENT_SHIFT);
 
 	v.si ^= (FLOAT_INF ^ v.si) & -(p == _G_INFP);
 	v.si ^= (0 ^ v.si) & -(p == 0);
 
 	v.ui |= (sign << FLOAT_SIGN_SHIFT);
-	return (v.f * SCALING_FACTOR);
+	return v.f;
 }
 
 fp16 fp32tofp16(float f) {
 	fp16 p = 0;
 	union Bits v;
-	v.f = f / SCALING_FACTOR;
+	v.f = f;
 	bool sign = v.ui & FLOAT_SIGN_MASK;
 	v.ui &= 0x7FFFFFFF;
 
 	p ^= (p ^_G_MAXREALP) & -(v.si >= _G_MAXREAL_INT);
-        p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
+	p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
 	p ^= (p ^ _G_MINREALP) & -(v.si != 0 && v.si <= _G_MINREAL_INT);
 
 	// min posit exponent in 16, 3 is 112
 	// therefore all the float subnormals will be handled
 	// in the previous if statement
 
-	// get exponent sign
-	bool exp_sign = !(v.ui >> FLOAT_EXP_SIGN_SHIFT);
-
 	//get regime and exponent
 	uint32_t exp = abs((v.si >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS);
-	int regime = exp >> _G_ESIZE;
-	TEMP_TYPE regime_and_exp = (((1 << (regime + 1)) - 1) << (_G_ESIZE + 1)) | (exp & POSIT_EXPONENT_MASK);
+	bool exp_sign = (exp & 1);
+	if(exp_sign) {
+		exp = (exp / 2) + 1;
+	} else {
+		exp /= 2;
+	}
+
+	TEMP_TYPE regime_and_exp = (((1 << ((exp >> _G_ESIZE) + 1)) - 1) << (_G_ESIZE + 1)) | (exp & POSIT_EXPONENT_MASK);
 	//if exponent is negative
 	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
 	int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
-	if((regime_and_exp_length - _G_ESIZE) > _G_MAX_REGIME_SIZE && !exp_sign) {
-		regime_and_exp_length -= 1;
-		regime_and_exp >>= (_G_ESIZE + 1);
-		regime_and_exp = (regime_and_exp << _G_ESIZE) | (exp & POSIT_EXPONENT_MASK);
-	}
 
 	//assemble
 	regime_and_exp <<= (UNSIGNED_LONG_LONG_SIZE - regime_and_exp_length);
