@@ -36,7 +36,7 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
   else
     regime_length = (__clz(v.ui));
 
-  if(regime_length >= _G_MAX_REGIME_SIZE && regime_sign) {
+  if(regime_length >= _G_MAX_REGIME_SIZE) {
     regime_length = _G_MAX_REGIME_SIZE;
     v.ui <<= regime_length;
   } else {
@@ -54,14 +54,14 @@ __device__ __inline__ float fp16tofp32_gpu(fp16 p) {
   v.si ^= (0 ^ v.si) & -(p == 0);
 
   v.ui |= (sign << FLOAT_SIGN_SHIFT);
-  return (v.f * SCALING_FACTOR);
+  return v.f;
 
 }
 
 __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   fp16 p = 0;
   union Bits v;
-  v.f = f / SCALING_FACTOR;
+  v.f = f;
   bool sign = v.ui & FLOAT_SIGN_MASK;
   v.ui &= 0x7FFFFFFF;
 
@@ -83,7 +83,7 @@ __device__ __inline__ fp16 fp32tofp16_gpu(float f) {
   //if exponent is negative
   regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
   int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
-  if((regime_and_exp_length - _G_ESIZE) > _G_MAX_REGIME_SIZE && !exp_sign) {
+  if((regime_and_exp_length - _G_ESIZE) > _G_MAX_REGIME_SIZE) {
     regime_and_exp_length -= 1;
     regime_and_exp >>= (_G_ESIZE + 1);
     regime_and_exp = (regime_and_exp << _G_ESIZE) | (exp & POSIT_EXPONENT_MASK);
