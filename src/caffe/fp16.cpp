@@ -46,13 +46,13 @@ float fp16tofp32(fp16 p) {
 	v.si ^= (0 ^ v.si) & -(p == 0);
 
 	v.ui |= (sign << FLOAT_SIGN_SHIFT);
-	return (v.f * SCALING_FACTOR);
+	return v.f;
 }
 
 fp16 fp32tofp16(float f) {
 	fp16 p = 0;
 	union Bits v;
-	v.f = f / SCALING_FACTOR;
+	v.f = f;
 	bool sign = v.ui & FLOAT_SIGN_MASK;
 	v.ui &= 0x7FFFFFFF;
 
