@@ -958,6 +958,11 @@ void caffe_gpu_axpy_with_bias<fp16>(const int N, const fp16 alpha, const fp16* X
   CUBLAS_CHECK(cublasIsamin(Caffe::cublas_handle(), N, tempY, 1, &min_index));
   cudaMemcpy(&min_float, tempY + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
 
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
   union Bits max;
   max.f = max_float;
   int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
@@ -966,7 +971,7 @@ void caffe_gpu_axpy_with_bias<fp16>(const int N, const fp16 alpha, const fp16* X
   min.f = min_float;
   int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
 
-  int bias_exponent = (max_exponent + min_exponent) * EXPONENT_PERCENTILE;
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
   max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
 
   *y_bias = max.f;
@@ -995,6 +1000,11 @@ void caffe_gpu_axpy_half_with_bias(const int N, const float alpha, const fp16* X
   CUBLAS_CHECK(cublasIsamin(Caffe::cublas_handle(), N, tempY, 1, &min_index));
   cudaMemcpy(&min_float, tempY + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
 
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
   union Bits max;
   max.f = max_float;
   int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
@@ -1003,7 +1013,7 @@ void caffe_gpu_axpy_half_with_bias(const int N, const float alpha, const fp16* X
   min.f = min_float;
   int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
 
-  int bias_exponent = (max_exponent + min_exponent) * EXPONENT_PERCENTILE;
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
   max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
 
   *y_bias = max.f;
@@ -1032,6 +1042,11 @@ void caffe_gpu_axpy_half_with_bias(const int N, const double alpha, const fp16* 
   CUBLAS_CHECK(cublasIdamin(Caffe::cublas_handle(), N, tempY, 1, &min_index));
   cudaMemcpy(&min_float, tempY + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
 
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
   union Bits max;
   max.f = max_float;
   int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
@@ -1040,7 +1055,7 @@ void caffe_gpu_axpy_half_with_bias(const int N, const double alpha, const fp16* 
   min.f = min_float;
   int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
 
-  int bias_exponent = (max_exponent + min_exponent) * EXPONENT_PERCENTILE;
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
   max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
 
   *y_bias = max.f;
@@ -1069,6 +1084,11 @@ void caffe_compress_blob(int N, float* in, fp16* out, float* bias) {
   CUBLAS_CHECK(cublasIsamin(Caffe::cublas_handle(), N, in, 1, &min_index));
   cudaMemcpy(&min_float, in + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
 
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
   union Bits max;
   max.f = max_float;
   int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
@@ -1077,7 +1097,7 @@ void caffe_compress_blob(int N, float* in, fp16* out, float* bias) {
   min.f = min_float;
   int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
 
-  int bias_exponent = (max_exponent + min_exponent) * EXPONENT_PERCENTILE;
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
   max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
 
   *bias = max.f;
@@ -1094,6 +1114,11 @@ void caffe_compress_blob(int N, double* in, fp16* out, float* bias) {
   CUBLAS_CHECK(cublasIdamin(Caffe::cublas_handle(), N, in, 1, &min_index));
   cudaMemcpy(&min_float, in + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
 
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
   union Bits max;
   max.f = max_float;
   int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
@@ -1102,7 +1127,7 @@ void caffe_compress_blob(int N, double* in, fp16* out, float* bias) {
   min.f = min_float;
   int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
 
-  int bias_exponent = (max_exponent + min_exponent) * EXPONENT_PERCENTILE;
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
   max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
 
   *bias = max.f;
