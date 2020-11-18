@@ -21,14 +21,14 @@ float fp16tofp32(fp16 p) {
 
 	// get regime
 	v.ui = p << POSIT_LENGTH_PLUS_ONE;
-	//int regime_length = (__builtin_clz(v.ui) & -!regime_sign) + (__builtin_clz(~v.ui) & -regime_sign);
+	//int regime_length = (__clz(v.ui) & -!regime_sign) + (__clz(~v.ui) & -regime_sign);
 	int regime_length;
-	if(regime_sign)
-	  regime_length = (__builtin_clz(~v.ui));
+	if (regime_sign)
+		regime_length = (__builtin_clz(~v.ui));
 	else
-	  regime_length = (__builtin_clz(v.ui));
+		regime_length = (__builtin_clz(v.ui));
 
-	if(regime_length >= _G_MAX_REGIME_SIZE && regime_sign) {
+	if (regime_length >= _G_MAX_REGIME_SIZE) {
 		regime_length = _G_MAX_REGIME_SIZE;
 		v.ui <<= regime_length;
 	} else {
@@ -56,8 +56,8 @@ fp16 fp32tofp16(float f) {
 	bool sign = v.ui & FLOAT_SIGN_MASK;
 	v.ui &= 0x7FFFFFFF;
 
-	p ^= (p ^_G_MAXREALP) & -(v.si >= _G_MAXREAL_INT);
-        p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
+	p ^= (p ^ _G_MAXREALP) & -(v.si >= _G_MAXREAL_INT);
+	p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
 	p ^= (p ^ _G_MINREALP) & -(v.si != 0 && v.si <= _G_MINREAL_INT);
 
 	// min posit exponent in 16, 3 is 112
@@ -71,10 +71,11 @@ fp16 fp32tofp16(float f) {
 	uint32_t exp = abs((v.si >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS);
 	int regime = exp >> _G_ESIZE;
 	TEMP_TYPE regime_and_exp = (((1 << (regime + 1)) - 1) << (_G_ESIZE + 1)) | (exp & POSIT_EXPONENT_MASK);
+
 	//if exponent is negative
 	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
 	int regime_and_exp_length = (exp >> _G_ESIZE) + 2 + _G_ESIZE - ((exp_sign & !((exp & POSIT_EXPONENT_MASK))) & (bool) exp);
-	if((regime_and_exp_length - _G_ESIZE) > _G_MAX_REGIME_SIZE && !exp_sign) {
+	if ((regime_and_exp_length - _G_ESIZE) > _G_MAX_REGIME_SIZE) {
 		regime_and_exp_length -= 1;
 		regime_and_exp >>= (_G_ESIZE + 1);
 		regime_and_exp = (regime_and_exp << _G_ESIZE) | (exp & POSIT_EXPONENT_MASK);
@@ -107,14 +108,14 @@ float fp16tofp32_bwd(fp16 p) {
 
 	// get regime
 	v.ui = p << POSIT_LENGTH_PLUS_ONE;
-	//int regime_length = (__builtin_clz(v.ui) & -!regime_sign) + (__builtin_clz(~v.ui) & -regime_sign);
+	//int regime_length = (__clz(v.ui) & -!regime_sign) + (__clz(~v.ui) & -regime_sign);
 	int regime_length;
-	if(regime_sign)
-	  regime_length = (__builtin_clz(~v.ui));
+	if (regime_sign)
+        regime_length = (__builtin_clz(~v.ui));
 	else
-	  regime_length = (__builtin_clz(v.ui));
+		regime_length = (__builtin_clz(v.ui));
 
-	if(regime_length >= _G_MAX_REGIME_SIZE_BWD && regime_sign) {
+	if (regime_length >= _G_MAX_REGIME_SIZE_BWD) {
 		regime_length = _G_MAX_REGIME_SIZE_BWD;
 		v.ui <<= regime_length;
 	} else {
@@ -142,8 +143,8 @@ fp16 fp32tofp16_bwd(float f) {
 	bool sign = v.ui & FLOAT_SIGN_MASK;
 	v.ui &= 0x7FFFFFFF;
 
-	p ^= (p ^_G_MAXREALP) & -(v.si >= _G_MAXREAL_INT_BWD);
-    p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
+	p ^= (p ^ _G_MAXREALP) & -(v.si >= _G_MAXREAL_INT_BWD);
+	p ^= (p ^ _G_INFP) & -(v.si >= FLOAT_INF);
 	p ^= (p ^ _G_MINREALP) & -(v.si != 0 && v.si <= _G_MINREAL_INT_BWD);
 
 	// min posit exponent in 16, 3 is 112
@@ -157,10 +158,11 @@ fp16 fp32tofp16_bwd(float f) {
 	uint32_t exp = abs((v.si >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS);
 	int regime = exp >> _G_ESIZE_BWD;
 	TEMP_TYPE regime_and_exp = (((1 << (regime + 1)) - 1) << (_G_ESIZE_BWD + 1)) | (exp & POSIT_EXPONENT_MASK_BWD);
+
 	//if exponent is negative
 	regime_and_exp = ((regime_and_exp ^ -exp_sign) + exp_sign) >> ((exp_sign & !((exp & POSIT_EXPONENT_MASK_BWD))) & (bool) exp);
 	int regime_and_exp_length = (exp >> _G_ESIZE_BWD) + 2 + _G_ESIZE_BWD - ((exp_sign & !((exp & POSIT_EXPONENT_MASK_BWD))) & (bool) exp);
-	if((regime_and_exp_length - _G_ESIZE_BWD) > _G_MAX_REGIME_SIZE_BWD && !exp_sign) {
+	if ((regime_and_exp_length - _G_ESIZE_BWD) > _G_MAX_REGIME_SIZE_BWD) {
 		regime_and_exp_length -= 1;
 		regime_and_exp >>= (_G_ESIZE_BWD + 1);
 		regime_and_exp = (regime_and_exp << _G_ESIZE_BWD) | (exp & POSIT_EXPONENT_MASK_BWD);
