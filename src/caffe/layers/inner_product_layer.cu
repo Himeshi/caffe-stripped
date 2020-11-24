@@ -30,6 +30,8 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   if (M_ == 1) {
 	  caffe_gpu_gemv(CblasNoTrans, N_, K_, Dtype(1.),
         weight_temp_data, bottom_data_dtype, Dtype(0.), temp_top_data);
+	caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+	caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
     if (bias_term_) {
       const fp16* bias = this->blobs_[1]->gpu_data();
       Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
@@ -44,6 +46,8 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
                           transpose_ ? CblasNoTrans : CblasTrans,
                           M_, N_, K_, Dtype(1.),
 						  bottom_data_dtype, weight_temp_data, Dtype(0.), temp_top_data);
+	caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+	caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
     if (bias_term_) {
       const fp16* bias = this->blobs_[1]->gpu_data();
       Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();

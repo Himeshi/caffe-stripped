@@ -123,10 +123,16 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   kernel_channel_subtract<Dtype><<<CAFFE_GET_BLOCKS(count),
       CAFFE_CUDA_NUM_THREADS>>>(count, outer_num_, channels, inner_num_,
       scale_data, temp_top_data);
+  caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
+  caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
+
   // exponentiate
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_exp<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
       count, temp_top_data, temp_top_data);
+  caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
+  caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
+
   // sum after exp
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_channel_sum<Dtype><<<CAFFE_GET_BLOCKS(outer_num_ * inner_num_),
