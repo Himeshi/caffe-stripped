@@ -1,3 +1,11 @@
+# Caffe with Posit Arithmetic
+
+This is an implmentation of Caffe with Posit Arithmetic. It supports posit *nbit* values in the range of 8-16 and *es* values of 1, 2 and 3 for each of them. A unique feature of this implementation is that kernels inside the layers are also computed using Posits. Details of benchmarks tested with this code can be found in the thesis "[Software Techniques for the Measurement, Management and Reduction of Numerical Error in Programs](https://scholarbank.nus.edu.sg/handle/10635/176929)".
+
+Some layers available in the original Caffe framework may not be present in this version. However, converting them to use Posit Arithmetic is straightforward by looking at the converted layers in this implementation.
+
+The Posit Standard and other documentation can be found on [Posithub](https://posithub.org/).
+
 # Caffe
 
 [![Build Status](https://travis-ci.org/BVLC/caffe.svg?branch=master)](https://travis-ci.org/BVLC/caffe)
