@@ -13,6 +13,20 @@ __global__ void convert_to_fp16(const int n, double* in, fp16* out, float bias) 
    out[index] = fp32tofp16_gpu(in[index] / bias);
   }
 }
+
+__global__ void convert_to_fp16_ip(const int n, float* in, fp16* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+    out[index] = fp32tofp16_gpu_IP(in[index]);
+  }
+}
+
+__global__ void convert_to_fp16_ip(const int n, double* in, fp16* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp32tofp16_gpu_IP(in[index]);
+  }
+}
+
+
 __global__ void convert_to_float(const int n,  fp16* in, float* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
    out[index] = fp16tofp32_gpu(in[index]) * bias;
@@ -28,6 +42,36 @@ __global__ void convert_to_float(const int n,  fp16* in, double* out, float bias
 __global__ void convert_to_float(const int n, const fp16* in, float* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
    out[index] = fp16tofp32_gpu(in[index]) * bias;
+  }
+}
+
+__global__ void convert_to_float(const int n, const fp16* in, double* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu(in[index]* bias);
+  }
+}
+
+__global__ void convert_to_float_ip(const int n,  fp16* in, float* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu_IP(in[index]);
+  }
+}
+
+__global__ void convert_to_float_ip(const int n,  fp16* in, double* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu_IP(in[index]);
+  }
+}
+
+__global__ void convert_to_float_ip(const int n, const fp16* in, float* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu_IP(in[index]);
+  }
+}
+
+__global__ void convert_to_float_ip(const int n, const fp16* in, double* out, float bias) {
+  CUDA_KERNEL_LOOP(index, n) {
+   out[index] = fp16tofp32_gpu_IP(in[index]);
   }
 }
 
@@ -51,14 +95,6 @@ __global__ void convert_to_float_2in1out(const int n1, const int n2, const fp16*
       out[index] = fp16tofp32_gpu(in2[index-n1]);
     }
   }
-}
-
-
-__global__ void convert_to_float(const int n, const fp16* in, double* out, float bias) {
-  CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu(in[index]* bias);
-  }
-
 }
 
 __global__ void outputweights(const int n, float* in) {

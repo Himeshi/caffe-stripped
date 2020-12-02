@@ -48,15 +48,25 @@ __global__ void convert_to_fp16(const int n, float* in, fp16* out, float bias = 
 
 __global__ void convert_to_fp16(const int n, double* in, fp16* out, float bias = 1.);
 
-__global__ void convert_to_float(const int n, fp16* in, float* out, float bias = 1.);
-
-__global__ void convert_to_float(const int n, fp16* in, double* out, float bias = 1.);
-
 __global__ void convert_to_fp16(const int n, const float* in, fp16* out, float bias = 1.);
 
 __global__ void convert_to_fp16(const int n, const double* in, fp16* out, float bias = 1.);
 
+__global__ void convert_to_fp16_ip(const int n, float* in, fp16* out, float bias = 1.);
+
+__global__ void convert_to_fp16_ip(const int n, double* in, fp16* out, float bias = 1.);
+
+__global__ void convert_to_float(const int n, fp16* in, float* out, float bias = 1.);
+
+__global__ void convert_to_float(const int n, fp16* in, double* out, float bias = 1.);
+
 __global__ void convert_to_float(const int n, const fp16* in, float* out, float bias = 1.);
+
+__global__ void convert_to_float_ip(const int n, fp16* in, float* out, float bias = 1.);
+
+__global__ void convert_to_float_ip(const int n, fp16* in, double* out, float bias = 1.);
+
+__global__ void convert_to_float_ip(const int n, const fp16* in, float* out, float bias = 1.);
 
 __global__ void convert_to_float_3in1out(const int n1, const int n2, const int n3, const fp16* in1, const fp16* in2, const fp16* in3, float* out);
 

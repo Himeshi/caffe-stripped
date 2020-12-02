@@ -1076,6 +1076,16 @@ void caffe_expand_blob(int N, double* out,const fp16* in, float bias) {
 }
 
 template <>
+void caffe_expand_blob_ip(int N, float* out,const fp16* in, float bias) {
+  convert_to_float_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, bias);
+}
+
+template <>
+void caffe_expand_blob_ip(int N, double* out,const fp16* in, float bias) {
+  convert_to_float_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, bias);
+}
+
+template <>
 void caffe_compress_blob(int N, float* in, fp16* out, float* bias) {
   int max_index, min_index;
   float max_float, min_float;
@@ -1132,6 +1142,18 @@ void caffe_compress_blob(int N, double* in, fp16* out, float* bias) {
 
   *bias = max.f;
   convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
+}
+
+template <>
+void caffe_compress_blob_ip(int N, float* in, fp16* out, float* bias) {
+  *bias = 1.0;
+  convert_to_fp16_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
+}
+
+template <>
+void caffe_compress_blob_ip(int N, double* in, fp16* out, float* bias) {
+  *bias = 1.0;
+  convert_to_fp16_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
 }
 
 void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
