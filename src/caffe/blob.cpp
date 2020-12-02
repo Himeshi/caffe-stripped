@@ -273,6 +273,32 @@ void Blob<Dtype>::Update_half_with_bias() {
   }
 }
 
+template <typename Dtype>
+void Blob<Dtype>::Update_half_with_bias_ip() {
+  // We will perform update based on where the data is located.
+  switch (data_->head()) {
+  case SyncedMemory::HEAD_AT_CPU:
+    // perform computation on CPU
+    caffe_axpy(count_, fp32tofp16(-1),
+        static_cast<const fp16*>(diff_->cpu_data()),
+        static_cast<fp16*>(data_->mutable_cpu_data()));
+    break;
+  case SyncedMemory::HEAD_AT_GPU:
+  case SyncedMemory::SYNCED:
+#ifndef CPU_ONLY
+    // perform computation on GPU
+	caffe_gpu_axpy_with_bias(count_, fp32tofp16(-1),
+	      static_cast<const fp16*>(diff_->gpu_data()),
+	      static_cast<fp16*>(data_->mutable_gpu_data()), diff_bias, &(data_bias));
+#else
+    NO_GPU;
+#endif
+    break;
+  default:
+    LOG(FATAL) << "Syncedmem not initialized.";
+  }
+}
+
 template <> unsigned int Blob<unsigned int>::asum_data() const {
   NOT_IMPLEMENTED;
   return 0;

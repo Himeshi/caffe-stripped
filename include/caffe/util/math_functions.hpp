@@ -198,7 +198,15 @@ void caffe_gpu_axpy_with_bias(const int N, const Dtype alpha, const Dtype* X,
     Dtype* Y, float x_bias, float* y_bias);
 
 template <typename Dtype>
+void caffe_gpu_axpy_with_bias_ip(const int N, const Dtype alpha, const Dtype* X,
+    Dtype* Y, float x_bias, float* y_bias);
+
+template <typename Dtype>
 void caffe_gpu_axpy_half_with_bias(const int N, const Dtype alpha, const fp16* X,
+    fp16* Y, float x_bias, float* y_bias);
+
+template <typename Dtype>
+void caffe_gpu_axpy_half_with_bias_ip(const int N, const Dtype alpha, const fp16* X,
     fp16* Y, float x_bias, float* y_bias);
 
 void caffe_gpu_axpby_half(const int N, const float alpha, const fp16* X,

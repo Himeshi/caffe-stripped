@@ -234,6 +234,7 @@ class Blob {
   void Update();
   void Update_half();
   void Update_half_with_bias();
+  void Update_half_with_bias_ip();
   void FromProto(const BlobProto& proto, bool reshape = true);
   void FromProtoDataMean(const BlobProto& proto, bool reshape = true);
   void ToProto(BlobProto* proto, bool write_diff = false) const;

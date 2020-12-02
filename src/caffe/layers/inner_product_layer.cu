@@ -24,7 +24,11 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
-  caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+  if(this->layer_param_.name() == "ip2") {
+  caffe_expand_blob_ip(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+  } else {
+    caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+  }
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   if (M_ == 1) {
@@ -125,7 +129,11 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const fp16* weight = this->blobs_[0]->gpu_data();
     Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
     int weight_count = this->blobs_[0]->count();
-    caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+    if(this->layer_param_.name() == "ip2") {
+      caffe_expand_blob_ip(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+    } else {
+      caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+    }
     const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();

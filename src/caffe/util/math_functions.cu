@@ -982,6 +982,27 @@ void caffe_gpu_axpy_with_bias<fp16>(const int N, const fp16 alpha, const fp16* X
 }
 
 template <>
+void caffe_gpu_axpy_with_bias_ip<fp16>(const int N, const fp16 alpha, const fp16* X,
+    fp16* Y, float x_bias, float* y_bias) {
+  float* tempX;
+  float* tempY;
+  cudaMalloc(&tempX, N * sizeof(float));
+  cudaMalloc(&tempY, N * sizeof(float));
+  const float alpha_float = fp16tofp32(alpha);
+
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
+  convert_to_float_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
+
+  CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha_float, tempX, 1, tempY, 1));
+
+  *y_bias = 1.0;
+
+  convert_to_fp16_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
+  cudaFree(tempX);
+  cudaFree(tempY);
+}
+
+template <>
 void caffe_gpu_axpy_half_with_bias(const int N, const float alpha, const fp16* X,
     fp16* Y, float x_bias, float* y_bias) {
   float* tempX;
@@ -1031,6 +1052,90 @@ void caffe_gpu_axpy_half_with_bias(const int N, const double alpha, const fp16* 
   cudaMalloc(&tempX, N * sizeof(double));
   cudaMalloc(&tempY, N * sizeof(double));
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
+
+  CUBLAS_CHECK(cublasDaxpy(Caffe::cublas_handle(), N, &alpha, tempX, 1, tempY, 1));
+
+  int max_index, min_index;
+  float max_float, min_float;
+  CUBLAS_CHECK(cublasIdamax(Caffe::cublas_handle(), N, tempY, 1, &max_index));
+  cudaMemcpy(&max_float, tempY + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+  CUBLAS_CHECK(cublasIdamin(Caffe::cublas_handle(), N, tempY, 1, &min_index));
+  cudaMemcpy(&min_float, tempY + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
+  union Bits max;
+  max.f = max_float;
+  int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  union Bits min;
+  min.f = min_float;
+  int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
+  max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
+
+  *y_bias = max.f;
+
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
+  cudaFree(tempX);
+  cudaFree(tempY);
+}
+
+template <>
+void caffe_gpu_axpy_half_with_bias_ip(const int N, const float alpha, const fp16* X,
+    fp16* Y, float x_bias, float* y_bias) {
+  float* tempX;
+  float* tempY;
+  cudaMalloc(&tempX, N * sizeof(float));
+  cudaMalloc(&tempY, N * sizeof(float));
+  convert_to_float_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
+  convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
+
+  CUBLAS_CHECK(cublasSaxpy(Caffe::cublas_handle(), N, &alpha, tempX, 1, tempY, 1));
+
+  int max_index, min_index;
+  float max_float, min_float;
+  CUBLAS_CHECK(cublasIsamax(Caffe::cublas_handle(), N, tempY, 1, &max_index));
+  cudaMemcpy(&max_float, tempY + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+  CUBLAS_CHECK(cublasIsamin(Caffe::cublas_handle(), N, tempY, 1, &min_index));
+  cudaMemcpy(&min_float, tempY + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
+  union Bits max;
+  max.f = max_float;
+  int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  union Bits min;
+  min.f = min_float;
+  int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
+  max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
+
+  *y_bias = max.f;
+
+  convert_to_fp16<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, tempY, Y, *y_bias);
+  cudaFree(tempX);
+  cudaFree(tempY);
+}
+
+template <>
+void caffe_gpu_axpy_half_with_bias_ip(const int N, const double alpha, const fp16* X,
+    fp16* Y, float x_bias, float* y_bias) {
+  double* tempX;
+  double* tempY;
+  cudaMalloc(&tempX, N * sizeof(double));
+  cudaMalloc(&tempY, N * sizeof(double));
+  convert_to_float_ip<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, X, tempX, x_bias);
   convert_to_float<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, Y, tempY, *y_bias);
 
   CUBLAS_CHECK(cublasDaxpy(Caffe::cublas_handle(), N, &alpha, tempX, 1, tempY, 1));
