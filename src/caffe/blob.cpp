@@ -895,7 +895,7 @@ void Blob<fp16>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_diff();
   const fp16* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
-    proto->add_data(fp16tofp32(data_vec[i]) * data_bias);
+    proto->add_data(fp16tofp32_IP(data_vec[i]));
   }
   if (write_diff) {
     const fp16* diff_vec = cpu_diff();

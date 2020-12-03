@@ -25,7 +25,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
   if(this->layer_param_.name() == "ip2") {
-  caffe_expand_blob_ip(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+    caffe_expand_blob_ip(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
   } else {
     caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
   }

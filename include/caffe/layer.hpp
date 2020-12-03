@@ -529,7 +529,11 @@ void Layer<Dtype>::ToProto(LayerParameter* param, bool write_diff) {
   param->CopyFrom(layer_param_);
   param->clear_blobs();
   for (int i = 0; i < blobs_.size(); ++i) {
-	blobs_[i]->ToProtoWithBias(param->add_blobs(), write_diff);
+	if(i != 6) {
+	    blobs_[i]->ToProtoWithBias(param->add_blobs(), write_diff);
+	} else  {
+	    blobs_[i]->ToProto(param->add_blobs(), write_diff);
+	}
   }
 }
 
