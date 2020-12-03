@@ -38,6 +38,10 @@ float fp16tofp32(fp16 p);
 
 fp16 fp32tofp16(float f);
 
+float fp16tofp32_IP(fp16 p);
+
+fp16 fp32tofp16_IP(float f);
+
 void print_gpu_float_array(const float* d_data, int size);
 
 void print_gpu_float_array(const double* d_data, int size);
