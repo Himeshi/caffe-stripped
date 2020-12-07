@@ -287,7 +287,7 @@ void Blob<Dtype>::Update_half_with_bias_ip() {
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY
     // perform computation on GPU
-	caffe_gpu_axpy_with_bias(count_, fp32tofp16(-1),
+	caffe_gpu_axpy_with_bias_ip(count_, fp32tofp16(-1),
 	      static_cast<const fp16*>(diff_->gpu_data()),
 	      static_cast<fp16*>(data_->mutable_gpu_data()), diff_bias, &(data_bias));
 #else
