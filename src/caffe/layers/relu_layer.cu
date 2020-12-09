@@ -32,6 +32,11 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   ReLUForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
       count, bottom_data_dtype, temp_top_data, negative_slope);
   caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN && this->sample_iter_) {
+      sample_blob(top_data, top[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+    }
+#endif
   CUDA_POST_KERNEL_CHECK;
   // << " count: " << count << " bottom_data: "
   //     << (unsigned long)bottom_data
@@ -75,6 +80,11 @@ void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     ReLUBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff_dtype, bottom_data_dtype, bottom_diff_dtype, negative_slope);
     caffe_compress_blob(count, bottom_diff_dtype, bottom_diff, &(bottom[0]->diff_bias));
+#ifdef SAMPLE_FLOATS
+      if(this->phase_ == TRAIN && this->sample_iter_) {
+        sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);
+      }
+#endif
     CUDA_POST_KERNEL_CHECK;
   }
 }

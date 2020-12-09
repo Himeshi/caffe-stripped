@@ -46,7 +46,18 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       }
     }
     caffe_compress_blob(top[i]->count(), temp_top_data, top_data, &(top[i]->data_bias));
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN && this->sample_iter_) {
+      sample_blob(top[i]->gpu_data(), top[i]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+    }
+#endif
   }
+#ifdef SAMPLE_FLOATS
+  if(this->phase_ == TRAIN && this->sample_iter_) {
+    sample_blob(weight, this->blobs_[0]->count(), this->weight_exp, this->weight_frac, this->weight, this->weight_vector, WEIGHT_SAMPLING_FREQ);
+    sample_blob(this->blobs_[1]->gpu_data(), this->blobs_[1]->count(), this->bias_exp, this->bias_frac, this->bias, this->bias_vector, BIAS_SAMPLING_FREQ);
+  }
+#endif
 }
 
 template <typename Dtype>
@@ -78,6 +89,11 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         this->backward_gpu_bias(temp_bias_diff, temp_top_diff + n * this->top_dim_);
       }
       caffe_compress_blob(this->blobs_[1]->count(), temp_bias_diff, bias_diff, &((this->blobs_[1])->diff_bias));
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN && this->sample_iter_) {
+      sample_blob(this->blobs_[1]->gpu_diff(), this->blobs_[1]->count(), this->bias_gradient_exp, this->bias_gradient_frac, this->bias_gradient, this->bias_gradient_vector, SAMPLING_FREQ);
+    }
+#endif
     }
 
     if (this->param_propagate_down_[0] || propagate_down[i]) {
@@ -101,12 +117,22 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
           this->weight_gpu_gemm(temp_bottom_data + n * this->bottom_dim_,
             temp_top_diff + n * this->top_dim_, temp_weight_diff);
           caffe_compress_blob(this->blobs_[0]->count(), temp_weight_diff, weight_diff, &((this->blobs_[0])->diff_bias));
+#ifdef SAMPLE_FLOATS
+  if(this->phase_ == TRAIN && this->sample_iter_) {
+    sample_blob(this->blobs_[0]->gpu_diff(), this->blobs_[0]->count(), this->weight_gradient_exp, this->weight_gradient_frac, this->weight_gradient, this->weight_gradient_vector, SAMPLING_FREQ);
+  }
+#endif
         }
         // gradient w.r.t. bottom data, if necessary.
         if (propagate_down[i]) {
           this->backward_gpu_gemm(temp_top_diff + n * this->top_dim_, weight_temp_data,
             temp_bottom_diff + n * this->bottom_dim_);
           caffe_compress_blob(bottom_count, temp_bottom_diff, bottom_diff, &(bottom[i]->diff_bias));
+#ifdef SAMPLE_FLOATS
+      if(this->phase_ == TRAIN && this->sample_iter_) {
+        sample_blob(bottom[i]->gpu_diff(), bottom[i]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);
+      }
+#endif
         }
       }
     }

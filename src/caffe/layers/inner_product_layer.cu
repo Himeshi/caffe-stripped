@@ -60,6 +60,13 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     }
   }
   caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN && this->sample_iter_) {
+      sample_blob(top[0]->gpu_data(), top[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+      sample_blob(weight, this->blobs_[0]->count(), this->weight_exp, this->weight_frac, this->weight, this->weight_vector, WEIGHT_SAMPLING_FREQ);
+      sample_blob(this->blobs_[1]->gpu_data(), this->blobs_[1]->count(), this->bias_exp, this->bias_frac, this->bias, this->bias_vector, BIAS_SAMPLING_FREQ);
+    }
+#endif
 }
 
 template <typename Dtype>
@@ -146,6 +153,13 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     }
     caffe_compress_blob(bottom[0]->count(), bottom_diff_temp, bottom_diff, &(bottom[0]->diff_bias));
   }
+#ifdef SAMPLE_FLOATS
+  if(this->phase_ == TRAIN && this->sample_iter_) {
+    sample_blob(this->blobs_[0]->gpu_diff(), this->blobs_[0]->count(), this->weight_gradient_exp, this->weight_gradient_frac, this->weight_gradient, this->weight_gradient_vector, SAMPLING_FREQ);
+    sample_blob(this->blobs_[1]->gpu_diff(), this->blobs_[1]->count(), this->bias_gradient_exp, this->bias_gradient_frac, this->bias_gradient, this->bias_gradient_vector, SAMPLING_FREQ);
+    sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);
+  }
+#endif
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(InnerProductLayer);

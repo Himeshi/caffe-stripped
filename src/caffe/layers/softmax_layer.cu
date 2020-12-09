@@ -124,6 +124,11 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       CAFFE_CUDA_NUM_THREADS>>>(count, outer_num_, channels, inner_num_,
       scale_data, temp_top_data);
   caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
+#ifdef SAMPLE_FLOATS
+      if(this->phase_ == TRAIN && this->sample_iter_) {
+        sample_blob(top_data, count, this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+      }
+#endif
   caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
 
   // exponentiate
@@ -131,6 +136,11 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   kernel_exp<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
       count, temp_top_data, temp_top_data);
   caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
+#ifdef SAMPLE_FLOATS
+      if(this->phase_ == TRAIN && this->sample_iter_) {
+        sample_blob(top_data, count, this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+      }
+#endif
   caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
 
   // sum after exp
@@ -145,6 +155,11 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       scale_data, temp_top_data);
 
   caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
+#ifdef SAMPLE_FLOATS
+      if(this->phase_ == TRAIN && this->sample_iter_) {
+        sample_blob(top_data, count, this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+      }
+#endif
 }
 
 template <typename Dtype>
