@@ -32,7 +32,19 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         this->forward_gpu_bias_half(top_data + n * this->top_dim_, bias);
       }
     }
+#ifdef SAMPLE_FLOATS
+    if(this->phase_ == TRAIN && this->sample_iter_) {
+      sample_blob(top[i]->gpu_data(), top[i]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
+    }
+#endif
   }
+
+#ifdef SAMPLE_FLOATS
+  if(this->phase_ == TRAIN && this->sample_iter_) {
+    sample_blob(weight, this->blobs_[0]->count(), this->weight_exp, this->weight_frac, this->weight, this->weight_vector, WEIGHT_SAMPLING_FREQ);
+    sample_blob(this->blobs_[1]->gpu_data(), this->blobs_[1]->count(), this->bias_exp, this->bias_frac, this->bias, this->bias_vector, BIAS_SAMPLING_FREQ);
+  }
+#endif
 }
 
 template <typename Dtype>
