@@ -13,9 +13,9 @@
 
 #define _G_NBITS 8
 #define _G_ESIZE 1
-#define _G_MAX_REGIME_SIZE 7
+#define _G_MAX_REGIME_SIZE 6
 
-#define SCALING_FACTOR 0.25
+#define SCALING_FACTOR 0.125
 
 #define SIGN_MASK 0x8000
 #define FLOAT_SIGN_MASK 0x80000000
