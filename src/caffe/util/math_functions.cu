@@ -1119,7 +1119,7 @@ void caffe_gpu_axpy_half_with_bias_w(const int N, const float alpha, const fp16*
   min.f = min_float;
   int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
 
-  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE_W);
   max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
 
   *y_bias = max.f;
@@ -1161,7 +1161,7 @@ void caffe_gpu_axpy_half_with_bias_w(const int N, const double alpha, const fp16
   min.f = min_float;
   int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
 
-  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE);
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE_W);
   max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
 
   *y_bias = max.f;

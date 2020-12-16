@@ -24,7 +24,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
   int weight_count = this->blobs_[0]->count();
-  caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+  caffe_expand_blob_w(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
   const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
   if (M_ == 1) {
@@ -36,7 +36,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const fp16* bias = this->blobs_[1]->gpu_data();
       Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
       int bias_count = this->blobs_[1]->count();
-      caffe_expand_blob(bias_count, bias_temp, bias, this->blobs_[1]->data_bias);
+      caffe_expand_blob_w(bias_count, bias_temp, bias, this->blobs_[1]->data_bias);
       const Dtype* bias_temp_data = this->blobs_dtype_[1]->gpu_data();
       caffe_gpu_axpy(N_, bias_multiplier_.cpu_data()[0],
                        bias_temp_data, temp_top_data);
@@ -52,7 +52,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const fp16* bias = this->blobs_[1]->gpu_data();
       Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
       int bias_count = this->blobs_[1]->count();
-      caffe_expand_blob(bias_count, bias_temp, bias, this->blobs_[1]->data_bias);
+      caffe_expand_blob_w(bias_count, bias_temp, bias, this->blobs_[1]->data_bias);
       const Dtype* bias_temp_data = this->blobs_dtype_[1]->gpu_data();
       caffe_gpu_gemm(CblasNoTrans, CblasNoTrans, M_, N_, 1, Dtype(1.),
                             bias_multiplier_.gpu_data(),
@@ -132,7 +132,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const fp16* weight = this->blobs_[0]->gpu_data();
     Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
     int weight_count = this->blobs_[0]->count();
-    caffe_expand_blob(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
+    caffe_expand_blob_w(weight_count, weight_temp, weight, this->blobs_[0]->data_bias);
     const Dtype* weight_temp_data = this->blobs_dtype_[0]->gpu_data();
 
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();

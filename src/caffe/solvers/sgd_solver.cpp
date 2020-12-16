@@ -189,7 +189,7 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
     if (local_decay) {
       if (regularization_type == "L2") {
         // add weight decay
-    	caffe_gpu_axpy_half_with_bias(net_params[param_id]->count(),
+    	  caffe_gpu_axpy_half_with_bias_w(net_params[param_id]->count(),
     	    local_decay,
     	    net_params[param_id]->gpu_data(),
     	    net_params[param_id]->mutable_gpu_diff(),
@@ -245,23 +245,23 @@ void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
   case Caffe::GPU: {
 #ifndef CPU_ONLY
 	  Dtype* g_temp = net_params_dtype[param_id]->mutable_gpu_diff();
-	    caffe_expand_blob(net_params[param_id]->count(),
+	    caffe_expand_blob_w(net_params[param_id]->count(),
 	  			g_temp, net_params[param_id]->gpu_diff(),
 	  			net_params[param_id]->diff_bias);
 
 	  Dtype* h_temp = net_params_dtype[param_id]->mutable_gpu_data();
-	    caffe_expand_blob(history_[param_id]->count(),
+	    caffe_expand_blob_w(history_[param_id]->count(),
 	  			h_temp, history_[param_id]->gpu_data(),
 	  			history_[param_id]->data_bias);
 
 	    sgd_update_gpu(net_params[param_id]->count(),
 	          g_temp, h_temp, momentum, local_rate);
 
-	    caffe_compress_blob(net_params[param_id]->count(), g_temp,
+	    caffe_compress_blob_w(net_params[param_id]->count(), g_temp,
 	          net_params[param_id]->mutable_gpu_diff(),
 	          &(net_params[param_id]->diff_bias));
 
-	    caffe_compress_blob(history_[param_id]->count(), h_temp,
+	    caffe_compress_blob_w(history_[param_id]->count(), h_temp,
 	          history_[param_id]->mutable_gpu_data(),
 	          &(history_[param_id]->data_bias));
 #else

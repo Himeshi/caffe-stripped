@@ -46,7 +46,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     shared_ptr<Filler<Dtype> > weight_filler(GetFiller<Dtype>(
         this->layer_param_.inner_product_param().weight_filler()));
     weight_filler->Fill(this->blobs_dtype_[0].get());
-    caffe_compress_blob(this->blobs_[0]->count(), this->blobs_dtype_[0]->mutable_cpu_data(), this->blobs_[0]->mutable_cpu_data(), &((this->blobs_[0])->data_bias));
+    caffe_compress_blob_w(this->blobs_[0]->count(), this->blobs_dtype_[0]->mutable_cpu_data(), this->blobs_[0]->mutable_cpu_data(), &((this->blobs_[0])->data_bias));
     // If necessary, initialize and fill the bias term
     if (bias_term_) {
       vector<int> bias_shape(1, N_);
@@ -55,7 +55,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
       shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
           this->layer_param_.inner_product_param().bias_filler()));
       bias_filler->Fill(this->blobs_dtype_[1].get());
-      caffe_compress_blob(this->blobs_[1]->count(), this->blobs_dtype_[1]->mutable_cpu_data(), this->blobs_[1]->mutable_cpu_data(), &((this->blobs_[1])->data_bias));
+      caffe_compress_blob_w(this->blobs_[1]->count(), this->blobs_dtype_[1]->mutable_cpu_data(), this->blobs_[1]->mutable_cpu_data(), &((this->blobs_[1])->data_bias));
     }
   }  // parameter initialization
   this->param_propagate_down_.resize(this->blobs_.size(), true);
