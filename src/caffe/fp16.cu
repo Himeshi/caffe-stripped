@@ -16,13 +16,13 @@ __global__ void convert_to_fp16(const int n, double* in, fp16* out, float bias) 
 
 __global__ void convert_to_fp16_w(const int n, float* in, fp16* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-    out[index] = fp32tofp16_gpu_IP(in[index]);
+    out[index] = fp32tofp16_gpu_W(in[index]);
   }
 }
 
 __global__ void convert_to_fp16_w(const int n, double* in, fp16* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp32tofp16_gpu_IP(in[index]);
+   out[index] = fp32tofp16_gpu_W(in[index]);
   }
 }
 
@@ -53,25 +53,25 @@ __global__ void convert_to_float(const int n, const fp16* in, double* out, float
 
 __global__ void convert_to_float_w(const int n,  fp16* in, float* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu_IP(in[index]);
+   out[index] = fp16tofp32_gpu_W(in[index]);
   }
 }
 
 __global__ void convert_to_float_w(const int n,  fp16* in, double* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu_IP(in[index]);
+   out[index] = fp16tofp32_gpu_W(in[index]);
   }
 }
 
 __global__ void convert_to_float_w(const int n, const fp16* in, float* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu_IP(in[index]);
+   out[index] = fp16tofp32_gpu_W(in[index]);
   }
 }
 
 __global__ void convert_to_float_w(const int n, const fp16* in, double* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu_IP(in[index]);
+   out[index] = fp16tofp32_gpu_W(in[index]);
   }
 }
 
