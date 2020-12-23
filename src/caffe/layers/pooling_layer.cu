@@ -357,7 +357,7 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   const fp16* top_diff = top[0]->gpu_diff();
   this->temp_top_->Reshape(top[0]->shape());
   Dtype* temp_top_diff = this->temp_top_->mutable_gpu_diff();
-  caffe_expand_blob(top[0]->count(), temp_top_diff, top_diff, top[0]->diff_bias);
+  caffe_expand_blob_ag(top[0]->count(), temp_top_diff, top_diff, top[0]->diff_bias);
 
   fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
   const int count = bottom[0]->count();
@@ -401,7 +401,7 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   default:
     LOG(FATAL) << "Unknown pooling method.";
   }
-  caffe_compress_blob(count, temp_bottom_diff, bottom_diff, &(bottom[0]->diff_bias));
+  caffe_compress_blob_ag(count, temp_bottom_diff, bottom_diff, &(bottom[0]->diff_bias));
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN && this->sample_iter_) {
         sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);

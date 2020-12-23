@@ -143,7 +143,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const Dtype loss_weight = fp16tofp32(top[0]->cpu_diff()[0]) /
                               get_normalizer(normalization_, valid_count);
     caffe_gpu_scal(prob_.count(), loss_weight , bottom_diff_dtype);
-    caffe_compress_blob(prob_.count(), bottom_diff_dtype, bottom_diff, &(bottom[0]->diff_bias));
+    caffe_compress_blob_ag(prob_.count(), bottom_diff_dtype, bottom_diff, &(bottom[0]->diff_bias));
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN && this->sample_iter_) {
       sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, LOSS_SAMPLING_FREQ);

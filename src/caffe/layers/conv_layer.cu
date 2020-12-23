@@ -78,7 +78,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 	const fp16* top_diff = top[i]->gpu_diff();
     this->temp_top_->Reshape(top[i]->shape());
     Dtype* temp_top_diff = this->temp_top_->mutable_gpu_diff();
-    caffe_expand_blob(top[i]->count(), temp_top_diff, top_diff, top[i]->diff_bias);
+    caffe_expand_blob_ag(top[i]->count(), temp_top_diff, top_diff, top[i]->diff_bias);
 
     // Bias gradient, if necessary.
     if (this->bias_term_ && this->param_propagate_down_[1]) {
@@ -110,7 +110,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
       fp16* bottom_diff = bottom[i]->mutable_gpu_diff();
       Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
-      caffe_expand_blob(bottom_count, temp_bottom_diff, bottom_diff, bottom[i]->diff_bias);
+      caffe_expand_blob_ag(bottom_count, temp_bottom_diff, bottom_diff, bottom[i]->diff_bias);
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
@@ -127,7 +127,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         if (propagate_down[i]) {
           this->backward_gpu_gemm(temp_top_diff + n * this->top_dim_, weight_temp_data,
             temp_bottom_diff + n * this->bottom_dim_);
-          caffe_compress_blob(bottom_count, temp_bottom_diff, bottom_diff, &(bottom[i]->diff_bias));
+          caffe_compress_blob_ag(bottom_count, temp_bottom_diff, bottom_diff, &(bottom[i]->diff_bias));
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN && this->sample_iter_) {
         sample_blob(bottom[i]->gpu_diff(), bottom[i]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);

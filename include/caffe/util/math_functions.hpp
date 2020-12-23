@@ -235,6 +235,12 @@ void caffe_expand_blob_w(int N, Dtype* out,const fp16* in, float bias);
 template <typename Dtype>
 void caffe_compress_blob_w(int N, Dtype* out, fp16* in, float* bias);
 
+template <typename Dtype>
+void caffe_expand_blob_ag(int N, Dtype* out,const fp16* in, float bias);
+
+template <typename Dtype>
+void caffe_compress_blob_ag(int N, Dtype* out, fp16* in, float* bias);
+
 void caffe_gpu_memcpy(const size_t N, const void *X, void *Y);
 
 void caffe_gpu_set_half(const int N, const float alpha, fp16* Y);
