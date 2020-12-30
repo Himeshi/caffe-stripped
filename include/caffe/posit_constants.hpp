@@ -22,7 +22,7 @@
 #define EXPONENT_PERCENTILE_W 0.2
 
 #define _G_NBITS_AG 8
-#define _G_ESIZE_AG 1
+#define _G_ESIZE_AG 3
 #define _G_MAX_REGIME_SIZE_AG 2
 #define EXPONENT_PERCENTILE_AG 0.3
 

@@ -37,7 +37,7 @@ void SoftmaxWithLossLayer<Dtype>::Forward_gpu(
   int prob_data_count = prob_.count();
   this->temp_top_->Reshape(prob_.shape());
   Dtype* prob_data_dtype = this->temp_top_->mutable_gpu_data();
-  caffe_expand_blob(prob_data_count, prob_data_dtype, prob_data, prob_.data_bias);
+  caffe_expand_blob_activations(prob_data_count, prob_data_dtype, prob_data, prob_.data_bias);
 
   const Dtype* label = bottom_dtype[1]->gpu_data();
   const int dim = prob_data_count / outer_num_;
@@ -118,7 +118,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     int bottom_diff_count = prob_.count();
     this->temp_bottom_->Reshape(prob_.shape());
     Dtype* bottom_diff_dtype = this->temp_bottom_->mutable_gpu_diff();
-    caffe_expand_blob(bottom_diff_count, bottom_diff_dtype, bottom_diff, prob_.data_bias);
+    caffe_expand_blob_activations(bottom_diff_count, bottom_diff_dtype, bottom_diff, prob_.data_bias);
 
     const fp16* top_data = top[0]->gpu_data();
 

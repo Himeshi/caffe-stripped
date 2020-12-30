@@ -163,7 +163,7 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   int bottom_data_count = bottom[0]->count();
   this->temp_bottom_->Reshape(bottom[0]->shape());
   Dtype* bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
-  caffe_expand_blob(bottom_data_count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
+  caffe_expand_blob_activations(bottom_data_count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
 
   fp16* top_data = top[0]->mutable_gpu_data();
   this->temp_top_->Reshape(top[0]->shape());
@@ -220,7 +220,7 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   default:
     LOG(FATAL) << "Unknown pooling method.";
   }
-  caffe_compress_blob(count, temp_top_data, top_data, &(top[0]->data_bias));
+  caffe_compress_blob_activations(count, temp_top_data, top_data, &(top[0]->data_bias));
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN && this->sample_iter_) {
         sample_blob(top_data, count, this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);

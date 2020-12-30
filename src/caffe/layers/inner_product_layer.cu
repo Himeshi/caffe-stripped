@@ -14,12 +14,12 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   int bottom_data_count = bottom[0]->count();
   this->temp_bottom_->Reshape(bottom[0]->shape());
   Dtype* bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
-  caffe_expand_blob(bottom_data_count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
+  caffe_expand_blob_activations(bottom_data_count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
 
   fp16* top_data = top[0]->mutable_gpu_data();
   this->temp_top_->Reshape(top[0]->shape());
   Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
-  caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
+  caffe_expand_blob_activations(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
 
   const fp16* weight = this->blobs_[0]->gpu_data();
   Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_data();
@@ -30,8 +30,8 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   if (M_ == 1) {
 	  caffe_gpu_gemv(CblasNoTrans, N_, K_, Dtype(1.),
         weight_temp_data, bottom_data_dtype, Dtype(0.), temp_top_data);
-	caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
-	caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
+	caffe_compress_blob_activations(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+	caffe_expand_blob_activations(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
     if (bias_term_) {
       const fp16* bias = this->blobs_[1]->gpu_data();
       Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
@@ -46,8 +46,8 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
                           transpose_ ? CblasNoTrans : CblasTrans,
                           M_, N_, K_, Dtype(1.),
 						  bottom_data_dtype, weight_temp_data, Dtype(0.), temp_top_data);
-	caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
-	caffe_expand_blob(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
+	caffe_compress_blob_activations(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+	caffe_expand_blob_activations(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
     if (bias_term_) {
       const fp16* bias = this->blobs_[1]->gpu_data();
       Dtype* bias_temp = this->blobs_dtype_[1]->mutable_gpu_data();
@@ -59,7 +59,7 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 							bias_temp_data, Dtype(1.), temp_top_data);
     }
   }
-  caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+  caffe_compress_blob_activations(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN && this->sample_iter_) {
       sample_blob(top[0]->gpu_data(), top[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
@@ -84,7 +84,7 @@ void InnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     int bottom_data_count = bottom[0]->count();
     this->temp_bottom_->Reshape(bottom[0]->shape());
     Dtype* bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
-    caffe_expand_blob(bottom_data_count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
+    caffe_expand_blob_activations(bottom_data_count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
 
     fp16* weight = this->blobs_[0]->mutable_gpu_diff();
     Dtype* weight_temp = this->blobs_dtype_[0]->mutable_gpu_diff();

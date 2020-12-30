@@ -21,7 +21,7 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   const int count = bottom[0]->count();
   this->temp_bottom_->Reshape(bottom[0]->shape());
   Dtype* bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
-  caffe_expand_blob(count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
+  caffe_expand_blob_activations(count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
 
   fp16* top_data = top[0]->mutable_gpu_data();
   this->temp_top_->Reshape(top[0]->shape());
@@ -31,7 +31,7 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   // NOLINT_NEXT_LINE(whitespace/operators)
   ReLUForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
       count, bottom_data_dtype, temp_top_data, negative_slope);
-  caffe_compress_blob(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
+  caffe_compress_blob_activations(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN && this->sample_iter_) {
       sample_blob(top_data, top[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
@@ -63,7 +63,7 @@ void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const fp16* bottom_data = bottom[0]->gpu_data();
     this->temp_bottom_->Reshape(bottom[0]->shape());
     Dtype* bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
-    caffe_expand_blob(count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
+    caffe_expand_blob_activations(count, bottom_data_dtype, bottom_data, bottom[0]->data_bias);
 
     const int top_count = top[0]->count();
     const fp16* top_diff = top[0]->gpu_diff();

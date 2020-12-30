@@ -26,12 +26,12 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const fp16* bottom_data = bottom[i]->gpu_data();
       this->temp_bottom_->Reshape(bottom[i]->shape());
       bottom_data_dtype = this->temp_bottom_->mutable_gpu_data();
-      caffe_expand_blob(bottom_data_count, bottom_data_dtype, bottom_data, bottom[i]->data_bias);
+      caffe_expand_blob_activations(bottom_data_count, bottom_data_dtype, bottom_data, bottom[i]->data_bias);
     }
     fp16* top_data = top[i]->mutable_gpu_data();
     this->temp_top_->Reshape(top[i]->shape());
     Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
-    caffe_expand_blob(top[i]->count(), temp_top_data, top_data, top[i]->data_bias);
+    caffe_expand_blob_activations(top[i]->count(), temp_top_data, top_data, top[i]->data_bias);
 
     for (int n = 0; n < this->num_; ++n) {
       this->forward_gpu_gemm(bottom_data_dtype + n * this->bottom_dim_, weight_temp_data,
@@ -45,7 +45,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         this->forward_gpu_bias(temp_top_data + n * this->top_dim_, bias_temp_data);
       }
     }
-    caffe_compress_blob(top[i]->count(), temp_top_data, top_data, &(top[i]->data_bias));
+    caffe_compress_blob_activations(top[i]->count(), temp_top_data, top_data, &(top[i]->data_bias));
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN && this->sample_iter_) {
       sample_blob(top[i]->gpu_data(), top[i]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
@@ -105,7 +105,7 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       } else {
         const fp16* bottom_data = bottom[i]->gpu_data();
         temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
-        caffe_expand_blob(bottom_count, temp_bottom_data, bottom_data, bottom[i]->data_bias);
+        caffe_expand_blob_activations(bottom_count, temp_bottom_data, bottom_data, bottom[i]->data_bias);
       }
 
       fp16* bottom_diff = bottom[i]->mutable_gpu_diff();
