@@ -1226,6 +1226,16 @@ void caffe_expand_blob_ag(int N, double* out,const fp16* in, float bias) {
 }
 
 template <>
+void caffe_expand_blob_activations(int N, float* out,const fp16* in, float bias) {
+  convert_to_float_activations<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, bias);
+}
+
+template <>
+void caffe_expand_blob_activations(int N, double* out,const fp16* in, float bias) {
+  convert_to_float_activations<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, bias);
+}
+
+template <>
 void caffe_compress_blob(int N, float* in, fp16* out, float* bias) {
   int max_index, min_index;
   float max_float, min_float;
@@ -1400,6 +1410,65 @@ void caffe_compress_blob_ag(int N, double* in, fp16* out, float* bias) {
 
   *bias = max.f;
   convert_to_fp16_ag<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
+}
+
+template <>
+void caffe_compress_blob_activations(int N, float* in, fp16* out, float* bias) {
+  int max_index, min_index;
+  float max_float, min_float;
+  CUBLAS_CHECK(cublasIsamax(Caffe::cublas_handle(), N, in, 1, &max_index));
+  cudaMemcpy(&max_float, in + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+  CUBLAS_CHECK(cublasIsamin(Caffe::cublas_handle(), N, in, 1, &min_index));
+  cudaMemcpy(&min_float, in + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
+  union Bits max;
+  max.f = max_float;
+  int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  union Bits min;
+  min.f = min_float;
+  int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE_ACTIVATIONS);
+  max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
+
+  *bias = max.f;
+
+  convert_to_fp16_activations<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
+}
+
+template <>
+void caffe_compress_blob_activations(int N, double* in, fp16* out, float* bias) {
+  int max_index, min_index;
+  float max_float, min_float;
+  CUBLAS_CHECK(cublasIdamax(Caffe::cublas_handle(), N, in, 1, &max_index));
+  cudaMemcpy(&max_float, in + max_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+  CUBLAS_CHECK(cublasIdamin(Caffe::cublas_handle(), N, in, 1, &min_index));
+  cudaMemcpy(&min_float, in + min_index - 1, sizeof(float), cudaMemcpyDeviceToHost);
+
+  if(max_float == 0)
+	  max_float = 1.0;
+  if(min_float == 0)
+	  min_float = 1.0;
+
+  union Bits max;
+  max.f = max_float;
+  int max_exponent = ((max.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  union Bits min;
+  min.f = min_float;
+  int min_exponent = ((min.ui & 0x7fffffff) >> FLOAT_EXPONENT_SHIFT) - SINGLE_PRECISION_BIAS;
+
+  int bias_exponent = max_exponent - ((max_exponent - min_exponent) * EXPONENT_PERCENTILE_ACTIVATIONS);
+  max.ui = (bias_exponent + SINGLE_PRECISION_BIAS) << FLOAT_EXPONENT_SHIFT;
+
+  *bias = max.f;
+  convert_to_fp16_activations<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(N, in, out, *bias);
 }
 
 void caffe_gpu_memcpy(const size_t N, const void* X, void* Y) {
