@@ -8,7 +8,8 @@ namespace caffe {
 
 template <typename Dtype>
 void BiasLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
+      const vector<Blob<fp16>*>& top,
+	  const vector<Blob<Dtype>*>& bottom_dtype, const vector<Blob<Dtype>*>& top_dtype) {
   if (bottom.size() == 1 && this->blobs_.size() > 0) {
     LOG(INFO) << "Skipping parameter initialization";
   } else if (bottom.size() == 1) {
@@ -31,7 +32,8 @@ void BiasLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     vector<int> bias_shape(shape_start, shape_end);
     this->blobs_[0].reset(new Blob<fp16>(bias_shape));
     shared_ptr<Filler<Dtype> > filler(GetFiller<Dtype>(param.filler()));
-    filler->Fill(this->blobs_[0].get());
+    filler->Fill(this->blobs_dtype_[0].get());
+    caffe_compress_blob_w(this->blobs_[0]->count(), this->blobs_dtype_[0]->mutable_cpu_data(), this->blobs_[0]->mutable_cpu_data(), &((this->blobs_[0])->data_bias));
   }
   this->param_propagate_down_.resize(this->blobs_.size(), true);
 }

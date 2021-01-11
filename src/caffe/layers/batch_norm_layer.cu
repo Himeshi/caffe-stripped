@@ -8,7 +8,8 @@ namespace caffe {
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
-    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+      const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
   fp16* top_data = top[0]->mutable_gpu_data();
   int num = bottom[0]->shape(0);
@@ -91,8 +92,8 @@ void BatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 
 template <typename Dtype>
 void BatchNormLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down,
-    const vector<Blob<fp16>*>& bottom) {
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype) {
   const fp16* top_diff;
   if (bottom[0] != top[0]) {
     top_diff = top[0]->gpu_diff();

@@ -28,8 +28,9 @@ __global__ void ScaleBiasForward(const int n, const fp16* in,
 }
 
 template <typename Dtype>
-void ScaleLayer<Dtype>::Forward_gpu(
-    const vector<Blob<fp16>*>& bottom, const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& top_dtype) {
+void ScaleLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
+      const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+      const vector<Blob<Dtype>*>& top_dtype){
   const int count = top[0]->count();
   const fp16* bottom_data = bottom[0]->gpu_data();
   if (bottom[0] == top[0]) {
@@ -58,10 +59,11 @@ void ScaleLayer<Dtype>::Forward_gpu(
 
 template <typename Dtype>
 void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
-    const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom) {
+      const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
+	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype){
   if (bias_layer_ &&
       this->param_propagate_down_[this->param_propagate_down_.size() - 1]) {
-    bias_layer_->Backward(top, bias_propagate_down_, bias_bottom_vec_);
+    bias_layer_->Backward(top, bias_propagate_down_, bias_bottom_vec_, top_dtype, bottom_dtype);
   }
   const bool scale_param = (bottom.size() == 1);
   Blob<fp16>* scale = scale_param ? this->blobs_[0].get() : bottom[1];
@@ -78,17 +80,21 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const bool is_eltwise = (bottom[0]->count() == scale->count());
     fp16* product = (is_eltwise ? scale->mutable_gpu_diff() :
         (in_place ? temp_.mutable_gpu_data() : bottom[0]->mutable_gpu_diff()));
+    float product_bias = (is_eltwise ? scale->diff_bias :
+            (in_place ? temp_.data_bias : bottom[0]->diff_bias));
     caffe_gpu_mul(top[0]->count(), top_diff, bottom_data, product);
     if (!is_eltwise) {
       fp16* sum_result = NULL;
+      float sum_result_bias = 1.0;
       if (inner_dim_ == 1) {
         sum_result = product;
+        sum_result_bias =  product_bias;
       } else if (sum_result_.count() == 1) {
         const fp16* sum_mult = sum_multiplier_.gpu_data();
         fp16* scale_diff = scale->mutable_cpu_diff();
         if (scale_param) {
           Dtype result;
-          caffe_gpu_dot_half(inner_dim_, product, sum_mult, &result);
+          caffe_gpu_dot_half(inner_dim_, product, sum_mult, &result, product_bias, sum_multiplier_.data_bias);
           *scale_diff += result;
         } else {
           caffe_gpu_dot(inner_dim_, product, sum_mult, scale_diff);
@@ -97,6 +103,8 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         const fp16* sum_mult = sum_multiplier_.gpu_data();
         sum_result = (outer_dim_ == 1) ?
             scale->mutable_gpu_diff() : sum_result_.mutable_gpu_data();
+        sum_result_bias = (outer_dim_ == 1) ?
+                scale->diff_bias : sum_result_.data_bias;
         caffe_gpu_gemv(CblasNoTrans, sum_result_.count(), inner_dim_,
                        fp32tofp16(1), product, sum_mult, fp32tofp16(0), sum_result);
       }
@@ -106,7 +114,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
           fp16* scale_diff = scale->mutable_cpu_diff();
           if (scale_param) {
             Dtype result;
-            caffe_gpu_dot_half(outer_dim_, sum_mult, sum_result, &result);
+            caffe_gpu_dot_half(outer_dim_, sum_mult, sum_result, &result, sum_multiplier_.data_bias, sum_result_bias);
             *scale_diff += result;
           } else {
             caffe_gpu_dot(outer_dim_, sum_mult, sum_result, scale_diff);

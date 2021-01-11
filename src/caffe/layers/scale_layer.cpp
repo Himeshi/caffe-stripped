@@ -10,7 +10,8 @@ namespace caffe {
 
 template <typename Dtype>
 void ScaleLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
-      const vector<Blob<fp16>*>& top) {
+    const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
+	  const vector<Blob<Dtype>*>& top_dtype) {
   const ScaleParameter& param = this->layer_param_.scale_param();
   if (bottom.size() == 1 && this->blobs_.size() > 0) {
     LOG(INFO) << "Skipping parameter initialization";
@@ -39,7 +40,8 @@ void ScaleLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
       filler_param.set_value(1);
     }
     shared_ptr<Filler<Dtype> > filler(GetFiller<Dtype>(filler_param));
-    filler->Fill(this->blobs_[0].get());
+    filler->Fill(this->blobs_dtype_[0].get());
+    caffe_compress_blob_w(this->blobs_[0]->count(), this->blobs_dtype_[0]->mutable_cpu_data(), this->blobs_[0]->mutable_cpu_data(), &((this->blobs_[0])->data_bias));
   }
   if (param.bias_term()) {
     LayerParameter layer_param(this->layer_param_);
@@ -55,7 +57,7 @@ void ScaleLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     bias_layer_ = LayerRegistry<Dtype>::CreateLayer(layer_param);
     bias_bottom_vec_.resize(1);
     bias_bottom_vec_[0] = bottom[0];
-    bias_layer_->SetUp(bias_bottom_vec_, top);
+    bias_layer_->SetUp(bias_bottom_vec_, top, bottom_dtype, top_dtype);
     if (this->blobs_.size() + bottom.size() < 3) {
       // case: blobs.size == 1 && bottom.size == 1
       // or blobs.size == 0 && bottom.size == 2
