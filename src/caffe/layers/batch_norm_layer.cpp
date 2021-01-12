@@ -28,11 +28,16 @@ void BatchNormLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     sz.push_back(channels_);
     this->blobs_[0].reset(new Blob<fp16>(sz));
     this->blobs_[1].reset(new Blob<fp16>(sz));
+    this->blobs_dtype_[0].reset(new Blob<Dtype>(sz));
+    this->blobs_dtype_[1].reset(new Blob<Dtype>(sz));
     sz[0] = 1;
     this->blobs_[2].reset(new Blob<fp16>(sz));
+    this->blobs_dtype_[2].reset(new Blob<Dtype>(sz));
     for (int i = 0; i < 3; ++i) {
       caffe_set(this->blobs_[i]->count(), fp16(0),
                 this->blobs_[i]->mutable_cpu_data());
+      caffe_set(this->blobs_dtype_[i]->count(), Dtype(0),
+                      this->blobs_dtype_[i]->mutable_cpu_data());
     }
   }
   // Mask statistics from optimization by setting local learning rates
@@ -60,8 +65,8 @@ void BatchNormLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
   sz.push_back(channels_);
   mean_.Reshape(sz);
   variance_.Reshape(sz);
-  temp_.ReshapeLike(*bottom[0]);
-  x_norm_.ReshapeLike(*bottom[0]);
+  temp_.Reshape(bottom[0]->shape());
+  x_norm_.Reshape(bottom[0]->shape());
   sz[0] = bottom[0]->shape(0);
   batch_sum_multiplier_.Reshape(sz);
 
@@ -70,8 +75,8 @@ void BatchNormLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
       spatial_sum_multiplier_.shape(0) != spatial_dim) {
     sz[0] = spatial_dim;
     spatial_sum_multiplier_.Reshape(sz);
-    fp16* multiplier_data = spatial_sum_multiplier_.mutable_cpu_data();
-    caffe_set(spatial_sum_multiplier_.count(), fp32tofp16(1), multiplier_data);
+    Dtype* multiplier_data = spatial_sum_multiplier_.mutable_cpu_data();
+    caffe_set(spatial_sum_multiplier_.count(), Dtype(1), multiplier_data);
   }
 
   int numbychans = channels_*bottom[0]->shape(0);

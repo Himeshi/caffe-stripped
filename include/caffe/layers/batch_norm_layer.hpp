@@ -63,7 +63,7 @@ class BatchNormLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<fp16>*>& bottom,
 	  const vector<Blob<Dtype>*>& top_dtype, const vector<Blob<Dtype>*>& bottom_dtype);
 
-  Blob<fp16> mean_, variance_, temp_, x_norm_;
+  Blob<Dtype> mean_, variance_, temp_, x_norm_;
   bool use_global_stats_;
   Dtype moving_average_fraction_;
   int channels_;
@@ -72,8 +72,8 @@ class BatchNormLayer : public Layer<Dtype> {
   // extra temporarary variables is used to carry out sums/broadcasting
   // using BLAS
   Blob<Dtype> batch_sum_multiplier_;
-  Blob<fp16> num_by_chans_;
-  Blob<fp16> spatial_sum_multiplier_;
+  Blob<Dtype> num_by_chans_;
+  Blob<Dtype> spatial_sum_multiplier_;
 };
 
 }  // namespace caffe
