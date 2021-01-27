@@ -127,6 +127,7 @@ void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
   for (int i = 0; i < bottom.size(); ++i) {
     if (propagate_down[i]) {
+      this->temp_bottom_->Reshape(bottom[i]->shape());
       fp16* bottom_diff = bottom[i]->mutable_gpu_diff();
       Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
       caffe_expand_blob_ag(bottom[i]->count(), temp_bottom_diff, bottom_diff, bottom[i]->diff_bias);
@@ -152,7 +153,6 @@ void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
             }
           }
         } else {
-          this->temp_bottom_->Reshape(bottom[i]->shape());
           bottom_data = bottom[i]->gpu_data();
           temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
           caffe_expand_blob_activations(bottom[i]->count(), temp_bottom_data, bottom_data, bottom[i]->data_bias);

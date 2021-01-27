@@ -8,22 +8,22 @@
 namespace caffe {
 
 template <typename Dtype>
-__global__ void ScaleForward(const int n, const fp16* in,
-    const fp16* scale, const int scale_dim, const int inner_dim,
-    fp16* out) {
+__global__ void ScaleForward(const int n, const Dtype* in,
+    const Dtype* scale, const int scale_dim, const int inner_dim,
+    Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
     const int scale_index = (index / inner_dim) % scale_dim;
-    out[index] = fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * fp16tofp32_gpu(scale[scale_index]));
+    out[index] = in[index] * scale[scale_index];
   }
 }
 
 template <typename Dtype>
-__global__ void ScaleBiasForward(const int n, const fp16* in,
-    const fp16* scale, const fp16* bias,
-    const int scale_dim, const int inner_dim, fp16* out) {
+__global__ void ScaleBiasForward(const int n, const Dtype* in,
+    const Dtype* scale, const Dtype* bias,
+    const int scale_dim, const int inner_dim, Dtype* out) {
   CUDA_KERNEL_LOOP(index, n) {
     const int scale_index = (index / inner_dim) % scale_dim;
-    out[index] = fp32tofp16_gpu(fp16tofp32_gpu(in[index]) * fp16tofp32_gpu(scale[scale_index]) + fp16tofp32_gpu(bias[scale_index]));
+    out[index] = in[index] * scale[scale_index] + bias[scale_index];
   }
 }
 
@@ -33,6 +33,9 @@ void ScaleLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<Dtype>*>& top_dtype){
   const int count = top[0]->count();
   const fp16* bottom_data = bottom[0]->gpu_data();
+  this->temp_bottom_->Reshape(bottom[0]->shape());
+  Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
+  caffe_expand_blob_activations(bottom[0]->count(), temp_bottom_data, bottom_data, bottom[0]->data_bias);
   if (bottom[0] == top[0]) {
     // in-place computation; need to store bottom data before overwriting it.
     // Note that this is only necessary for Backward; we could skip this if not
@@ -40,21 +43,36 @@ void ScaleLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     // we'll need to do Backward at the time of the Forward call.
     caffe_copy(bottom[0]->count(), bottom[0]->gpu_data(),
                temp_.mutable_gpu_data());
+    temp_.data_bias = bottom[0]->data_bias;
   }
   const fp16* scale_data =
       ((bottom.size() > 1) ? bottom[1] : this->blobs_[0].get())->gpu_data();
+  Dtype* temp_scale_data;
+  if(bottom.size() > 1) {
+	  bottom_dtype[1]->Reshape(bottom[1]->shape());
+	  temp_scale_data = bottom_dtype[1]->mutable_gpu_data();
+	  caffe_expand_blob_activations(bottom[1]->count(), temp_scale_data, bottom[1]->gpu_data(), bottom[1]->data_bias);
+  } else {
+	  temp_scale_data = this->blobs_dtype_[0]->mutable_gpu_data();
+	  caffe_expand_blob_w(this->blobs_[0]->count(), temp_scale_data, this->blobs_[0]->gpu_data(), this->blobs_[0]->data_bias);
+  }
   fp16* top_data = top[0]->mutable_gpu_data();
+  Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
   if (bias_layer_) {
     const fp16* bias_data = this->blobs_[bias_param_id_]->gpu_data();
+    Dtype* temp_bias_data = this->blobs_dtype_[bias_param_id_]->mutable_gpu_data();
+    caffe_expand_blob_w(this->blobs_[bias_param_id_]->count(), temp_bias_data, bias_data, this->blobs_[bias_param_id_]->data_bias);
+
     ScaleBiasForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, scale_data, bias_data, scale_dim_, inner_dim_,
-        top_data);
+        count, temp_bottom_data, temp_scale_data, temp_bias_data, scale_dim_, inner_dim_,
+		temp_top_data);
   } else {
     ScaleForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, scale_data, scale_dim_, inner_dim_, top_data);
+        count, temp_bottom_data, temp_scale_data, scale_dim_, inner_dim_, temp_top_data);
   }
+  caffe_compress_blob_activations(count, temp_top_data, top_data, &(top[0]->data_bias));
 }
 
 template <typename Dtype>
@@ -64,8 +82,10 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   if (bias_layer_ &&
       this->param_propagate_down_[this->param_propagate_down_.size() - 1]) {
     bias_layer_->Backward(top, bias_propagate_down_, bias_bottom_vec_, top_dtype, bottom_dtype);
+  } else {
+	  LOG(ERROR) << "No bias layer";
   }
-  const bool scale_param = (bottom.size() == 1);
+  /*const bool scale_param = (bottom.size() == 1);
   Blob<fp16>* scale = scale_param ? this->blobs_[0].get() : bottom[1];
   if ((!scale_param && propagate_down[1]) ||
       (scale_param && this->param_propagate_down_[0])) {
@@ -136,7 +156,7 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     ScaleForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, scale_data, scale_dim_, inner_dim_, bottom_diff);
-  }
+  }*/
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(ScaleLayer);
