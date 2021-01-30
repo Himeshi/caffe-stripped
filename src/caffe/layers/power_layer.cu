@@ -22,7 +22,7 @@ void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     return;
   }
   const fp16* bottom_data = bottom[0]->gpu_data();
-  this->temp_top_->Reshape(bottom[0]->shape());
+  this->temp_bottom_->Reshape(bottom[0]->shape());
   Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
   caffe_expand_blob_activations(bottom[0]->count(), temp_bottom_data, bottom_data, bottom[0]->data_bias);
 
