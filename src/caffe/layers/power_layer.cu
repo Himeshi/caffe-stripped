@@ -19,6 +19,7 @@ void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   if (diff_scale_ == Dtype(0)) {
     Dtype value = (power_ == 0) ? Dtype(1) : pow(shift_, power_);
     caffe_gpu_set(count, value, temp_top_data);
+    caffe_compress_blob_activations(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
     return;
   }
   const fp16* bottom_data = bottom[0]->gpu_data();

@@ -55,7 +55,9 @@ void EltwiseLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     caffe_gpu_mul(count, temp_bottom_0_data, temp_bottom_1_data,
        temp_top_data);
     for (int i = 2; i < bottom.size(); ++i) {
-      caffe_expand_blob_activations(bottom[i]->count(), temp_bottom_0_data, bottom[i]->gpu_data(), bottom[i]->data_bias);
+      this->temp_bottom_->Reshape(bottom[i]->shape());
+      Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
+      caffe_expand_blob_activations(bottom[i]->count(), temp_bottom_data, bottom[i]->gpu_data(), bottom[i]->data_bias);
       caffe_gpu_mul(count, temp_top_data, temp_bottom_0_data, temp_top_data);
     }
     break;

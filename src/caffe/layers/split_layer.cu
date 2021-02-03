@@ -27,6 +27,7 @@ void SplitLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   if (!propagate_down[0]) { return; }
   if (top.size() == 1) {
     caffe_copy(count_, top[0]->gpu_diff(), bottom[0]->mutable_gpu_diff());
+    bottom[0]->diff_bias = top[0]->diff_bias;
     return;
   }
   this->temp_bottom_->Reshape(bottom[0]->shape());
@@ -41,12 +42,11 @@ void SplitLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
 
   caffe_gpu_add(count_, temp_top_diff_0, temp_top_diff_1,
 		  temp_bottom_diff);
-  caffe_compress_blob_ag(count_, temp_bottom_diff, bottom[0]->mutable_gpu_diff(), &(bottom[0]->diff_bias));
 
   // Add remaining top blob diffs.
   for (int i = 2; i < top.size(); ++i) {
     const fp16* top_diff = top[i]->gpu_diff();
-    this->temp_top_->Reshape(top[0]->shape());
+    this->temp_top_->Reshape(top[i]->shape());
     Dtype* temp_top_diff = this->temp_top_->mutable_gpu_diff();
     caffe_expand_blob_ag(count_, temp_top_diff, top[i]->gpu_diff(), top[i]->diff_bias);
 
@@ -55,8 +55,8 @@ void SplitLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
 
     caffe_gpu_axpy(count_, Dtype(1.), temp_top_diff, temp_bottom_diff);
-    caffe_compress_blob_ag(count_, temp_bottom_diff, bottom[0]->mutable_gpu_diff(), &(bottom[0]->diff_bias));
   }
+  caffe_compress_blob_ag(count_, temp_bottom_diff, bottom[0]->mutable_gpu_diff(), &(bottom[0]->diff_bias));
 }
 
 
