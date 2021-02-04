@@ -889,12 +889,12 @@ void Blob<double>::ToProtoWithBias(BlobProto* proto, bool write_diff) const {
   proto->clear_double_diff();
   const double* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
-    proto->add_double_data(data_vec[i]);
+    proto->add_double_data(fp16tofp32_W(data_vec[i]) * data_bias);
   }
   if (write_diff) {
     const double* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
-      proto->add_double_diff(diff_vec[i]);
+      proto->add_double_diff(fp16tofp32(diff_vec[i]) * diff_bias);
     }
   }
 }
@@ -909,12 +909,12 @@ void Blob<float>::ToProtoWithBias(BlobProto* proto, bool write_diff) const {
   proto->clear_diff();
   const float* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
-    proto->add_data(data_vec[i]);
+    proto->add_data(fp16tofp32_W(data_vec[i]) * data_bias);
   }
   if (write_diff) {
     const float* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
-      proto->add_diff(diff_vec[i]);
+      proto->add_diff(fp16tofp32(diff_vec[i]) * diff_bias);
     }
   }
 }
@@ -929,12 +929,12 @@ void Blob<fp16>::ToProtoWithBias(BlobProto* proto, bool write_diff) const {
   proto->clear_diff();
   const fp16* data_vec = cpu_data();
   for (int i = 0; i < count_; ++i) {
-    proto->add_data(fp16tofp32(data_vec[i]) * data_bias);
+    proto->add_data(fp16tofp32_W(data_vec[i]) * data_bias);
   }
   if (write_diff) {
     const fp16* diff_vec = cpu_diff();
     for (int i = 0; i < count_; ++i) {
-      proto->add_diff(fp16tofp32(diff_vec[i]));
+      proto->add_diff(fp16tofp32(diff_vec[i]) * diff_bias);
     }
   }
 }
