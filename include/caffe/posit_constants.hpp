@@ -3703,7 +3703,7 @@
 #define _G_MINREAL (1 / pow(_G_USEED, (_G_NBITS - 2)))
 #endif
 
-##elif _G_NBITS == 11
+#elif _G_NBITS == 11
 #define _G_POSIT_SHIFT_AMOUNT 5
 #define _G_MAXREALP 32736
 #define _G_MINREALP 32
