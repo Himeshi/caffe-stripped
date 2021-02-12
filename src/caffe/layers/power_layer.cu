@@ -12,7 +12,6 @@ void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   fp16* top_data = top[0]->mutable_gpu_data();
   this->temp_top_->Reshape(top[0]->shape());
   Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
-  caffe_expand_blob_activations(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
 
   const int count = bottom[0]->count();
   // Special case where we can ignore the input: scale or power is 0.
@@ -22,12 +21,12 @@ void PowerLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     caffe_compress_blob_activations(top[0]->count(), temp_top_data, top_data, &(top[0]->data_bias));
     return;
   }
-  const fp16* bottom_data = bottom[0]->gpu_data();
-  this->temp_bottom_->Reshape(bottom[0]->shape());
-  Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
-  caffe_expand_blob_activations(bottom[0]->count(), temp_bottom_data, bottom_data, bottom[0]->data_bias);
 
-  caffe_copy(count, temp_bottom_data, temp_top_data);
+  const fp16* bottom_data = bottom[0]->gpu_data();
+  caffe_copy(count, bottom_data, top_data);
+  top[0]->data_bias = bottom[0]->data_bias;
+  caffe_expand_blob_activations(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
+
   if (scale_ != Dtype(1)) {
     caffe_gpu_scal(count, scale_, temp_top_data);
   }
@@ -49,7 +48,6 @@ void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     const int count = bottom[0]->count();
     this->temp_bottom_->Reshape(bottom[0]->shape());
     Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
-    caffe_expand_blob_ag(count, temp_bottom_diff, bottom_diff, bottom[0]->diff_bias);
 
     const fp16* top_diff = top[0]->gpu_diff();
     this->temp_top_->Reshape(top[0]->shape());
@@ -62,7 +60,6 @@ void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       const fp16* bottom_data = bottom[0]->gpu_data();
       Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
       caffe_expand_blob_activations(bottom[0]->count(), temp_bottom_data, bottom_data, bottom[0]->data_bias);
-
       // Compute dy/dx = scale * power * (shift + scale * x)^(power - 1)
       //               = diff_scale * y / (shift + scale * x)
       if (power_ == Dtype(2)) {
@@ -86,7 +83,9 @@ void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         caffe_gpu_div(count, temp_top_data, temp_bottom_data, temp_bottom_diff);
         caffe_gpu_scal(count, power_, temp_bottom_diff);
       } else {
-        caffe_copy(count, temp_bottom_data, temp_bottom_diff);
+        caffe_copy(count, bottom_data, bottom_diff);
+        bottom[0]->diff_bias = bottom[0]->data_bias;
+        caffe_expand_blob_activations(count, temp_bottom_diff, bottom_diff, bottom[0]->diff_bias);
         if (scale_ != Dtype(1)) {
           caffe_gpu_scal(count, scale_, temp_bottom_diff);
         }
@@ -96,7 +95,6 @@ void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
         const fp16* top_data = top[0]->gpu_data();
         Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
         caffe_expand_blob_activations(top[0]->count(), temp_top_data, top_data, top[0]->data_bias);
-
         caffe_gpu_div(count, temp_top_data, temp_bottom_diff, temp_bottom_diff);
         if (diff_scale_ != Dtype(1)) {
           caffe_gpu_scal(count, diff_scale_, temp_bottom_diff);
