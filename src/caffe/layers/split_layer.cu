@@ -11,8 +11,8 @@ void SplitLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       const vector<Blob<Dtype>*>& top_dtype) {
   for (int i = 0; i < top.size(); ++i) {
     top[i]->ShareData(*bottom[0]);
-    top[i]->data_bias = bottom[i]->data_bias;
-    top[i]->diff_bias = bottom[i]->diff_bias;
+    top[i]->data_bias = bottom[0]->data_bias;
+    top[i]->diff_bias = bottom[0]->diff_bias;
     if(this->layer_param_.name() == "label_cifar_1_split") {
       top_dtype[i]->Reshape(bottom_dtype[0]->shape());
       top_dtype[i]->ShareData(*bottom_dtype[0]);
