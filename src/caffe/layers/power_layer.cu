@@ -60,7 +60,7 @@ void PowerLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     } else {
       const fp16* bottom_data = bottom[0]->gpu_data();
       Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
-      caffe_expand_blob_activations(bottom[0]->count(), temp_bottom_data, bottom_data, bottom[0]->data_bias);
+      caffe_expand_blob_activations(count, temp_bottom_data, bottom_data, bottom[0]->data_bias);
       // Compute dy/dx = scale * power * (shift + scale * x)^(power - 1)
       //               = diff_scale * y / (shift + scale * x)
       if (power_ == Dtype(2)) {
