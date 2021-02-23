@@ -19,7 +19,7 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     const vector<Blob<fp16>*>& top, const vector<Blob<Dtype>*>& bottom_dtype,
     const vector<Blob<Dtype>*>& top_dtype) {
   const fp16* bottom_data = bottom[0]->gpu_data();
-  this->temp_bottom->Reshape(bottom[0]->shape());
+  this->temp_bottom_->Reshape(bottom[0]->shape());
   Dtype* temp_bottom_data = this->temp_bottom_->mutable_gpu_data();
   const int count = bottom[0]->count();
   caffe_expand_blob_activations(count, temp_bottom_data, bottom_data, bottom[0]->data_bias);
