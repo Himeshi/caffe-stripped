@@ -71,7 +71,7 @@ __global__ void convert_to_float(const int n, const fp16* in, float* out, float 
 
 __global__ void convert_to_float(const int n, const fp16* in, double* out, float bias) {
   CUDA_KERNEL_LOOP(index, n) {
-   out[index] = fp16tofp32_gpu(in[index]* bias);
+   out[index] = fp16tofp32_gpu(in[index]) * bias;
   }
 }
 
