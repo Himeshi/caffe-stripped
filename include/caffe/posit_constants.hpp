@@ -687,7 +687,7 @@
 #define _G_MINREAL_INT_W 0x34800000
 
 #elif _G_MAX_REGIME_SIZE_W == 7
-#define _G_MAXREAL_INT_W 0x467c0000
+#define _G_MAXREAL_INT_W 0x46780000
 #define _G_MINREAL_INT_W 0x34800000
 #endif
 
@@ -804,7 +804,11 @@
 #define _G_MINREAL_INT_W 0x33800000
 
 #elif _G_MAX_REGIME_SIZE_W == 7
-#define _G_MAXREAL_INT_W 0x467e0000
+#define _G_MAXREAL_INT_W 0x467c0000
+#define _G_MINREAL_INT_W 0x33800000
+
+#elif _G_MAX_REGIME_SIZE_W == 8
+#define _G_MAXREAL_INT_W 0x47780000
 #define _G_MINREAL_INT_W 0x33800000
 #endif
 
@@ -1230,10 +1234,10 @@
 #endif
 
 #else
-#define _G_USEED 1 << (1 << _G_ESIZE)
-#define _G_USEED_ZEROS (1 << _G_ESIZE)
-#define _G_MAXREAL pow(_G_USEED, (_G_NBITS - 2))
-#define _G_MINREAL (1 / pow(_G_USEED, (_G_NBITS - 2)))
+#define _G_USEED_AG 1 << (1 << _G_ESIZE)
+#define _G_USEED_ZEROS_AG (1 << _G_ESIZE)
+#define _G_MAXREAL_AG pow(_G_USEED, (_G_NBITS - 2))
+#define _G_MINREAL_AG (1 / pow(_G_USEED, (_G_NBITS - 2)))
 #endif
 
 #elif _G_NBITS_AG == 9
@@ -1742,7 +1746,7 @@
 #define _G_MINREAL_INT_AG 0x34800000
 
 #elif _G_MAX_REGIME_SIZE_AG == 7
-#define _G_MAXREAL_INT_AG 0x467c0000
+#define _G_MAXREAL_INT_AG 0x46780000
 #define _G_MINREAL_INT_AG 0x34800000
 #endif
 
@@ -1859,7 +1863,11 @@
 #define _G_MINREAL_INT_AG 0x33800000
 
 #elif _G_MAX_REGIME_SIZE_AG == 7
-#define _G_MAXREAL_INT_AG 0x467e0000
+#define _G_MAXREAL_INT_AG 0x467c0000
+#define _G_MINREAL_INT_AG 0x33800000
+
+#elif _G_MAX_REGIME_SIZE_AG == 8
+#define _G_MAXREAL_INT_AG 0x47780000
 #define _G_MINREAL_INT_AG 0x33800000
 #endif
 
@@ -2285,10 +2293,10 @@
 #endif
 
 #else
-#define _G_USEED 1 << (1 << _G_ESIZE)
-#define _G_USEED_ZEROS (1 << _G_ESIZE)
-#define _G_MAXREAL pow(_G_USEED, (_G_NBITS - 2))
-#define _G_MINREAL (1 / pow(_G_USEED, (_G_NBITS - 2)))
+#define _G_USEED_ACTIVATIONS 1 << (1 << _G_ESIZE)
+#define _G_USEED_ZEROS_ACTIVATIONS (1 << _G_ESIZE)
+#define _G_MAXREAL_ACTIVATIONS pow(_G_USEED, (_G_NBITS - 2))
+#define _G_MINREAL_ACTIVATIONS (1 / pow(_G_USEED, (_G_NBITS - 2)))
 #endif
 
 #elif _G_NBITS_ACTIVATIONS == 9
@@ -2797,7 +2805,7 @@
 #define _G_MINREAL_INT_ACTIVATIONS 0x34800000
 
 #elif _G_MAX_REGIME_SIZE_ACTIVATIONS == 7
-#define _G_MAXREAL_INT_ACTIVATIONS 0x467c0000
+#define _G_MAXREAL_INT_ACTIVATIONS 0x46780000
 #define _G_MINREAL_INT_ACTIVATIONS 0x34800000
 #endif
 
@@ -2914,7 +2922,11 @@
 #define _G_MINREAL_INT_ACTIVATIONS 0x33800000
 
 #elif _G_MAX_REGIME_SIZE_ACTIVATIONS == 7
-#define _G_MAXREAL_INT_ACTIVATIONS 0x467e0000
+#define _G_MAXREAL_INT_ACTIVATIONS 0x467c0000
+#define _G_MINREAL_INT_ACTIVATIONS 0x33800000
+
+#elif _G_MAX_REGIME_SIZE_ACTIVATIONS == 8
+#define _G_MAXREAL_INT_ACTIVATIONS 0x47780000
 #define _G_MINREAL_INT_ACTIVATIONS 0x33800000
 #endif
 
@@ -3229,124 +3241,7 @@
 
 #endif
 
-#if _G_NBITS == 16
-#define _G_POSIT_SHIFT_AMOUNT 0
-#define _G_MAXREALP 32767
-#define _G_MINREALP 1
-#define POSIT_EXTRA_BITS_SHIFT 49
-#define POSIT_EXTRA_BITS_MASK 0x0000FFFFFFFFFFFF
-#define POSIT_HALFWAY_BIT_MASK 0x0001000000000000
-
-#if _G_ESIZE == 1
-#define _G_USEED 4
-#define _G_USEED_ZEROS 2
-#define POSIT_EXPONENT_MASK 1
-
-#if _G_MAX_REGIME_SIZE == 1
-#define _G_MAXREAL_INT 0x407ffc00
-#define _G_MINREAL_INT 0x31800000
-
-#elif _G_MAX_REGIME_SIZE == 2
-#define _G_MAXREAL_INT 0x417ff800
-#define _G_MINREAL_INT 0x31800000
-
-#elif _G_MAX_REGIME_SIZE == 3
-#define _G_MAXREAL_INT 0x427ff000
-#define _G_MINREAL_INT 0x31800000
-
-#elif _G_MAX_REGIME_SIZE == 4
-#define _G_MAXREAL_INT 0x437fe000
-#define _G_MINREAL_INT 0x31800000
-
-#elif _G_MAX_REGIME_SIZE == 5
-#define _G_MAXREAL_INT 0x447fc000
-#define _G_MINREAL_INT 0x31800000
-
-#elif _G_MAX_REGIME_SIZE == 6
-#define _G_MAXREAL_INT 0x457f8000
-#define _G_MINREAL_INT 0x31800000
-
-#elif _G_MAX_REGIME_SIZE == 7
-#define _G_MAXREAL_INT 0x467f0000
-#define _G_MINREAL_INT 0x31800000
-#endif
-
-#elif _G_ESIZE == 2
-#define _G_USEED 16
-#define _G_USEED_ZEROS 4
-#define POSIT_EXPONENT_MASK 3
-
-#if _G_MAX_REGIME_SIZE == 1
-#define _G_MAXREAL_INT 0x417ff800
-#define _G_MINREAL_INT 0x23800000
-
-#elif _G_MAX_REGIME_SIZE == 2
-#define _G_MAXREAL_INT 0x437ff000
-#define _G_MINREAL_INT 0x23800000
-
-#elif _G_MAX_REGIME_SIZE == 3
-#define _G_MAXREAL_INT 0x457fe000
-#define _G_MINREAL_INT 0x23800000
-
-#elif _G_MAX_REGIME_SIZE == 4
-#define _G_MAXREAL_INT 0x477fc000
-#define _G_MINREAL_INT 0x23800000
-
-#elif _G_MAX_REGIME_SIZE == 5
-#define _G_MAXREAL_INT 0x497f8000
-#define _G_MINREAL_INT 0x23800000
-
-#elif _G_MAX_REGIME_SIZE == 6
-#define _G_MAXREAL_INT 0x4b7f0000
-#define _G_MINREAL_INT 0x23800000
-
-#elif _G_MAX_REGIME_SIZE == 7
-#define _G_MAXREAL_INT 0x4d7e0000
-#define _G_MINREAL_INT 0x23800000
-#endif
-
-#elif _G_ESIZE == 3
-#define _G_USEED 256
-#define _G_USEED_ZEROS 8
-#define POSIT_EXPONENT_MASK 7
-
-#if _G_MAX_REGIME_SIZE == 1
-#define _G_MAXREAL_INT 0x437ff000
-#define _G_MINREAL_INT 0x07800000
-
-#elif _G_MAX_REGIME_SIZE == 2
-#define _G_MAXREAL_INT 0x477fe000
-#define _G_MINREAL_INT 0x07800000
-
-#elif _G_MAX_REGIME_SIZE == 3
-#define _G_MAXREAL_INT 0x4b7fc000
-#define _G_MINREAL_INT 0x07800000
-
-#elif _G_MAX_REGIME_SIZE == 4
-#define _G_MAXREAL_INT 0x4f7f8000
-#define _G_MINREAL_INT 0x07800000
-
-#elif _G_MAX_REGIME_SIZE == 5
-#define _G_MAXREAL_INT 0x537f0000
-#define _G_MINREAL_INT 0x07800000
-
-#elif _G_MAX_REGIME_SIZE == 6
-#define _G_MAXREAL_INT 0x577e0000
-#define _G_MINREAL_INT 0x07800000
-
-#elif _G_MAX_REGIME_SIZE == 7
-#define _G_MAXREAL_INT 0x5b7c0000
-#define _G_MINREAL_INT 0x07800000
-#endif
-
-#else
-#define _G_USEED 1 << (1 << _G_ESIZE)
-#define _G_USEED_ZEROS (1 << _G_ESIZE)
-#define _G_MAXREAL pow(_G_USEED, (_G_NBITS - 2))
-#define _G_MINREAL (1 / pow(_G_USEED, (_G_NBITS - 2)))
-#endif
-
-#elif _G_NBITS == 8
+#if _G_NBITS == 8
 #define _G_POSIT_SHIFT_AMOUNT 8
 #define _G_MAXREALP 32512
 #define _G_MINREALP 256
@@ -3455,12 +3350,6 @@
 #define _G_MAXREAL_INT 0x57800000
 #define _G_MINREAL_INT 0x27800000
 #endif
-
-#elif _G_ESIZE == 4
-#define _G_USEED 512
-#define _G_USEED_ZEROS 16
-#define _G_MAXREAL 7.922816251e+28
-#define _G_MINREAL 1.262177448e-29
 
 #else
 #define _G_USEED 1 << (1 << _G_ESIZE)
@@ -3975,7 +3864,7 @@
 #define _G_MINREAL_INT 0x34800000
 
 #elif _G_MAX_REGIME_SIZE == 7
-#define _G_MAXREAL_INT 0x467c0000
+#define _G_MAXREAL_INT 0x46780000
 #define _G_MINREAL_INT 0x34800000
 #endif
 
@@ -4092,7 +3981,11 @@
 #define _G_MINREAL_INT 0x33800000
 
 #elif _G_MAX_REGIME_SIZE == 7
-#define _G_MAXREAL_INT 0x467e0000
+#define _G_MAXREAL_INT 0x467c0000
+#define _G_MINREAL_INT 0x33800000
+
+#elif _G_MAX_REGIME_SIZE == 8
+#define _G_MAXREAL_INT 0x47780000
 #define _G_MINREAL_INT 0x33800000
 #endif
 
@@ -4279,6 +4172,123 @@
 #elif _G_MAX_REGIME_SIZE == 7
 #define _G_MAXREAL_INT 0x5b780000
 #define _G_MINREAL_INT 0x0B800000
+#endif
+
+#else
+#define _G_USEED 1 << (1 << _G_ESIZE)
+#define _G_USEED_ZEROS (1 << _G_ESIZE)
+#define _G_MAXREAL pow(_G_USEED, (_G_NBITS - 2))
+#define _G_MINREAL (1 / pow(_G_USEED, (_G_NBITS - 2)))
+#endif
+
+#elif _G_NBITS == 16
+#define _G_POSIT_SHIFT_AMOUNT 0
+#define _G_MAXREALP 32767
+#define _G_MINREALP 1
+#define POSIT_EXTRA_BITS_SHIFT 49
+#define POSIT_EXTRA_BITS_MASK 0x0000FFFFFFFFFFFF
+#define POSIT_HALFWAY_BIT_MASK 0x0001000000000000
+
+#if _G_ESIZE == 1
+#define _G_USEED 4
+#define _G_USEED_ZEROS 2
+#define POSIT_EXPONENT_MASK 1
+
+#if _G_MAX_REGIME_SIZE == 1
+#define _G_MAXREAL_INT 0x407ffc00
+#define _G_MINREAL_INT 0x31800000
+
+#elif _G_MAX_REGIME_SIZE == 2
+#define _G_MAXREAL_INT 0x417ff800
+#define _G_MINREAL_INT 0x31800000
+
+#elif _G_MAX_REGIME_SIZE == 3
+#define _G_MAXREAL_INT 0x427ff000
+#define _G_MINREAL_INT 0x31800000
+
+#elif _G_MAX_REGIME_SIZE == 4
+#define _G_MAXREAL_INT 0x437fe000
+#define _G_MINREAL_INT 0x31800000
+
+#elif _G_MAX_REGIME_SIZE == 5
+#define _G_MAXREAL_INT 0x447fc000
+#define _G_MINREAL_INT 0x31800000
+
+#elif _G_MAX_REGIME_SIZE == 6
+#define _G_MAXREAL_INT 0x457f8000
+#define _G_MINREAL_INT 0x31800000
+
+#elif _G_MAX_REGIME_SIZE == 7
+#define _G_MAXREAL_INT 0x467f0000
+#define _G_MINREAL_INT 0x31800000
+#endif
+
+#elif _G_ESIZE == 2
+#define _G_USEED 16
+#define _G_USEED_ZEROS 4
+#define POSIT_EXPONENT_MASK 3
+
+#if _G_MAX_REGIME_SIZE == 1
+#define _G_MAXREAL_INT 0x417ff800
+#define _G_MINREAL_INT 0x23800000
+
+#elif _G_MAX_REGIME_SIZE == 2
+#define _G_MAXREAL_INT 0x437ff000
+#define _G_MINREAL_INT 0x23800000
+
+#elif _G_MAX_REGIME_SIZE == 3
+#define _G_MAXREAL_INT 0x457fe000
+#define _G_MINREAL_INT 0x23800000
+
+#elif _G_MAX_REGIME_SIZE == 4
+#define _G_MAXREAL_INT 0x477fc000
+#define _G_MINREAL_INT 0x23800000
+
+#elif _G_MAX_REGIME_SIZE == 5
+#define _G_MAXREAL_INT 0x497f8000
+#define _G_MINREAL_INT 0x23800000
+
+#elif _G_MAX_REGIME_SIZE == 6
+#define _G_MAXREAL_INT 0x4b7f0000
+#define _G_MINREAL_INT 0x23800000
+
+#elif _G_MAX_REGIME_SIZE == 7
+#define _G_MAXREAL_INT 0x4d7e0000
+#define _G_MINREAL_INT 0x23800000
+#endif
+
+#elif _G_ESIZE == 3
+#define _G_USEED 256
+#define _G_USEED_ZEROS 8
+#define POSIT_EXPONENT_MASK 7
+
+#if _G_MAX_REGIME_SIZE == 1
+#define _G_MAXREAL_INT 0x437ff000
+#define _G_MINREAL_INT 0x07800000
+
+#elif _G_MAX_REGIME_SIZE == 2
+#define _G_MAXREAL_INT 0x477fe000
+#define _G_MINREAL_INT 0x07800000
+
+#elif _G_MAX_REGIME_SIZE == 3
+#define _G_MAXREAL_INT 0x4b7fc000
+#define _G_MINREAL_INT 0x07800000
+
+#elif _G_MAX_REGIME_SIZE == 4
+#define _G_MAXREAL_INT 0x4f7f8000
+#define _G_MINREAL_INT 0x07800000
+
+#elif _G_MAX_REGIME_SIZE == 5
+#define _G_MAXREAL_INT 0x537f0000
+#define _G_MINREAL_INT 0x07800000
+
+#elif _G_MAX_REGIME_SIZE == 6
+#define _G_MAXREAL_INT 0x577e0000
+#define _G_MINREAL_INT 0x07800000
+
+#elif _G_MAX_REGIME_SIZE == 7
+#define _G_MAXREAL_INT 0x5b7c0000
+#define _G_MINREAL_INT 0x07800000
 #endif
 
 #else
