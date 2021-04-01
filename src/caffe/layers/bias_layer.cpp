@@ -25,12 +25,14 @@ void BiasLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
           << "starting with bottom[0] axis = " << axis;
     }
     this->blobs_.resize(1);
+    this->blobs_dtype_.resize(1);
     const vector<int>::const_iterator& shape_start =
         bottom[0]->shape().begin() + axis;
     const vector<int>::const_iterator& shape_end =
         (num_axes == -1) ? bottom[0]->shape().end() : (shape_start + num_axes);
     vector<int> bias_shape(shape_start, shape_end);
     this->blobs_[0].reset(new Blob<fp16>(bias_shape));
+    this->blobs_dtype_[0].reset(new Blob<Dtype>(bias_shape));
     shared_ptr<Filler<Dtype> > filler(GetFiller<Dtype>(param.filler()));
     filler->Fill(this->blobs_dtype_[0].get());
     caffe_compress_blob_w(this->blobs_[0]->count(), this->blobs_dtype_[0]->mutable_cpu_data(), this->blobs_[0]->mutable_cpu_data(), &((this->blobs_[0])->data_bias));

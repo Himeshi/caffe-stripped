@@ -24,6 +24,7 @@ void BatchNormLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     LOG(INFO) << "Skipping parameter initialization";
   } else {
     this->blobs_.resize(3);
+    this->blobs_dtype_.resize(3);
     vector<int> sz;
     sz.push_back(channels_);
     this->blobs_[0].reset(new Blob<fp16>(sz));

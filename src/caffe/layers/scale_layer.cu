@@ -57,6 +57,7 @@ void ScaleLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 	  caffe_expand_blob_w(this->blobs_[0]->count(), temp_scale_data, this->blobs_[0]->gpu_data(), this->blobs_[0]->data_bias);
   }
   fp16* top_data = top[0]->mutable_gpu_data();
+  this->temp_top_->Reshape(top[0]->shape());
   Dtype* temp_top_data = this->temp_top_->mutable_gpu_data();
   if (bias_layer_) {
     const fp16* bias_data = this->blobs_[bias_param_id_]->gpu_data();

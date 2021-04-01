@@ -17,6 +17,7 @@ void BatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
 
   if (bottom[0] != top[0]) {
     caffe_copy(bottom[0]->count(), bottom_data, top_data);
+    top[0]->data_bias = bottom[0]->data_bias;
   }
 
   this->temp_top_->Reshape(top[0]->shape());

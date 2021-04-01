@@ -27,12 +27,14 @@ void ScaleLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
           << "starting with bottom[0] axis = " << axis_;
     }
     this->blobs_.resize(1);
+    this->blobs_dtype_.resize(1);
     const vector<int>::const_iterator& shape_start =
         bottom[0]->shape().begin() + axis_;
     const vector<int>::const_iterator& shape_end =
         (num_axes == -1) ? bottom[0]->shape().end() : (shape_start + num_axes);
     vector<int> scale_shape(shape_start, shape_end);
     this->blobs_[0].reset(new Blob<fp16>(scale_shape));
+    this->blobs_dtype_[0].reset(new Blob<Dtype>(scale_shape));
     FillerParameter filler_param(param.filler());
     if (!param.has_filler()) {
       // Default to unit (1) filler for identity operation.
@@ -56,18 +58,23 @@ void ScaleLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     bias_param->mutable_filler()->CopyFrom(param.bias_filler());
     bias_layer_ = LayerRegistry<Dtype>::CreateLayer(layer_param);
     bias_bottom_vec_.resize(1);
+    bias_bottom_vec_dtype_.resize(1);
     bias_bottom_vec_[0] = bottom[0];
-    bias_layer_->SetUp(bias_bottom_vec_, top, bottom_dtype, top_dtype);
+    bias_bottom_vec_dtype_[0] = bottom_dtype[0];
+    bias_layer_->SetUp(bias_bottom_vec_, top, bias_bottom_vec_dtype_, top_dtype);
     if (this->blobs_.size() + bottom.size() < 3) {
       // case: blobs.size == 1 && bottom.size == 1
       // or blobs.size == 0 && bottom.size == 2
       bias_param_id_ = this->blobs_.size();
       this->blobs_.resize(bias_param_id_ + 1);
+      this->blobs_dtype_.resize(bias_param_id_ + 1);
       this->blobs_[bias_param_id_] = bias_layer_->blobs()[0];
+      this->blobs_dtype_[bias_param_id_] = bias_layer_->blobs_dtype()[0];
     } else {
       // bias param already initialized
       bias_param_id_ = this->blobs_.size() - 1;
       bias_layer_->blobs()[0] = this->blobs_[bias_param_id_];
+      bias_layer_->blobs_dtype()[0] = this->blobs_dtype_[bias_param_id_];
     }
     bias_propagate_down_.resize(1, false);
   }
