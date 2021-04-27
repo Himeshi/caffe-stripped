@@ -106,7 +106,7 @@ void ScaleLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
   scale_dim_ = scale->count();
   inner_dim_ = bottom[0]->count(axis_ + scale->num_axes());
   if (bottom[0] == top[0]) {  // in-place computation
-    temp_.ReshapeLike(*bottom[0]);
+    temp_.Reshape(bottom[0]->shape());
   } else {
     top[0]->ReshapeLike(*bottom[0]);
   }
@@ -114,7 +114,7 @@ void ScaleLayer<Dtype>::Reshape(const vector<Blob<fp16>*>& bottom,
   const int sum_mult_size = std::max(outer_dim_, inner_dim_);
   sum_multiplier_.Reshape(vector<int>(1, sum_mult_size));
   if (sum_multiplier_.cpu_data()[sum_mult_size - 1] != Dtype(1)) {
-    caffe_set(sum_mult_size, fp32tofp16(1), sum_multiplier_.mutable_cpu_data());
+    caffe_set(sum_mult_size, Dtype(1), sum_multiplier_.mutable_cpu_data());
   }
   if (bias_layer_) {
     bias_bottom_vec_[0] = top[0];

@@ -41,9 +41,8 @@ void ScaleLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     // Note that this is only necessary for Backward; we could skip this if not
     // doing Backward, but Caffe currently provides no way of knowing whether
     // we'll need to do Backward at the time of the Forward call.
-    caffe_copy(bottom[0]->count(), bottom[0]->gpu_data(),
+    caffe_copy(bottom[0]->count(), temp_bottom_data,
                temp_.mutable_gpu_data());
-    temp_.data_bias = bottom[0]->data_bias;
   }
   const fp16* scale_data =
       ((bottom.size() > 1) ? bottom[1] : this->blobs_[0].get())->gpu_data();
@@ -83,81 +82,134 @@ void ScaleLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
   if (bias_layer_ &&
       this->param_propagate_down_[this->param_propagate_down_.size() - 1]) {
     bias_layer_->Backward(top, bias_propagate_down_, bias_bottom_vec_, top_dtype, bottom_dtype);
-  } else {
-	  LOG(ERROR) << "No bias layer";
   }
-  /*const bool scale_param = (bottom.size() == 1);
+  const bool scale_param = (bottom.size() == 1);
   Blob<fp16>* scale = scale_param ? this->blobs_[0].get() : bottom[1];
+  Blob<Dtype>* temp_scale;
+  if(scale_param) {
+	  temp_scale = this->blobs_dtype_[0].get();
+  } else {
+	  temp_scale = bottom_dtype[1];
+  }
+  temp_scale->Reshape(scale->shape());
+
   if ((!scale_param && propagate_down[1]) ||
       (scale_param && this->param_propagate_down_[0])) {
     const fp16* top_diff = top[0]->gpu_diff();
+    this->temp_top_->Reshape(top[0]->shape());
+    Dtype* temp_top_diff = this->temp_top_->mutable_gpu_diff();
+    caffe_expand_blob_ag(top[0]->count(), temp_top_diff, top_diff, top[0]->diff_bias);
+
     const bool in_place = (bottom[0] == top[0]);
-    const fp16* bottom_data = (in_place ? &temp_ : bottom[0])->gpu_data();
+    const Dtype* temp_bottom_data;
+    if(in_place) {
+      temp_bottom_data = temp_.gpu_data();
+    } else {
+      this->temp_bottom_->Reshape(bottom[0]->shape());
+      Dtype* temp_bottom_data_mutable = this->temp_bottom_->mutable_gpu_data();
+      caffe_expand_blob_activations(bottom[0]->count(), temp_bottom_data_mutable, bottom[0]->gpu_data(), bottom[0]->diff_bias);
+      temp_bottom_data = this->temp_bottom_->gpu_data();
+    }
     // Hack: store big eltwise product in bottom[0] diff, except in the special
     // case where this layer itself does the eltwise product, in which case we
     // can store it directly in the scale diff, and we're done.
     // If we're computing in-place (and not doing eltwise computation), this
     // hack doesn't work and we store the product in temp_.
     const bool is_eltwise = (bottom[0]->count() == scale->count());
-    fp16* product = (is_eltwise ? scale->mutable_gpu_diff() :
-        (in_place ? temp_.mutable_gpu_data() : bottom[0]->mutable_gpu_diff()));
-    float product_bias = (is_eltwise ? scale->diff_bias :
-            (in_place ? temp_.data_bias : bottom[0]->diff_bias));
-    caffe_gpu_mul(top[0]->count(), top_diff, bottom_data, product);
+
+    //fp16* temp_product = (is_eltwise ? scale->mutable_gpu_diff() :
+        //(in_place ? temp_.mutable_gpu_data() : bottom[0]->mutable_gpu_diff()));
+
+    Dtype* product;
+    if(is_eltwise) {
+      product = temp_scale->mutable_gpu_diff();
+    } else {
+      if(in_place) {
+        product = temp_.mutable_gpu_data();
+      } else {
+        product = this->temp_bottom_->mutable_gpu_diff();
+      }
+    }
+    caffe_gpu_mul(top[0]->count(), temp_top_diff, temp_bottom_data, product);
+    if(is_eltwise) {
+      if(scale_param) {
+        caffe_compress_blob(scale->count(), product, scale->mutable_gpu_diff(), &(scale->diff_bias));
+      } else {
+        caffe_compress_blob_ag(scale->count(), product, scale->mutable_gpu_diff(), &(scale->diff_bias));
+      }
+    } else {
+      if(!in_place) {
+        caffe_compress_blob_ag(bottom[0]->count(), product, bottom[0]->mutable_gpu_diff(), &(bottom[0]->diff_bias));
+      }
+    }
+
     if (!is_eltwise) {
-      fp16* sum_result = NULL;
-      float sum_result_bias = 1.0;
+      Dtype* sum_result = NULL;
       if (inner_dim_ == 1) {
         sum_result = product;
-        sum_result_bias =  product_bias;
       } else if (sum_result_.count() == 1) {
-        const fp16* sum_mult = sum_multiplier_.gpu_data();
-        fp16* scale_diff = scale->mutable_cpu_diff();
+        const Dtype* sum_mult = sum_multiplier_.gpu_data();
+        Dtype* scale_diff = temp_scale->mutable_cpu_diff();
         if (scale_param) {
           Dtype result;
-          caffe_gpu_dot_half(inner_dim_, product, sum_mult, &result, product_bias, sum_multiplier_.data_bias);
+          caffe_gpu_dot(inner_dim_, product, sum_mult, &result);
           *scale_diff += result;
         } else {
           caffe_gpu_dot(inner_dim_, product, sum_mult, scale_diff);
         }
       } else {
-        const fp16* sum_mult = sum_multiplier_.gpu_data();
+        const Dtype* sum_mult = sum_multiplier_.gpu_data();
         sum_result = (outer_dim_ == 1) ?
-            scale->mutable_gpu_diff() : sum_result_.mutable_gpu_data();
-        sum_result_bias = (outer_dim_ == 1) ?
-                scale->diff_bias : sum_result_.data_bias;
+            temp_scale->mutable_gpu_diff() : sum_result_.mutable_gpu_data();
         caffe_gpu_gemv(CblasNoTrans, sum_result_.count(), inner_dim_,
-                       fp32tofp16(1), product, sum_mult, fp32tofp16(0), sum_result);
+                       Dtype(1), product, sum_mult, Dtype(0), sum_result);
       }
       if (outer_dim_ != 1) {
-        const fp16* sum_mult = sum_multiplier_.gpu_data();
+        const Dtype* sum_mult = sum_multiplier_.gpu_data();
         if (scale_dim_ == 1) {
-          fp16* scale_diff = scale->mutable_cpu_diff();
+          Dtype* scale_diff = temp_scale->mutable_cpu_diff();
           if (scale_param) {
             Dtype result;
-            caffe_gpu_dot_half(outer_dim_, sum_mult, sum_result, &result, sum_multiplier_.data_bias, sum_result_bias);
+            caffe_gpu_dot(outer_dim_, sum_mult, sum_result, &result);
             *scale_diff += result;
           } else {
             caffe_gpu_dot(outer_dim_, sum_mult, sum_result, scale_diff);
           }
         } else {
-          fp16* scale_diff = scale->mutable_gpu_diff();
+          Dtype* scale_diff = temp_scale->mutable_gpu_diff();
           caffe_gpu_gemv(CblasTrans, outer_dim_, scale_dim_,
-                         fp32tofp16(1), sum_result, sum_mult, fp32tofp16(scale_param),
+                         Dtype(1), sum_result, sum_mult, Dtype(scale_param),
                          scale_diff);
         }
       }
+
+      if(scale_param) {
+        caffe_compress_blob(scale->count(), temp_scale->mutable_gpu_diff(), scale->mutable_gpu_diff(), &(scale->diff_bias));
+        } else {
+        caffe_compress_blob_ag(scale->count(), temp_scale->mutable_gpu_diff(), scale->mutable_gpu_diff(), &(scale->diff_bias));
+      }
+
     }
   }
   if (propagate_down[0]) {
     const int count = top[0]->count();
     const fp16* top_diff = top[0]->gpu_diff();
-    const fp16* scale_data = scale->gpu_data();
+    this->temp_top_->Reshape(top[0]->shape());
+    Dtype* temp_top_diff = this->temp_top_->mutable_gpu_diff();
+    caffe_expand_blob_ag(count, temp_top_diff, top_diff, top[0]->diff_bias);
+
+    const Dtype* temp_scale_data = temp_scale->gpu_data();
+
     fp16* bottom_diff = bottom[0]->mutable_gpu_diff();
+    this->temp_bottom_->Reshape(bottom[0]->shape());
+    Dtype* temp_bottom_diff = this->temp_bottom_->mutable_gpu_diff();
+
     ScaleForward<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
         <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, scale_data, scale_dim_, inner_dim_, bottom_diff);
-  }*/
+        count, temp_top_diff, temp_scale_data, scale_dim_, inner_dim_, temp_bottom_diff);
+
+    caffe_compress_blob_ag(bottom[0]->count(), temp_bottom_diff, bottom_diff, &(bottom[0]->diff_bias));
+  }
 }
 
 INSTANTIATE_LAYER_GPU_FUNCS(ScaleLayer);

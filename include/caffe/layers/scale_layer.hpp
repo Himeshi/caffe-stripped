@@ -76,9 +76,9 @@ class ScaleLayer: public Layer<Dtype> {
   vector<bool> bias_propagate_down_;
   int bias_param_id_;
 
-  Blob<fp16> sum_multiplier_;
-  Blob<fp16> sum_result_;
-  Blob<fp16> temp_;
+  Blob<Dtype> sum_multiplier_;
+  Blob<Dtype> sum_result_;
+  Blob<Dtype> temp_;
   int axis_;
   int outer_dim_, scale_dim_, inner_dim_;
 };
