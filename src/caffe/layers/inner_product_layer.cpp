@@ -45,6 +45,7 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<fp16>*>& bottom,
     shared_ptr<Filler<Dtype> > weight_filler(GetFiller<Dtype>(
         this->layer_param_.inner_product_param().weight_filler()));
     weight_filler->Fill(this->blobs_[0].get());
+    expand_blob(this->blobs_[0]->count(), this->blobs_[0]->gpu_data(), this->blobs_dtype_[0]->mutable_gpu_data());
     // If necessary, initialize and fill the bias term
     if (bias_term_) {
       vector<int> bias_shape(1, N_);

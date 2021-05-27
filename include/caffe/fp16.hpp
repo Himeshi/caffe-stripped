@@ -71,6 +71,10 @@ void print_gpu_float_array(const double* d_data, int size);
 
 void print_gpu_fp16_array(const fp16* d_data, int size);
 
+void expand_blob(int n, const fp16* in, float* out);
+
+void expand_blob(int n, const fp16* in, double* out);
+
 __global__ void convert_to_fp16(const int n, float* in, fp16* out);
 
 __global__ void convert_to_fp16(const int n, double* in, fp16* out);

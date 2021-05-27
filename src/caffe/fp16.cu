@@ -2,6 +2,14 @@
 #include "caffe/fp16.cuh"
 namespace caffe {
 
+void expand_blob(int n, const fp16* in, float* out) {
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, in, out);
+}
+
+void expand_blob(int n, const fp16* in, double* out) {
+  convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, in, out);
+}
+
 __global__ void convert_to_fp16(const int n, float* in, fp16* out) {
   CUDA_KERNEL_LOOP(index, n) {
     out[index] = fp32tofp16_gpu(in[index]);
