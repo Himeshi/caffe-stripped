@@ -170,6 +170,10 @@ class Layer {
     return blobs_;
   }
 
+  vector<shared_ptr<Blob<Dtype> > >& blobs_dtype() {
+    return blobs_dtype_;
+  }
+
   /**
    * @brief Returns the layer parameter.
    */

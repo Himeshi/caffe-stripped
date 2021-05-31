@@ -75,9 +75,17 @@ void expand_blob(int n, const fp16* in, float* out);
 
 void expand_blob(int n, const fp16* in, double* out);
 
+void compress_blob(int n, const float* in, fp16* out);
+
+void compress_blob(int n, const double* in, fp16* out);
+
 __global__ void convert_to_fp16(const int n, float* in, fp16* out);
 
 __global__ void convert_to_fp16(const int n, double* in, fp16* out);
+
+__global__ void convert_to_fp16(const int n, const float* in, fp16* out);
+
+__global__ void convert_to_fp16(const int n, const double* in, fp16* out);
 
 __global__ void convert_to_float(const int n, fp16* in, float* out);
 

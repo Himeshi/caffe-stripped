@@ -449,6 +449,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
   }
   const int net_param_id = params_.size();
   params_.push_back(layers_[layer_id]->blobs()[param_id]);
+  params_dtype_.push_back(layers_[layer_id]->blobs_dtype()[param_id]);
   param_id_vecs_[layer_id].push_back(net_param_id);
   param_layer_indices_.push_back(make_pair(layer_id, param_id));
   ParamSpec default_param_spec;
@@ -465,6 +466,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
     }
     const int learnable_param_id = learnable_params_.size();
     learnable_params_.push_back(params_[net_param_id].get());
+    learnable_params_dtype_.push_back(params_dtype_[net_param_id].get());
     learnable_param_ids_.push_back(learnable_param_id);
     has_params_lr_.push_back(param_spec->has_lr_mult());
     has_params_decay_.push_back(param_spec->has_decay_mult());
@@ -962,7 +964,17 @@ void Net<Dtype>::Update() {
 template <typename Dtype>
 void Net<Dtype>::Update_half() {
   for (int i = 0; i < learnable_params_.size(); ++i) {
-    learnable_params_[i]->Update_half();
+	//for weights
+	if (i % 2 == 0) {
+	  //get fp16 diffs copy it to float diff
+	  expand_blob(learnable_params_[i]->count(), learnable_params_[i]->gpu_diff(), learnable_params_dtype_[i]->mutable_gpu_diff());
+	  //update float weights
+	  learnable_params_dtype_[i]->Update();
+      //copy float weights to fp16 weights
+	  compress_blob(learnable_params_[i]->count(), learnable_params_dtype_[i]->gpu_data(), learnable_params_[i]->mutable_gpu_data());
+	} else {
+      learnable_params_[i]->Update_half();
+	}
   }
 }
 
