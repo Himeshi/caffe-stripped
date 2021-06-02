@@ -14,6 +14,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
+#include <assert.h>
 
 #include "caffe/util/device_alternate.hpp"
 //#include "caffe/util/mkl_alternate.hpp"

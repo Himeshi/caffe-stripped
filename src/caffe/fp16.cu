@@ -1,6 +1,13 @@
 #include "caffe/fp16.hpp"
 #include "caffe/fp16.cuh"
+
 namespace caffe {
+
+__global__ void test_for_nan(int n, fp16* in) {
+  CUDA_KERNEL_LOOP(index, n) {
+    assert(isnan(fp16tofp32_gpu(in[index])));
+  }
+}
 
 void expand_blob(int n, const fp16* in, float* out) {
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, in, out);
