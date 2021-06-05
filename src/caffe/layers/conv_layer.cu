@@ -25,9 +25,9 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
       if (this->bias_term_) {
         const fp16* bias = this->blobs_[1]->gpu_data();
         this->forward_gpu_bias_half(top_data + n * this->top_dim_, bias);
-        test_for_nan_blob(this->blobs_[1]->count(), bias);
+        test_for_nan_blob(this->blobs_[1]->count(), this->blobs_[1]->mutable_gpu_data());
       }
-      test_for_nan_blob(top[i]->count(), this->blobs_[1]->mutable_gpu_data());
+      test_for_nan_blob(top[i]->count(), top_data);
     }
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
