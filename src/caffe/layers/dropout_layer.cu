@@ -32,6 +32,7 @@ void DropoutLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   } else {
     caffe_copy(count, bottom_data, top_data);
   }
+  test_for_nan_blob(top[0]->count(), top_data);
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
       sample_blob(top[0]->gpu_data(), top[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
@@ -67,6 +68,7 @@ void DropoutLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     } else {
       caffe_copy(top[0]->count(), top_diff, bottom_diff);
     }
+    test_for_nan_blob(bottom[0]->count(), bottom_diff);
 #ifdef SAMPLE_FLOATS
      if (this->phase_ == TRAIN) {
        sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);
