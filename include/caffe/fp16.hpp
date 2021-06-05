@@ -80,6 +80,10 @@ void compress_blob(int n, const float* in, fp16* out);
 
 void compress_blob(int n, const double* in, fp16* out);
 
+void test_for_nan_blob(int n, fp16* in);
+
+__global__ void test_for_nan(int n, fp16* in);
+
 __global__ void convert_to_fp16(const int n, float* in, fp16* out);
 
 __global__ void convert_to_fp16(const int n, double* in, fp16* out);

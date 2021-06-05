@@ -9,6 +9,10 @@ __global__ void test_for_nan(int n, fp16* in) {
   }
 }
 
+void test_for_nan_blob(int n, fp16* in) {
+	test_for_nan<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, in);
+}
+
 void expand_blob(int n, const fp16* in, float* out) {
   convert_to_float<<<CAFFE_GET_BLOCKS(n), CAFFE_CUDA_NUM_THREADS>>>(n, in, out);
 }
