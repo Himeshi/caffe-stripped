@@ -14,7 +14,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   int weight_count = this->blobs_[0]->count();
   convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
   const Dtype* weight_temp_data = this->temp_top_->gpu_data();
-  test_for_nan_blob(weight_count, weight);
+  test_for_nan_blob(weight_count, this->blobs_[0]->mutable_gpu_data());
 
   for (int i = 0; i < bottom.size(); ++i) {
     const fp16* bottom_data = bottom[i]->gpu_data();
@@ -27,7 +27,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         this->forward_gpu_bias_half(top_data + n * this->top_dim_, bias);
         test_for_nan_blob(this->blobs_[1]->count(), bias);
       }
-      test_for_nan_blob(top[i]->count(), top_data);
+      test_for_nan_blob(top[i]->count(), this->blobs_[1]->mutable_gpu_data());
     }
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
