@@ -222,6 +222,8 @@ void PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
     LOG(FATAL) << "Unknown pooling method.";
   }
   test_for_nan_blob(count, top_data);
+  CUDA_CHECK2(cudaGetLastError());
+  CUDA_CHECK2(cudaDeviceSynchronize());
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN) {
         sample_blob(top_data, count, this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
@@ -395,6 +397,8 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     LOG(FATAL) << "Unknown pooling method.";
   }
   test_for_nan_blob(count, bottom_diff);
+  CUDA_CHECK2(cudaGetLastError());
+  CUDA_CHECK2(cudaDeviceSynchronize());
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN) {
         sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);

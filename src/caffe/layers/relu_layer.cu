@@ -31,6 +31,8 @@ void ReLULayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   //     << " threads: " << CAFFE_CUDA_NUM_THREADS;
 
   test_for_nan_blob(top[0]->count(), top_data);
+  CUDA_CHECK2(cudaGetLastError());
+  CUDA_CHECK2(cudaDeviceSynchronize());
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
       sample_blob(top_data, top[0]->count(), this->activation_exp, this->activation_frac, this->activation, this->activation_vector, SAMPLING_FREQ);
@@ -60,6 +62,8 @@ void ReLULayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
     ReLUBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, bottom_data, bottom_diff, negative_slope);
     test_for_nan_blob(count, bottom_diff);
+  CUDA_CHECK2(cudaGetLastError());
+  CUDA_CHECK2(cudaDeviceSynchronize());
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN) {
         sample_blob(bottom[0]->gpu_diff(), bottom[0]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);

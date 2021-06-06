@@ -15,6 +15,8 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
   convert_to_float<<<CAFFE_GET_BLOCKS(weight_count), CAFFE_CUDA_NUM_THREADS>>>(weight_count, weight, weight_temp);
   const Dtype* weight_temp_data = this->temp_top_->gpu_data();
   test_for_nan_blob(weight_count, this->blobs_[0]->mutable_gpu_data());
+  CUDA_CHECK2(cudaGetLastError());
+  CUDA_CHECK2(cudaDeviceSynchronize());
 
   for (int i = 0; i < bottom.size(); ++i) {
     const fp16* bottom_data = bottom[i]->gpu_data();
@@ -26,8 +28,12 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<fp16>*>& bottom,
         const fp16* bias = this->blobs_[1]->gpu_data();
         this->forward_gpu_bias_half(top_data + n * this->top_dim_, bias);
         test_for_nan_blob(this->blobs_[1]->count(), this->blobs_[1]->mutable_gpu_data());
+        CUDA_CHECK2(cudaGetLastError());
+        CUDA_CHECK2(cudaDeviceSynchronize());
       }
       test_for_nan_blob(top[i]->count(), top_data);
+      CUDA_CHECK2(cudaGetLastError());
+      CUDA_CHECK2(cudaDeviceSynchronize());
     }
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
@@ -79,6 +85,8 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
       for (int n = 0; n < this->num_; ++n) {
         this->backward_gpu_bias_half(bias_diff, top_diff + n * this->top_dim_);
         test_for_nan_blob(this->blobs_[1]->count(), bias_diff);
+        CUDA_CHECK2(cudaGetLastError());
+        CUDA_CHECK2(cudaDeviceSynchronize());
       }
 #ifdef SAMPLE_FLOATS
     if(this->phase_ == TRAIN) {
@@ -95,6 +103,8 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
           this->weight_gpu_gemm_half(bottom_data + n * this->bottom_dim_,
               top_diff + n * this->top_dim_, weight_diff);
           test_for_nan_blob(this->blobs_[0]->count(), weight_diff);
+          CUDA_CHECK2(cudaGetLastError());
+          CUDA_CHECK2(cudaDeviceSynchronize());
 #ifdef SAMPLE_FLOATS
   if(this->phase_ == TRAIN) {
     sample_blob(this->blobs_[0]->gpu_diff(), this->blobs_[0]->count(), this->weight_gradient_exp, this->weight_gradient_frac, this->weight_gradient, this->weight_gradient_vector, SAMPLING_FREQ);
@@ -106,6 +116,8 @@ void ConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<fp16>*>& top,
           this->backward_gpu_gemm_half_with_float(top_diff + n * this->top_dim_, weight_temp_data,
               bottom_diff + n * this->bottom_dim_);
           test_for_nan_blob(bottom[i]->count(), bottom_diff);
+          CUDA_CHECK2(cudaGetLastError());
+          CUDA_CHECK2(cudaDeviceSynchronize());
 #ifdef SAMPLE_FLOATS
       if(this->phase_ == TRAIN) {
         sample_blob(bottom[i]->gpu_diff(), bottom[i]->count(), this->activation_gradient_exp, this->activation_gradient_frac, this->activation_gradient, this->activation_gradient_vector, SAMPLING_FREQ);

@@ -89,6 +89,14 @@ inline int CAFFE_GET_BLOCKS(const int N) {
   return (N + CAFFE_CUDA_NUM_THREADS - 1) / CAFFE_CUDA_NUM_THREADS;
 }
 
+inline void error_check(cudaError_t err, const char* file, int line) {
+    if(err != cudaSuccess) {
+        ::fprintf(stderr, "CUDA ERROR at %s[%d] : %s\n", file, line, cudaGetErrorString(err));
+        abort();
+    }
+}
+#define CUDA_CHECK2(err) do { error_check(err, __FILE__, __LINE__); } while(0)
+
 }  // namespace caffe
 
 #endif  // CPU_ONLY

@@ -5,7 +5,9 @@ namespace caffe {
 
 __global__ void test_for_nan(int n, fp16* in) {
   CUDA_KERNEL_LOOP(index, n) {
-    assert(isnan(fp16tofp32_gpu(in[index])));
+    if(isnan(fp16tofp32_gpu(in[index]))) {
+      asm("trap;");
+    }
   }
 }
 
